@@ -1,0 +1,34 @@
+{
+  "name": "myodyssey",
+  "version": "0.1.0",
+  "private": true,
+  "description": "myodyssey — public motivation app. Set a goal, share the journey, crowdsource encouragement.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "convex": "convex",
+    "convex:dev": "convex dev",
+    "convex:deploy": "convex deploy"
+  },
+  "dependencies": {
+    "@convex-dev/auth": "^0.0.80",
+    "convex": "^1.17.0",
+    "framer-motion": "^11.18.0",
+    "lucide-react": "^0.460.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.9.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.3"
+  }
+}
