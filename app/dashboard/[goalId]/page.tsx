@@ -12,11 +12,17 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   MessageSquare,
+  Pause,
+  PauseCircle,
+  PlayCircle,
   Plus,
   Send,
   Trash2,
   TrendingUp,
+  Trophy,
   X,
+  CheckCircle2,
+  Archive,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
@@ -27,8 +33,11 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { ProgressBar } from "@/components/ProgressBar";
 import { BadgeChip } from "@/components/BadgeChip";
 import { UpdateCard } from "@/components/UpdateCard";
+import { DualProgress } from "@/components/DualProgress";
+import { MilestonesList } from "@/components/MilestonesList";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 import { RequireAuth } from "@/components/RequireAuth";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function GoalDetailPage() {
   return (
@@ -42,14 +51,17 @@ function GoalDetailContent() {
   const params = useParams<{ goalId: string }>();
   const goalId = params.goalId as Id<"goals">;
 
+  const { user: _user } = useCurrentUser();
   const goal = useQuery(api.goals.getMine, { goalId });
   const updates = useQuery(api.updates.listForOwner, { goalId });
   const badges = useQuery(api.badges.listForGoal, { goalId });
-  const messages = useQuery(api.reactions.listForOwner, { goalId });
   const stats = useQuery(api.reactions.publicStats, { goalId });
+  const supporters = useQuery(api.supporters.listForOwner, { goalId });
+  const supportMessages = useQuery(api.supportMessages.listForOwner, { goalId });
 
-  const [showUpdate, setShowUpdate] = useState<null | "note" | "image" | "link" | "value">(null);
+  const [showUpdate, setShowUpdate] = useState<null | "note" | "image" | "link" | "value" | "milestone">(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showStatus, setShowStatus] = useState(false);
 
   const publicUrl = useMemo(() => {
     if (!goal) return "";
@@ -65,7 +77,7 @@ function GoalDetailContent() {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 1800);
     } catch {
-      // fallback: select text
+      // ignore
     }
   };
 
@@ -98,7 +110,14 @@ function GoalDetailContent() {
   }
 
   const progress = computeProgress(goal);
-  const daysLeft = Math.ceil((goal.targetDate - Date.now()) / (1000 * 60 * 60 * 24));
+  const daysLeft = goal.targetDate
+    ? Math.ceil((goal.targetDate - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+  const supporterCount = goal.supporterCount ?? 0;
+  const supporterTarget = goal.supporterTarget ?? null;
+  const isCompleted = goal.status === "completed";
+  const isPaused = goal.status === "paused";
+  const isClosed = goal.status === "closed";
 
   return (
     <div className="min-h-screen">
@@ -112,6 +131,14 @@ function GoalDetailContent() {
           Back to goals
         </Link>
 
+        {/* Status badge */}
+        <div className="mb-3 flex items-center gap-2">
+          <StatusPill status={goal.status} />
+          {isPaused && goal.pausedReason && (
+            <span className="text-xs text-[var(--color-text-muted)]">· {goal.pausedReason}</span>
+          )}
+        </div>
+
         {/* Header card */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -124,57 +151,67 @@ function GoalDetailContent() {
             {goal.category}
           </div>
           <h1 className="text-2xl font-bold tracking-tight">{goal.title}</h1>
+          {goal.summary && (
+            <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">{goal.summary}</p>
+          )}
           {goal.story && (
-            <p className="mt-1.5 text-sm text-[var(--color-text-muted)] line-clamp-3">
-              {goal.story}
-            </p>
+            <p className="mt-2 line-clamp-3 text-sm text-[var(--color-text-dim)]">{goal.story}</p>
           )}
 
-          <div className="mt-5 flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
-            <span className="inline-flex items-center gap-1">
-              <Calendar size={12} />
-              Target: {formatDate(goal.targetDate)}
-            </span>
-            <span
-              className={`tabular-nums ${
-                daysLeft < 0
-                  ? "text-[var(--color-danger)]"
-                  : daysLeft < 7
-                  ? "text-[var(--color-gold)]"
-                  : ""
-              }`}
-            >
-              {daysLeft < 0
-                ? `${Math.abs(daysLeft)}d overdue`
-                : daysLeft === 0
-                ? "Due today"
-                : `${daysLeft}d left`}
-            </span>
+          <div className="mt-5">
+            <DualProgress
+              goalPct={progress}
+              supporterCount={supporterCount}
+              supporterTarget={supporterTarget}
+              goalLabel={
+                goal.progressType === "milestones"
+                  ? `${goal.currentValue} of ${goal.targetValue} milestones`
+                  : goal.progressType === "streak"
+                  ? `${goal.currentValue} day streak`
+                  : `${formatNumber(goal.currentValue)} of ${formatNumber(goal.targetValue)} ${goal.unit}`
+              }
+              unit={goal.unit}
+            />
           </div>
 
-          <div className="mt-5">
-            <ProgressBar value={progress} size="lg" showLabel />
-            <div className="mt-3 flex items-baseline justify-between text-sm">
-              <span className="text-[var(--color-text-muted)]">
-                <span className="text-base font-semibold text-[var(--color-text)]">
-                  {formatNumber(goal.currentValue)}
-                </span>{" "}
-                of {formatNumber(goal.targetValue)} {goal.unit}
+          {badges && badges.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] pt-4">
+              <span className="mr-1 inline-flex items-center gap-1 text-xs text-[var(--color-text-dim)]">
+                <Trophy size={11} />
+                Milestones
               </span>
-              {badges && badges.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {badges
-                    .sort((a: any, b: any) => a.tier - b.tier)
-                    .map((b: any) => (
-                      <BadgeChip key={b._id} tier={b.tier} awardedAt={b.awardedAt} />
-                    ))}
-                </div>
-              )}
+              {badges
+                .sort((a: any, b: any) => a.tier - b.tier)
+                .map((b: any) => (
+                  <BadgeChip key={b._id} tier={b.tier} awardedAt={b.awardedAt} />
+                ))}
             </div>
+          )}
+
+          {/* Status actions */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--color-border)] pt-4">
+            {!isCompleted && !isClosed && (
+              <button
+                onClick={() => setShowStatus(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] transition hover:border-[var(--color-text-muted)]"
+              >
+                {isPaused ? <PlayCircle size={12} /> : <PauseCircle size={12} />}
+                {isPaused ? "Resume" : "Pause / complete"}
+              </button>
+            )}
+            {daysLeft !== null && (
+              <span className="text-xs text-[var(--color-text-dim)]">
+                {daysLeft < 0
+                  ? `${Math.abs(daysLeft)}d overdue`
+                  : daysLeft === 0
+                  ? "Due today"
+                  : `${daysLeft}d left`}
+              </span>
+            )}
           </div>
 
           {/* Share link */}
-          <div className="mt-6 rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] p-3">
+          <div className="mt-4 rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] p-3">
             <p className="mb-1.5 text-xs font-medium text-[var(--color-text-muted)]">
               Your public link
             </p>
@@ -201,13 +238,45 @@ function GoalDetailContent() {
           </div>
         </motion.div>
 
-        {/* Goal settings (cover + story) */}
+        {/* Status modal */}
+        <AnimatePresence>
+          {showStatus && (
+            <StatusModal
+              goalId={goalId}
+              currentStatus={goal.status}
+              onClose={() => setShowStatus(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Goal settings (cover + story + support types + target) */}
         <GoalSettings
           goalId={goalId}
           title={goal.title}
+          summary={goal.summary}
           story={goal.story}
           coverImageId={goal.coverImageId}
+          supporterTarget={goal.supporterTarget}
+          supportTypes={goal.supportTypes}
+          visibility={goal.visibility}
         />
+
+        {/* Milestones (if milestone template) */}
+        {goal.progressType === "milestones" && goal.milestones && goal.milestones.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+              Milestones
+            </h2>
+            <MilestonesList
+              goalId={goalId}
+              milestones={goal.milestones}
+              isOwner={true}
+              currentValue={goal.currentValue}
+              targetValue={goal.targetValue}
+              unit={goal.unit}
+            />
+          </div>
+        )}
 
         {/* Quick add */}
         <motion.div
@@ -224,6 +293,7 @@ function GoalDetailContent() {
               icon={TrendingUp}
               label="New value"
               onClick={() => setShowUpdate("value")}
+              disabled={goal.progressType !== "number"}
             />
             <QuickAddButton
               icon={MessageSquare}
@@ -250,42 +320,51 @@ function GoalDetailContent() {
               type={showUpdate}
               goalId={goalId}
               unit={goal.unit}
+              milestones={goal.milestones ?? []}
               onClose={() => setShowUpdate(null)}
             />
           )}
         </AnimatePresence>
 
-        {/* Messages inbox */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="mt-10"
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-[var(--color-text-muted)]">
-              Messages{" "}
-              <span className="ml-1 text-[var(--color-text-dim)]">
-                ({stats?.messages.length ?? 0} public · {messages?.length ?? 0} total)
-              </span>
+        {/* Supporters inbox */}
+        {supporters && supporters.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="mt-10"
+          >
+            <h2 className="mb-3 text-sm font-medium text-[var(--color-text-muted)]">
+              Your support team ({supporters.length})
             </h2>
-          </div>
-          {messages === undefined ? (
-            <div className="h-20 animate-pulse rounded-2xl bg-[var(--color-bg-card)]" />
-          ) : messages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)]/40 p-6 text-center text-sm text-[var(--color-text-dim)]">
-              No messages yet. Share your link to start receiving notes.
-            </div>
-          ) : (
             <div className="space-y-2">
-              {messages.map((m: any) => (
-                <MessageRow key={m._id} reactionId={m._id} message={m} />
-              ))}
+              {supporters.slice(0, 10).map((s: any) => {
+                const msg = supportMessages?.find((m: any) => m.authorId === s.userId && !m.hiddenAt);
+                return (
+                  <div
+                    key={s._id}
+                    className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{s.supportType}</span>
+                      <span className="text-xs text-[var(--color-text-dim)]">
+                        {relativeTime(s.createdAt)}
+                      </span>
+                    </div>
+                    {s.pledge && (
+                      <p className="mt-1 text-xs italic text-[var(--color-text-muted)]">"{s.pledge}"</p>
+                    )}
+                    {msg && (
+                      <p className="mt-1.5 text-sm text-[var(--color-text)]">{msg.body}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
 
-        {/* Public timeline preview (owner view) */}
+        {/* Public timeline preview */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -320,12 +399,128 @@ function GoalDetailContent() {
   );
 }
 
-function computeProgress(g: {
-  startValue: number;
-  currentValue: number;
-  targetValue: number;
-  direction: "increase" | "decrease";
+function StatusPill({ status }: { status: string }) {
+  const meta: Record<string, { label: string; color: string; icon: any }> = {
+    active: { label: "Active", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", icon: PlayCircle },
+    paused: { label: "Paused", color: "bg-amber-500/15 text-amber-400 border-amber-500/30", icon: Pause },
+    completed: { label: "Completed", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", icon: CheckCircle2 },
+    closed: { label: "Closed", color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: Archive },
+    draft: { label: "Draft", color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: Archive },
+  };
+  const m = meta[status] ?? meta.active;
+  const Icon = m.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${m.color}`}>
+      <Icon size={11} />
+      {m.label}
+    </span>
+  );
+}
+
+function StatusModal({
+  goalId,
+  currentStatus,
+  onClose,
+}: {
+  goalId: Id<"goals">;
+  currentStatus: string;
+  onClose: () => void;
 }) {
+  const setStatus = useMutation(api.goals.setStatus);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const transition = async (status: any, pausedReason?: string) => {
+    setBusy(true);
+    try {
+      await setStatus({ goalId, status, pausedReason });
+      onClose();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 30, opacity: 0 }}
+        className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Campaign status</h3>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)]"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {currentStatus === "paused" ? (
+          <button
+            onClick={() => transition("active")}
+            disabled={busy}
+            className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-left text-sm font-medium transition hover:bg-emerald-500/20 disabled:opacity-50"
+          >
+            <PlayCircle size={14} className="mr-2 inline text-emerald-400" />
+            Resume the campaign
+          </button>
+        ) : currentStatus === "completed" ? (
+          <p className="text-sm text-[var(--color-text-muted)]">This campaign is complete.</p>
+        ) : (
+          <div className="space-y-2">
+            <button
+              onClick={() => transition("paused", reason || "Taking a break")}
+              disabled={busy}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium transition hover:border-amber-500/40 disabled:opacity-50"
+            >
+              <Pause size={14} className="mr-2 inline text-amber-400" />
+              Pause the campaign
+            </button>
+            <input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Reason (optional) — e.g. 'Need a week to reset'"
+              className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+            />
+            <button
+              onClick={() => transition("completed")}
+              disabled={busy}
+              className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-left text-sm font-medium transition hover:bg-emerald-500/20 disabled:opacity-50"
+            >
+              <CheckCircle2 size={14} className="mr-2 inline text-emerald-400" />
+              Mark as completed
+            </button>
+            <button
+              onClick={() => transition("closed")}
+              disabled={busy}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium text-[var(--color-text-muted)] transition hover:border-[var(--color-text-muted)] disabled:opacity-50"
+            >
+              <Archive size={14} className="mr-2 inline" />
+              Close the campaign
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function computeProgress(g: any) {
+  if (g.progressType === "milestones") {
+    if (!g.milestones || g.milestones.length === 0) return 0;
+    return (g.currentValue / g.targetValue) * 100;
+  }
   const total = g.direction === "decrease" ? g.startValue - g.targetValue : g.targetValue - g.startValue;
   if (total <= 0) return 0;
   const moved = g.direction === "decrease" ? g.startValue - g.currentValue : g.currentValue - g.startValue;
@@ -336,16 +531,19 @@ function QuickAddButton({
   icon: Icon,
   label,
   onClick,
+  disabled,
 }: {
   icon: typeof TrendingUp;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+      disabled={disabled}
+      className="group flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40"
     >
       <Icon size={14} />
       {label}
@@ -416,11 +614,13 @@ function UpdateModal({
   type,
   goalId,
   unit,
+  milestones,
   onClose,
 }: {
-  type: "note" | "image" | "link" | "value";
+  type: "note" | "image" | "link" | "value" | "milestone";
   goalId: Id<"goals">;
   unit: string;
+  milestones: any[];
   onClose: () => void;
 }) {
   return (
@@ -445,6 +645,7 @@ function UpdateModal({
             {type === "image" && "Add a photo"}
             {type === "link" && "Add a link"}
             {type === "value" && `New ${unit} value`}
+            {type === "milestone" && "Mark milestone done"}
           </h3>
           <button
             onClick={onClose}
@@ -458,6 +659,9 @@ function UpdateModal({
         {type === "image" && <ImageForm goalId={goalId} onDone={onClose} />}
         {type === "link" && <LinkForm goalId={goalId} onDone={onClose} />}
         {type === "value" && <ValueForm goalId={goalId} unit={unit} onDone={onClose} />}
+        {type === "milestone" && (
+          <MilestoneForm goalId={goalId} milestones={milestones} onDone={onClose} />
+        )}
       </motion.div>
     </motion.div>
   );
@@ -689,16 +893,67 @@ function ValueForm({
   );
 }
 
+function MilestoneForm({
+  goalId,
+  milestones,
+  onDone,
+}: {
+  goalId: Id<"goals">;
+  milestones: any[];
+  onDone: () => void;
+}) {
+  const toggleMilestone = useMutation(api.goals.toggleMilestone);
+  const undone = milestones.filter((m) => !m.done);
+  const [busy, setBusy] = useState<string | null>(null);
+  return (
+    <div className="space-y-2">
+      {undone.length === 0 ? (
+        <p className="text-sm text-[var(--color-text-muted)]">All milestones are already done.</p>
+      ) : (
+        undone.map((m) => (
+          <button
+            key={m.id}
+            disabled={busy === m.id}
+            onClick={async () => {
+              setBusy(m.id);
+              try {
+                await toggleMilestone({ goalId, milestoneId: m.id, done: true });
+                onDone();
+              } finally {
+                setBusy(null);
+              }
+            }}
+            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium transition hover:border-emerald-500/40 disabled:opacity-50"
+          >
+            {m.title}
+            <span className="ml-2 text-xs text-[var(--color-text-dim)]">
+              {busy === m.id ? "Marking..." : "Mark done"}
+            </span>
+          </button>
+        ))
+      )}
+    </div>
+  );
+}
+
 function GoalSettings({
   goalId,
   title,
+  summary,
   story,
   coverImageId,
+  supporterTarget,
+  supportTypes,
+  visibility,
 }: {
   goalId: Id<"goals">;
   title: string;
+  summary?: string;
   story?: string;
   coverImageId?: Id<"_storage">;
+  supporterTarget?: number;
+  supportTypes: string[];
+  visibility: string;
 }) {
   const updateGoal = useMutation(api.goals.update);
   const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
@@ -709,8 +964,15 @@ function GoalSettings({
 
   const [editing, setEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title);
+  const [draftSummary, setDraftSummary] = useState(summary ?? "");
   const [draftStory, setDraftStory] = useState(story ?? "");
   const [draftCover, setDraftCover] = useState<Id<"_storage"> | undefined>(coverImageId);
+  const [draftSupporterTarget, setDraftSupporterTarget] = useState<string>(
+    supporterTarget?.toString() ?? ""
+  );
+  const [draftVisibility, setDraftVisibility] = useState<"public" | "unlisted">(
+    (visibility as any) ?? "public"
+  );
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -738,11 +1000,17 @@ function GoalSettings({
     setBusy(true);
     setErr(null);
     try {
+      const parsedSupTarget = draftSupporterTarget
+        ? parseInt(draftSupporterTarget, 10)
+        : undefined;
       await updateGoal({
         goalId,
         title: draftTitle,
+        summary: draftSummary || undefined,
         story: draftStory,
         coverImageId: draftCover,
+        supporterTarget: parsedSupTarget,
+        visibility: draftVisibility,
       });
       setEditing(false);
     } catch (e) {
@@ -772,8 +1040,11 @@ function GoalSettings({
           <button
             onClick={() => {
               setDraftTitle(title);
+              setDraftSummary(summary ?? "");
               setDraftStory(story ?? "");
               setDraftCover(coverImageId);
+              setDraftSupporterTarget(supporterTarget?.toString() ?? "");
+              setDraftVisibility((visibility as any) ?? "public");
               setEditing(true);
             }}
             className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
@@ -802,7 +1073,6 @@ function GoalSettings({
         )}
       </div>
 
-      {/* Cover image */}
       <div className="mb-4">
         <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
           Cover photo
@@ -825,11 +1095,6 @@ function GoalSettings({
               {editing ? "Click to upload a cover photo" : "No cover photo yet"}
             </div>
           )}
-          {editing && currentCoverUrl && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition hover:opacity-100">
-              <span className="text-xs text-white">Click to replace</span>
-            </div>
-          )}
         </div>
         <input
           ref={fileInput}
@@ -847,7 +1112,6 @@ function GoalSettings({
         />
       </div>
 
-      {/* Title */}
       <div className="mb-3">
         <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
           Title
@@ -863,8 +1127,23 @@ function GoalSettings({
         )}
       </div>
 
-      {/* Story */}
-      <div>
+      <div className="mb-3">
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+          One-line pitch
+        </label>
+        {editing ? (
+          <input
+            value={draftSummary}
+            onChange={(e) => setDraftSummary(e.target.value)}
+            placeholder="Short, punchy summary for the homepage card"
+            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+          />
+        ) : (
+          <p className="text-sm text-[var(--color-text-muted)]">{summary || "—"}</p>
+        )}
+      </div>
+
+      <div className="mb-3">
         <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
           Why this matters
         </label>
@@ -878,9 +1157,48 @@ function GoalSettings({
           />
         ) : (
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text-muted)]">
-            {story || "No story yet. Click edit to add one."}
+            {story || "—"}
           </p>
         )}
+      </div>
+
+      <div className="mb-3 grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+            Supporter target
+          </label>
+          {editing ? (
+            <input
+              type="number"
+              value={draftSupporterTarget}
+              onChange={(e) => setDraftSupporterTarget(e.target.value)}
+              placeholder="e.g. 50"
+              min={0}
+              className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+            />
+          ) : (
+            <p className="text-sm text-[var(--color-text)]">
+              {supporterTarget ?? <span className="text-[var(--color-text-dim)]">not set</span>}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+            Visibility
+          </label>
+          {editing ? (
+            <select
+              value={draftVisibility}
+              onChange={(e) => setDraftVisibility(e.target.value as any)}
+              className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+            >
+              <option value="public">Public (indexed)</option>
+              <option value="unlisted">Unlisted (link only)</option>
+            </select>
+          ) : (
+            <p className="text-sm text-[var(--color-text)] capitalize">{visibility}</p>
+          )}
+        </div>
       </div>
 
       {err && <p className="mt-3 text-xs text-[var(--color-danger)]">{err}</p>}
