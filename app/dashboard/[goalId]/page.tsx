@@ -124,8 +124,10 @@ function GoalDetailContent() {
             {goal.category}
           </div>
           <h1 className="text-2xl font-bold tracking-tight">{goal.title}</h1>
-          {goal.description && (
-            <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">{goal.description}</p>
+          {goal.story && (
+            <p className="mt-1.5 text-sm text-[var(--color-text-muted)] line-clamp-3">
+              {goal.story}
+            </p>
           )}
 
           <div className="mt-5 flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
@@ -198,6 +200,14 @@ function GoalDetailContent() {
             </div>
           </div>
         </motion.div>
+
+        {/* Goal settings (cover + story) */}
+        <GoalSettings
+          goalId={goalId}
+          title={goal.title}
+          story={goal.story}
+          coverImageId={goal.coverImageId}
+        />
 
         {/* Quick add */}
         <motion.div
@@ -676,5 +686,204 @@ function ValueForm({
         {busy ? "Saving..." : "Log value"}
       </button>
     </form>
+  );
+}
+
+function GoalSettings({
+  goalId,
+  title,
+  story,
+  coverImageId,
+}: {
+  goalId: Id<"goals">;
+  title: string;
+  story?: string;
+  coverImageId?: Id<"_storage">;
+}) {
+  const updateGoal = useMutation(api.goals.update);
+  const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
+  const coverUrl = useQuery(
+    api.storage.getUrls,
+    coverImageId ? { ids: [coverImageId] } : "skip"
+  );
+
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(title);
+  const [draftStory, setDraftStory] = useState(story ?? "");
+  const [draftCover, setDraftCover] = useState<Id<"_storage"> | undefined>(coverImageId);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  const onUploadCover = async (file: File | null) => {
+    if (!file) return;
+    setErr(null);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { storageId } = await res.json();
+      setDraftCover(storageId as Id<"_storage">);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
+    }
+  };
+
+  const onSave = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await updateGoal({
+        goalId,
+        title: draftTitle,
+        story: draftStory,
+        coverImageId: draftCover,
+      });
+      setEditing(false);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const currentCoverUrl =
+    preview ??
+    (draftCover ? coverUrl?.[draftCover] : null) ??
+    (coverImageId ? coverUrl?.[coverImageId] : null);
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.05 }}
+      className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          Public page
+        </h2>
+        {!editing ? (
+          <button
+            onClick={() => {
+              setDraftTitle(title);
+              setDraftStory(story ?? "");
+              setDraftCover(coverImageId);
+              setEditing(true);
+            }}
+            className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+          >
+            Edit
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setEditing(false);
+                setPreview(null);
+              }}
+              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onSave}
+              disabled={busy || !draftTitle.trim()}
+              className="rounded-md bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+            >
+              {busy ? "Saving..." : "Save"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Cover image */}
+      <div className="mb-4">
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+          Cover photo
+        </label>
+        <div
+          onClick={() => editing && fileInput.current?.click()}
+          className={`relative aspect-[3/1] w-full overflow-hidden rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] ${
+            editing ? "cursor-pointer transition hover:border-[var(--color-accent)]" : ""
+          }`}
+        >
+          {currentCoverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={currentCoverUrl}
+              alt="Cover"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs text-[var(--color-text-dim)]">
+              {editing ? "Click to upload a cover photo" : "No cover photo yet"}
+            </div>
+          )}
+          {editing && currentCoverUrl && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition hover:opacity-100">
+              <span className="text-xs text-white">Click to replace</span>
+            </div>
+          )}
+        </div>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            if (f) {
+              if (preview) URL.revokeObjectURL(preview);
+              setPreview(URL.createObjectURL(f));
+              onUploadCover(f);
+            }
+          }}
+        />
+      </div>
+
+      {/* Title */}
+      <div className="mb-3">
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+          Title
+        </label>
+        {editing ? (
+          <input
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+          />
+        ) : (
+          <p className="text-sm text-[var(--color-text)]">{title}</p>
+        )}
+      </div>
+
+      {/* Story */}
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+          Why this matters
+        </label>
+        {editing ? (
+          <textarea
+            value={draftStory}
+            onChange={(e) => setDraftStory(e.target.value)}
+            rows={5}
+            placeholder="Tell your story. Why this goal? What does hitting it mean?"
+            className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+          />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {story || "No story yet. Click edit to add one."}
+          </p>
+        )}
+      </div>
+
+      {err && <p className="mt-3 text-xs text-[var(--color-danger)]">{err}</p>}
+    </motion.section>
   );
 }

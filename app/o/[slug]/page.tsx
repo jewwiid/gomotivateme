@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Calendar, Sparkles, Trophy } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
@@ -13,9 +13,14 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { ProgressBar } from "@/components/ProgressBar";
 import { BadgeChip } from "@/components/BadgeChip";
 import { UpdateCard } from "@/components/UpdateCard";
-import { ThumbsUpButton } from "@/components/ThumbsUpButton";
+import { ReactionBar } from "@/components/ReactionBar";
 import { MessageForm } from "@/components/MessageForm";
 import { MessageBubble } from "@/components/MessageBubble";
+import { RecentCheerers } from "@/components/RecentCheerers";
+import { OrganizerCard } from "@/components/OrganizerCard";
+import { CompletionBanner } from "@/components/CompletionBanner";
+import { StickyCta } from "@/components/StickyCta";
+import { StorySection } from "@/components/StorySection";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 
 export default function PublicGoalPage() {
@@ -38,7 +43,7 @@ export default function PublicGoalPage() {
             href="/"
             className="mt-6 inline-flex items-center gap-1.5 text-sm text-[var(--color-accent)]"
           >
-            Learn about myodyssey
+            Learn about gomotivateme
           </Link>
         </div>
       </PublicShell>
@@ -53,79 +58,103 @@ function PublicGoalView({
   goal,
 }: {
   goalId: Id<"goals">;
-  goal: NonNullable<ReturnType<typeof useQuery<typeof api.public.getGoalBySlug>>>;
+  goal: any;
 }) {
   const updates = useQuery(api.updates.listForGoal, { goalId });
   const badges = useQuery(api.badges.listForGoal, { goalId });
   const stats = useQuery(api.reactions.publicStats, { goalId });
+  const ownerGoalsCount = useQuery(api.goals.listMine, "skip"); // never runs (skip)
 
-  // Resolve image URLs in one batched query.
+  // Resolve cover + update image URLs in one batched query.
   const imageIds = useMemo(() => {
     const ids = new Set<Id<"_storage">>();
+    if (goal.coverImageId) ids.add(goal.coverImageId);
     for (const u of updates ?? []) if (u.imageId) ids.add(u.imageId);
     return Array.from(ids);
-  }, [updates]);
+  }, [updates, goal.coverImageId]);
   const imageUrls = useQuery(
     api.storage.getUrls,
     imageIds.length > 0 ? { ids: imageIds } : "skip"
   );
 
-  const startMs = useMemo(() => goal.createdAt, [goal.createdAt]);
+  const coverUrl = goal.coverImageId ? imageUrls?.[goal.coverImageId] : null;
+  const cheerSectionRef = useRef<HTMLDivElement>(null);
+  const isComplete = goal.progress >= 100;
+  const startMs = goal.createdAt;
+
+  const onCheerClick = () => {
+    cheerSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   return (
     <PublicShell>
       {/* Hero */}
       <section className="relative">
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[var(--color-accent)]/15 blur-3xl" />
-        </div>
+        {coverUrl ? (
+          <div className="relative -mx-5 sm:-mx-6">
+            <div className="relative aspect-[3/1] w-full overflow-hidden bg-[var(--color-bg-card)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-x-5 bottom-5 sm:inset-x-6">
+                <div className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-wider text-white/80">
+                  <CategoryIcon category={goal.category} size={12} />
+                  {goal.category}
+                </div>
+                <h1 className="text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+                  {goal.title}
+                </h1>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4">
+            <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--color-text-dim)]">
+              <CategoryIcon category={goal.category} size={12} />
+              {goal.category}
+            </div>
+            <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+              {goal.title}
+            </h1>
+          </div>
+        )}
+
+        {/* Progress card */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6 sm:p-8"
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mt-4 rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6 sm:p-8"
         >
-          <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--color-text-dim)]">
-            <CategoryIcon category={goal.category} size={12} />
-            {goal.category}
-          </div>
-          <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-            {goal.title}
-          </h1>
-          {goal.description && (
-            <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-muted)]">
-              {goal.description}
-            </p>
-          )}
-
-          {/* Progress */}
-          <div className="mt-7">
-            <ProgressBar value={goal.progress} size="lg" showLabel />
-            <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
-              <Stat
-                label="Now"
-                value={`${formatNumber(goal.currentValue)} ${goal.unit}`}
-                highlight
-              />
-              <Stat label="Target" value={`${formatNumber(goal.targetValue)} ${goal.unit}`} />
-              <Stat
-                label={goal.daysRemaining < 0 ? "Overdue" : "Days left"}
-                value={
-                  goal.daysRemaining < 0
-                    ? `${Math.abs(goal.daysRemaining)}d`
-                    : goal.daysRemaining === 0
-                    ? "today"
-                    : `${goal.daysRemaining}`
-                }
-                color={
-                  goal.daysRemaining < 0
-                    ? "danger"
-                    : goal.daysRemaining < 7
-                    ? "warn"
-                    : undefined
-                }
-              />
-            </div>
+          <ProgressBar value={goal.progress} size="lg" showLabel />
+          <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+            <Stat
+              label="Now"
+              value={`${formatNumber(goal.currentValue)} ${goal.unit}`}
+              highlight
+            />
+            <Stat label="Target" value={`${formatNumber(goal.targetValue)} ${goal.unit}`} />
+            <Stat
+              label={goal.daysRemaining < 0 ? "Overdue" : "Days left"}
+              value={
+                goal.daysRemaining < 0
+                  ? `${Math.abs(goal.daysRemaining)}d`
+                  : goal.daysRemaining === 0
+                  ? "today"
+                  : `${goal.daysRemaining}`
+              }
+              color={
+                goal.daysRemaining < 0
+                  ? "danger"
+                  : goal.daysRemaining < 7
+                  ? "warn"
+                  : undefined
+              }
+            />
           </div>
 
           {/* Badges */}
@@ -152,23 +181,43 @@ function PublicGoalView({
                 ))}
             </motion.div>
           )}
-
-          {/* Reactions row */}
-          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[var(--color-border)] pt-5">
-            <ThumbsUpButton goalId={goalId} />
-            <div className="ml-auto text-xs text-[var(--color-text-dim)]">
-              Started {formatDate(startMs)} · {relativeTime(startMs)}
-            </div>
-          </div>
         </motion.div>
       </section>
 
-      {/* Cheer / message */}
-      <section className="mt-6">
-        <MessageForm goalId={goalId} />
-      </section>
+      {/* Completion banner */}
+      {isComplete && <div className="mt-6"><CompletionBanner goalTitle={goal.title} /></div>}
 
-      {/* Approved public messages */}
+      {/* Organizer */}
+      <div className="mt-6">
+        <OrganizerCard
+          ownerId={goal.ownerId}
+          ownerName={goal.ownerName}
+          ownerImage={goal.ownerImage}
+          goalCount={Array.isArray(ownerGoalsCount) ? ownerGoalsCount.length : 1}
+        />
+      </div>
+
+      {/* Story */}
+      <StorySection story={goal.story} />
+
+      {/* Reaction bar + cheer count summary */}
+      <div ref={cheerSectionRef} className="mt-8">
+        <ReactionBar goalId={goalId} />
+        <div className="mt-2 flex items-center justify-between text-xs text-[var(--color-text-dim)]">
+          <span>Started {formatDate(startMs)} · {relativeTime(startMs)}</span>
+          <Link
+            href={`/o/${goal.slug}#cheer`}
+            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+          >
+            Permalink
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent cheerers */}
+      <RecentCheerers goalId={goalId} />
+
+      {/* Approved messages */}
       {stats && stats.messages.length > 0 && (
         <section className="mt-10">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
@@ -189,8 +238,16 @@ function PublicGoalView({
         </section>
       )}
 
-      {/* Vertical timeline */}
+      {/* Leave a message */}
       <section className="mt-10">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          Leave a note
+        </h2>
+        <MessageForm goalId={goalId} />
+      </section>
+
+      {/* Vertical timeline */}
+      <section className="mt-10 pb-24 md:pb-10">
         <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
           <Calendar size={14} />
           The journey
@@ -210,7 +267,6 @@ function PublicGoalView({
           </div>
         ) : (
           <div className="relative">
-            {/* Timeline rail */}
             <div className="absolute bottom-3 left-[19px] top-3 w-px bg-[var(--color-border)]" aria-hidden />
             <div className="space-y-4">
               {updates.map((u: any, i: number) => (
@@ -236,19 +292,13 @@ function PublicGoalView({
         )}
       </section>
 
-      {/* CTA */}
-      <section className="mt-16 rounded-3xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-gold)]/10 p-8 text-center">
-        <h3 className="text-xl font-bold">Want to run your own odyssey?</h3>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Set a goal, share a link, let the people cheering you on send notes.
-        </p>
-        <Link
-          href="/signup"
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)]"
-        >
-          Start yours
-        </Link>
-      </section>
+      {/* Sticky mobile CTA */}
+      <StickyCta
+        goalId={goalId}
+        emojiCounts={stats?.emojiCounts}
+        total={stats?.emojiTotal ?? 0}
+        onCheerClick={onCheerClick}
+      />
     </PublicShell>
   );
 }
@@ -257,10 +307,13 @@ function PublicShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="mx-auto max-w-2xl px-5 py-8 sm:py-12">{children}</main>
+      <main className="mx-auto max-w-2xl px-5 py-8 sm:px-6 sm:py-12">{children}</main>
       <footer className="border-t border-[var(--color-border)]">
-        <div className="mx-auto max-w-2xl px-5 py-6 text-center text-xs text-[var(--color-text-dim)]">
-          Powered by <Link href="/" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">myodyssey</Link>
+        <div className="mx-auto max-w-2xl px-5 py-6 text-center text-xs text-[var(--color-text-dim)] sm:px-6">
+          Powered by{" "}
+          <Link href="/" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
+            gomotivateme
+          </Link>
         </div>
       </footer>
     </div>

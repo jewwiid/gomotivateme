@@ -26,7 +26,7 @@ function NewGoalContent() {
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [story, setStory] = useState("");
   const [category, setCategory] = useState<CategoryId>("weight");
   const [direction, setDirection] = useState<"increase" | "decrease">("decrease");
   const [unit, setUnit] = useState("kg");
@@ -70,7 +70,7 @@ function NewGoalContent() {
     try {
       const { goalId } = await create({
         title: title.trim(),
-        description: description.trim() || undefined,
+        story: story.trim() || undefined,
         category,
         unit: unit.trim() || "units",
         startValue: parseFloat(startValue),
@@ -112,8 +112,8 @@ function NewGoalContent() {
                 className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-4 py-3 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
               />
               <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={story}
+                onChange={(e) => setStory(e.target.value)}
                 placeholder="Why does this matter? (optional)"
                 rows={3}
                 className="mt-3 w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"

@@ -4,11 +4,11 @@ import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "myodyssey — set a goal, share the journey",
+  title: "gomotivateme — set a goal, share the journey",
   description:
-    "Set a goal, get a public link, and let the people cheering you on drop thumbs-ups and notes as you work toward your target date.",
+    "Set a goal, get a public link, and let the people cheering you on drop 💪 and notes as you work toward your target date.",
   openGraph: {
-    title: "myodyssey",
+    title: "gomotivateme",
     description: "Set a goal. Share a link. Crowdsource the motivation.",
     type: "website",
   },
