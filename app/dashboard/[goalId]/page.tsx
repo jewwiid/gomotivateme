@@ -402,7 +402,7 @@ function GoalDetailContent() {
 function StatusPill({ status }: { status: string }) {
   const meta: Record<string, { label: string; color: string; icon: any }> = {
     active: { label: "Active", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", icon: PlayCircle },
-    paused: { label: "Paused", color: "bg-amber-500/15 text-amber-400 border-amber-500/30", icon: Pause },
+    paused: { label: "Paused", color: "bg-[var(--color-warning)] 500/15 text-[var(--color-warning)] 400 border-[var(--color-warning)] 500/30", icon: Pause },
     completed: { label: "Completed", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", icon: CheckCircle2 },
     closed: { label: "Closed", color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: Archive },
     draft: { label: "Draft", color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: Archive },
@@ -482,9 +482,9 @@ function StatusModal({
             <button
               onClick={() => transition("paused", reason || "Taking a break")}
               disabled={busy}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium transition hover:border-amber-500/40 disabled:opacity-50"
+              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium transition hover:border-[var(--color-warning)] 500/40 disabled:opacity-50"
             >
-              <Pause size={14} className="mr-2 inline text-amber-400" />
+              <Pause size={14} className="mr-2 inline text-[var(--color-warning)] 400" />
               Pause the campaign
             </button>
             <input

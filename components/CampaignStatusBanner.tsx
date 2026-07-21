@@ -17,8 +17,8 @@ export function CampaignStatusBanner({
 
   const meta: Record<string, { bg: string; border: string; icon: any; title: string; body: string }> = {
     paused: {
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/30",
+      bg: "bg-[var(--color-warning)] 500/10",
+      border: "border-[var(--color-warning)] 500/30",
       icon: Pause,
       title: "Paused",
       body: pausedReason ?? "Taking a break. They'll be back.",
