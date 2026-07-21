@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useSpring, useTransform } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ProgressBarProps {
   /** 0..100 */
@@ -18,8 +18,11 @@ const SIZES = {
 };
 
 /**
- * Animated progress bar with a smooth spring. Used on the public page and
- * in the dashboard cards.
+ * Animated progress bar with a smooth spring.
+ *
+ * NOTE: the percent label is driven by a `useMotionValueEvent` subscription
+ * to avoid the setState-in-render pitfall — see prior version that mirrored
+ * the spring into React state and re-rendered on every animation frame.
  */
 export function ProgressBar({
   value,
@@ -28,19 +31,29 @@ export function ProgressBar({
   size = "md",
 }: ProgressBarProps) {
   const pct = Math.max(0, Math.min(100, value));
-  const spring = useSpring(0, { stiffness: 80, damping: 18, mass: 0.6 });
+  const spring = useSpring(pct, { stiffness: 80, damping: 18, mass: 0.6 });
   const widthPct = useTransform(spring, (v) => `${v}%`);
 
-  // Mirror the spring value into React state for the percent label.
-  const [displayPct, setDisplayPct] = useState(0);
+  // Update the spring only when the target value actually changes.
+  const lastTargetRef = useRef<number | null>(null);
   useEffect(() => {
-    const unsub = spring.on("change", (v) => setDisplayPct(v));
+    if (lastTargetRef.current !== pct) {
+      lastTargetRef.current = pct;
+      spring.set(pct);
+    }
+  }, [pct, spring]);
+
+  // Render the label as a non-React text node that we update imperatively.
+  const labelRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const unsub = spring.on("change", (v) => {
+      if (labelRef.current) labelRef.current.textContent = `${v.toFixed(1)}%`;
+    });
     return () => unsub();
   }, [spring]);
 
-  useEffect(() => {
-    spring.set(pct);
-  }, [pct, spring]);
+  // First-paint label so SSR / hydration have content immediately.
+  const [initialLabel] = useState(() => `${pct.toFixed(1)}%`);
 
   return (
     <div className={className}>
@@ -62,7 +75,9 @@ export function ProgressBar({
       {showLabel && (
         <div className="mt-1.5 flex items-center justify-between text-xs text-[var(--color-text-muted)]">
           <span>Progress</span>
-          <span className="font-mono tabular-nums">{displayPct.toFixed(1)}%</span>
+          <span ref={labelRef} className="font-mono tabular-nums">
+            {initialLabel}
+          </span>
         </div>
       )}
     </div>

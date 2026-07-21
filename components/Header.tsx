@@ -27,7 +27,7 @@ export function Header() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-gold)] text-sm font-bold text-black">
             m
           </div>
-          <span className="text-lg font-semibold tracking-tight">myodyssey</span>
+          <span className="text-lg font-semibold tracking-tight">gomotivateme</span>
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-3 text-sm">
@@ -66,7 +66,7 @@ export function Header() {
               href="/"
               className="rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
             >
-              About myodyssey
+              About gomotivateme
             </Link>
           ) : (
             <>
