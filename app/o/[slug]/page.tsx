@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { BadgeChip } from "@/components/BadgeChip";
 import { ReactionBar } from "@/components/ReactionBar";
@@ -26,6 +27,7 @@ import { RecentActivity } from "@/components/RecentActivity";
 import { EditorialTimeline } from "@/components/EditorialTimeline";
 import { MomentumStats } from "@/components/MomentumStats";
 import { MobileActionBar } from "@/components/MobileActionBar";
+import { MotivationCircleWidget } from "@/components/MotivationCircleWidget";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 
 export default function PublicGoalPage() {
@@ -59,6 +61,8 @@ export default function PublicGoalPage() {
 }
 
 function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
+  const { user } = useCurrentUser();
+  const isOwner = !!user && user._id === goal.ownerId;
   const updates = useQuery(api.updates.listForGoal, { goalId });
   const badges = useQuery(api.badges.listForGoal, { goalId });
   const owner = useQuery(api.users.profilesById, { ids: [goal.ownerId] });
@@ -302,6 +306,12 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
                 allowedTypes={(goal.supportTypes ?? []) as any}
                 onShare={onShare}
                 copied={copied}
+              />
+              <MotivationCircleWidget
+                goalId={goalId}
+                coreMotivatorMin={goal.coreMotivatorMin ?? 3}
+                isOwner={isOwner}
+                isLoggedIn={!!user}
               />
               <OrganiserMini ownerName={ownerName} ownerImage={ownerImage} />
             </div>

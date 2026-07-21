@@ -83,6 +83,34 @@ export const create = mutation({
     supportTypes: v.array(v.string()),
     visibility: v.union(v.literal("public"), v.literal("unlisted")),
     coverImageId: v.optional(v.id("_storage")),
+
+    // --- Motivation Circle ---
+    publicMotivatorPolicy: v.optional(
+      v.union(v.literal("auto"), v.literal("approval"), v.literal("disabled"))
+    ),
+    coreMotivatorMin: v.optional(v.number()),
+    invites: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          email: v.optional(v.string()),
+          proposedRole: v.union(
+            v.literal("encourager"),
+            v.literal("accountability"),
+            v.literal("advice"),
+            v.literal("review"),
+            v.literal("challenge")
+          ),
+          proposedFrequency: v.union(
+            v.literal("afterUpdate"),
+            v.literal("weekly"),
+            v.literal("monthly"),
+            v.literal("onRequest")
+          ),
+          personalMessage: v.optional(v.string()),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -110,6 +138,11 @@ export const create = mutation({
     const validSupport = args.supportTypes.filter((t) =>
       SUPPORT_TYPES.includes(t as (typeof SUPPORT_TYPES)[number])
     );
+
+    // Cap invites at 6 — that's the circle size from the spec.
+    const invites = (args.invites ?? []).slice(0, 6);
+    const hasInvites = invites.length > 0;
+    const preLaunchDeadline = hasInvites ? Date.now() + 14 * 24 * 60 * 60 * 1000 : undefined;
 
     // Build initial milestone rows (all undone).
     const milestones = (args.milestones ?? []).map((m) => ({
@@ -156,15 +189,93 @@ export const create = mutation({
       supporterTarget: args.supporterTarget,
       supporterCount: 0,
       supportTypes: validSupport as any,
-      status: "active",
+      // Pre-launch (status: "draft") if there are invites. Otherwise active.
+      status: hasInvites ? "draft" : "active",
       visibility: args.visibility,
       slug,
       coverImageId: args.coverImageId,
       createdAt: now,
       updatedAt: now,
+      // --- Motivation Circle ---
+      publicMotivatorPolicy: args.publicMotivatorPolicy ?? "approval",
+      coreMotivatorMin: args.coreMotivatorMin ?? 3,
+      preLaunchAt: hasInvites ? now : undefined,
+      preLaunchDeadline,
     });
 
+    // If we have invites, create the invite rows now. The token is random
+    // enough to make guessing impractical. Recipients get the link via the
+    // share sheet on the dashboard.
+    if (invites.length > 0) {
+      for (const inv of invites) {
+        const token =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        await ctx.db.insert("motivatorInvites", {
+          goalId,
+          creatorId: userId,
+          name: inv.name.trim(),
+          email: inv.email?.trim() || undefined,
+          invitedUserId: undefined,
+          proposedRole: inv.proposedRole,
+          proposedFrequency: inv.proposedFrequency,
+          personalMessage: inv.personalMessage?.trim() || undefined,
+          token,
+          status: "pending",
+          goalTitle: args.title.trim(),
+          createdAt: now,
+          expiresAt: preLaunchDeadline ?? now + 14 * 24 * 60 * 60 * 1000,
+        });
+      }
+    }
+
     return { goalId, slug };
+  },
+});
+
+/**
+ * Launch a pre-launch goal.
+ * Allowed when:
+ *   - core motivators >= coreMotivatorMin, OR
+ *   - the pre-launch deadline has passed
+ * Sets status → "active" and stamps launchedAt. The goal becomes discoverable
+ * on the public feed from this point.
+ */
+export const launch = mutation({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const goal = await ctx.db.get(goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not found");
+    if (goal.status !== "draft") throw new Error("Goal is not in pre-launch");
+
+    const now = Date.now();
+    const deadlinePassed =
+      goal.preLaunchDeadline !== undefined && goal.preLaunchDeadline <= now;
+
+    // Count active core motivators
+    const pledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
+      .collect();
+    const activeCore = pledges.filter(
+      (p) => p.isCoreMotivator && p.status === "active"
+    ).length;
+
+    if (!deadlinePassed && activeCore < goal.coreMotivatorMin) {
+      throw new Error(
+        `Need ${goal.coreMotivatorMin - activeCore} more core motivators to launch (or wait until ${new Date(goal.preLaunchDeadline ?? now).toLocaleDateString()})`
+      );
+    }
+
+    await ctx.db.patch(goalId, {
+      status: "active",
+      launchedAt: now,
+      updatedAt: now,
+    });
+    return { launched: true, activeCoreMotivators: activeCore };
   },
 });
 
@@ -180,6 +291,9 @@ export const update = mutation({
     supportTypes: v.optional(v.array(v.string())),
     visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"))),
     coverImageId: v.optional(v.id("_storage")),
+    publicMotivatorPolicy: v.optional(
+      v.union(v.literal("auto"), v.literal("approval"), v.literal("disabled"))
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -198,6 +312,9 @@ export const update = mutation({
     if (args.supporterTarget !== undefined) patch.supporterTarget = args.supporterTarget;
     if (args.supportTypes !== undefined) patch.supportTypes = args.supportTypes;
     if (args.visibility !== undefined) patch.visibility = args.visibility;
+    if (args.publicMotivatorPolicy !== undefined) {
+      patch.publicMotivatorPolicy = args.publicMotivatorPolicy;
+    }
     if (args.coverImageId !== undefined) patch.coverImageId = args.coverImageId;
     await ctx.db.patch(args.goalId, patch);
   },

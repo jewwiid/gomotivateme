@@ -40,6 +40,12 @@ export function Header() {
                 My goals
               </Link>
               <Link
+                href="/motivate"
+                className="rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+              >
+                Goals I motivate
+              </Link>
+              <Link
                 href="/dashboard/new"
                 className="hidden sm:inline-flex rounded-md bg-[var(--color-accent)] px-3 py-1.5 font-medium text-black transition hover:bg-[var(--color-accent-soft)]"
               >

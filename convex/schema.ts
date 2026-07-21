@@ -91,6 +91,27 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     completedAt: v.optional(v.number()),
+
+    // --- Motivation Circle fields ---
+    /**
+     * How the creator wants to handle public motivator applications.
+     *  - "auto": join instantly, no approval needed.
+     *  - "approval": creator must approve each application.
+     *  - "disabled": public users cannot apply (core circle only).
+     */
+    publicMotivatorPolicy: v.union(
+      v.literal("auto"),
+      v.literal("approval"),
+      v.literal("disabled")
+    ),
+    /** Minimum number of core motivators required before the creator can launch early. */
+    coreMotivatorMin: v.number(),
+    /** When the pre-launch window started (set when invites are sent). */
+    preLaunchAt: v.optional(v.number()),
+    /** When the pre-launch window expires (auto-launch nudge). */
+    preLaunchDeadline: v.optional(v.number()),
+    /** When the goal was promoted from pre-launch / draft to active. */
+    launchedAt: v.optional(v.number()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_created", ["ownerId", "createdAt"])
@@ -212,4 +233,169 @@ export default defineSchema({
   })
     .index("by_goal", ["goalId"])
     .index("by_goal_tier", ["goalId", "tier"]),
+
+  /**
+   * Motivation Circle — the creator's pre-launch team.
+   * The creator sends up to six of these. Each invitee accepts, declines, or
+   * asks a question. On accept, a motivatorPledge is created.
+   */
+  motivatorInvites: defineTable({
+    goalId: v.id("goals"),
+    creatorId: v.id("users"),
+    /** Display name entered by the creator. */
+    name: v.string(),
+    /** Email the creator typed — used to auto-link if the user already has an account. */
+    email: v.optional(v.string()),
+    /** Set once the email matches a registered user. */
+    invitedUserId: v.optional(v.id("users")),
+    /** What the creator wants this person to do. */
+    proposedRole: v.union(
+      v.literal("encourager"),
+      v.literal("accountability"),
+      v.literal("advice"),
+      v.literal("review"),
+      v.literal("challenge")
+    ),
+    /** How often the creator expects check-ins. */
+    proposedFrequency: v.union(
+      v.literal("afterUpdate"),
+      v.literal("weekly"),
+      v.literal("monthly"),
+      v.literal("onRequest")
+    ),
+    /** Optional personal note from the creator. */
+    personalMessage: v.optional(v.string()),
+    /** One-time token used in the shareable invite link. */
+    token: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("declined"),
+      v.literal("expired")
+    ),
+    /** Set when the invitee accepts — links to the resulting pledge. */
+    pledgeId: v.optional(v.id("motivatorPledges")),
+    /** Denormalized goal title for display on the invite page without a join. */
+    goalTitle: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_goal", ["goalId"])
+    .index("by_goal_status", ["goalId", "status"])
+    .index("by_creator", ["creatorId"])
+    .index("by_token", ["token"])
+    .index("by_email", ["email"]),
+
+  /**
+   * Motivation Circle — the actual pledge.
+   * Created when an invitee accepts (core) or a public application is approved.
+   * This is the committed tier; the legacy `supporters` table stays as the casual tier.
+   */
+  motivatorPledges: defineTable({
+    goalId: v.id("goals"),
+    /** User who is the motivator. */
+    userId: v.id("users"),
+    /** The role they signed up for. */
+    role: v.union(
+      v.literal("encourager"),
+      v.literal("accountability"),
+      v.literal("advice"),
+      v.literal("review"),
+      v.literal("challenge")
+    ),
+    /**
+     * How often they intend to check in. They can change this from their
+     * motivator dashboard.
+     */
+    checkInFrequency: v.union(
+      v.literal("afterUpdate"),
+      v.literal("weekly"),
+      v.literal("monthly"),
+      v.literal("onRequest")
+    ),
+    /** Public, plain-language commitment the motivator is making. */
+    pledgeText: v.optional(v.string()),
+    /** How they want to be notified when the creator posts an update. */
+    notificationPref: v.union(
+      v.literal("immediate"),
+      v.literal("dailyDigest"),
+      v.literal("weeklyDigest"),
+      v.literal("onRequest")
+    ),
+    status: v.union(
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("completed"),
+      v.literal("removed")
+    ),
+    /** True for the original six invited circle members. False for public motivators. */
+    isCoreMotivator: v.boolean(),
+    acceptedAt: v.number(),
+    lastCheckInAt: v.optional(v.number()),
+  })
+    .index("by_goal", ["goalId"])
+    .index("by_goal_status", ["goalId", "status"])
+    .index("by_goal_role", ["goalId", "role"])
+    .index("by_user", ["userId"])
+    .index("by_user_status", ["userId", "status"]),
+
+  /**
+   * Public motivator applications.
+   * Public users who want to join a goal's circle fill one of these. The
+   * creator approves or declines from the dashboard.
+   */
+  motivatorApplications: defineTable({
+    goalId: v.id("goals"),
+    applicantId: v.id("users"),
+    requestedRole: v.union(
+      v.literal("encourager"),
+      v.literal("accountability"),
+      v.literal("advice"),
+      v.literal("review"),
+      v.literal("challenge")
+    ),
+    message: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("declined")
+    ),
+    /** Set when accepted — links to the resulting pledge. */
+    pledgeId: v.optional(v.id("motivatorPledges")),
+    createdAt: v.number(),
+  })
+    .index("by_goal", ["goalId"])
+    .index("by_goal_status", ["goalId", "status"])
+    .index("by_applicant", ["applicantId"]),
+
+  /**
+   * Motivator check-ins. Structured messages a motivator sends in response
+   * to a creator update, or proactively on their scheduled cadence.
+   * Separate from supportMessages (anonymous public cheer).
+   */
+  checkIns: defineTable({
+    goalId: v.id("goals"),
+    /** The motivator sending the check-in. */
+    motivatorId: v.id("users"),
+    /** The goal's creator. */
+    creatorId: v.id("users"),
+    /** What kind of check-in this is. */
+    type: v.union(
+      v.literal("encouragement"),
+      v.literal("accountability"),
+      v.literal("advice"),
+      v.literal("reflection"),
+      v.literal("milestone")
+    ),
+    /** Optional reference to the update that prompted this check-in. */
+    updateId: v.optional(v.id("updates")),
+    body: v.string(),
+    acknowledgedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_goal", ["goalId"])
+    .index("by_goal_created", ["goalId", "createdAt"])
+    .index("by_motivator", ["motivatorId"])
+    .index("by_motivator_created", ["motivatorId", "createdAt"])
+    .index("by_creator", ["creatorId"]),
 });

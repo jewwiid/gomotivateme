@@ -30,6 +30,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { MotivationCircleManager } from "@/components/MotivationCircleManager";
 import { ProgressBar } from "@/components/ProgressBar";
 import { BadgeChip } from "@/components/BadgeChip";
 import { UpdateCard } from "@/components/UpdateCard";
@@ -237,6 +238,16 @@ function GoalDetailContent() {
             </div>
           </div>
         </motion.div>
+
+        {/* Motivation Circle — pre-launch + active */}
+        <div className="mt-6">
+          <MotivationCircleManager
+            goalId={goalId}
+            goalStatus={goal.status}
+            coreMotivatorMin={goal.coreMotivatorMin ?? 3}
+            preLaunchDeadline={goal.preLaunchDeadline}
+          />
+        </div>
 
         {/* Status modal */}
         <AnimatePresence>
