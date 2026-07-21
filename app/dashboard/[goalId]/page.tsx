@@ -551,65 +551,6 @@ function QuickAddButton({
   );
 }
 
-function MessageRow({
-  reactionId,
-  message,
-}: {
-  reactionId: Id<"reactions">;
-  message: { message?: string; displayName?: string; approved: boolean; createdAt: number };
-}) {
-  const approve = useMutation(api.reactions.approve);
-  const unapprove = useMutation(api.reactions.unapprove);
-  const remove = useMutation(api.reactions.remove);
-
-  return (
-    <div
-      className={`rounded-2xl border p-3 ${
-        message.approved
-          ? "border-[var(--color-success)]/30 bg-[var(--color-success)]/5"
-          : "border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)]"
-      }`}
-    >
-      <p className="text-sm leading-relaxed text-[var(--color-text)]">"{message.message}"</p>
-      <div className="mt-2 flex items-center justify-between text-xs">
-        <span className="text-[var(--color-text-dim)]">
-          <span className="font-medium text-[var(--color-text-muted)]">
-            {message.displayName || "Anonymous"}
-          </span>{" "}
-          · {relativeTime(message.createdAt)}
-          {message.approved ? " · public" : " · pending"}
-        </span>
-        <div className="flex items-center gap-1">
-          {message.approved ? (
-            <button
-              onClick={() => unapprove({ reactionId })}
-              className="rounded-md px-2 py-1 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
-            >
-              Hide
-            </button>
-          ) : (
-            <button
-              onClick={() => approve({ reactionId })}
-              className="rounded-md bg-[var(--color-success)]/15 px-2 py-1 font-medium text-[var(--color-success)] transition hover:bg-[var(--color-success)]/25"
-            >
-              Approve
-            </button>
-          )}
-          <button
-            onClick={() => {
-              if (confirm("Delete this message?")) remove({ reactionId });
-            }}
-            className="rounded-md p-1 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-danger)]"
-            aria-label="Delete"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function UpdateModal({
   type,
   goalId,
