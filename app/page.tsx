@@ -3,18 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Search,
-  Heart,
-  Lightbulb,
-  Calendar,
-  Users,
-  Sparkles,
-  MessageCircle,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight, Search, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -24,33 +13,39 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const FEATURED_CATEGORIES = CATEGORIES.slice(0, 6);
 
-const SUPPORT_TYPE_META: Array<{ id: string; label: string; description: string; icon: typeof Heart; color: string }> = [
+const SUPPORT_TYPE_META: Array<{
+  id: string;
+  label: string;
+  description: string;
+  iconSrc: string;
+  color: string;
+}> = [
   {
     id: "encourage",
     label: "Encouragement",
     description: "Cheer them on when motivation dips",
-    icon: Heart,
+    iconSrc: "/illustrations/support/encourage.png",
     color: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
   },
   {
     id: "advice",
     label: "Practical advice",
     description: "Specific tips, resources, know-how",
-    icon: Lightbulb,
+    iconSrc: "/illustrations/support/advice.png",
     color: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
   },
   {
     id: "checkin",
     label: "Regular check-ins",
     description: "Keep them accountable on a schedule",
-    icon: Calendar,
+    iconSrc: "/illustrations/support/checkin.png",
     color: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
   },
   {
     id: "join",
     label: "Join me",
     description: "Set your own version of the same goal",
-    icon: Users,
+    iconSrc: "/illustrations/support/join.png",
     color: "bg-[var(--color-accent-soft)] text-[var(--color-primary-dark)]",
   },
 ];
@@ -143,7 +138,15 @@ export default function HomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--color-primary)]/8 blur-3xl" />
-        <div className="mx-auto max-w-4xl px-6 pt-20 pb-12 text-center sm:pt-28">
+        {/* Hero illustration — full-bleed, sitting behind the headline on desktop. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/illustrations/hero.png"
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -top-6 left-1/2 hidden w-full max-w-6xl -translate-x-1/2 select-none opacity-90 mix-blend-multiply lg:block"
+        />
+        <div className="relative mx-auto max-w-4xl px-6 pt-20 pb-12 text-center sm:pt-28">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -199,6 +202,14 @@ export default function HomePage() {
             </a>
           </motion.div>
         </div>
+        {/* Mobile-only hero illustration: tucked under the CTA, full-width strip. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/illustrations/hero.png"
+          alt=""
+          aria-hidden
+          className="pointer-events-none mx-auto -mb-12 block w-full max-w-3xl select-none opacity-90 mix-blend-multiply lg:hidden"
+        />
       </section>
 
       {/* Platform promise */}
@@ -232,9 +243,15 @@ export default function HomePage() {
                 transition={{ duration: 0.4, delay: i * 0.08 }}
                 className="rounded-2xl border border-zinc-200 bg-white p-5"
               >
-                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-bold text-white">
-                  {i + 1}
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/illustrations/steps/${step.icon}.png`}
+                  alt=""
+                  aria-hidden
+                  width={96}
+                  height={96}
+                  className="mb-3 h-16 w-16 select-none object-contain"
+                />
                 <h3 className="text-sm font-semibold text-zinc-900">{step.title}</h3>
                 <p className="mt-1.5 text-xs text-zinc-600">{step.body}</p>
               </motion.div>
@@ -255,25 +272,28 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {SUPPORT_TYPE_META.map((s, i) => {
-              const Icon = s.icon;
-              return (
-                <motion.div
-                  key={s.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5"
-                >
-                  <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ${s.color}`}>
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="text-sm font-semibold text-zinc-900">{s.label}</h3>
-                  <p className="mt-1 text-xs text-zinc-600">{s.description}</p>
-                </motion.div>
-              );
-            })}
+            {SUPPORT_TYPE_META.map((s, i) => (
+              <motion.div
+                key={s.id}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={s.iconSrc}
+                  alt=""
+                  aria-hidden
+                  width={120}
+                  height={120}
+                  className="mb-3 h-20 w-20 select-none object-contain"
+                />
+                <h3 className="text-sm font-semibold text-zinc-900">{s.label}</h3>
+                <p className="mt-1 text-xs text-zinc-600">{s.description}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -322,7 +342,16 @@ export default function HomePage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-12 text-center">
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-14 text-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/illustrations/empty-state.png"
+                alt=""
+                aria-hidden
+                width={160}
+                height={160}
+                className="mb-6 h-32 w-32 select-none object-contain sm:h-40 sm:w-40"
+              />
               <p className="text-sm text-zinc-600">
                 {recent === undefined
                   ? "Loading goals…"
@@ -505,10 +534,10 @@ export default function HomePage() {
 }
 
 const HOW_IT_WORKS = [
-  { title: "Set a meaningful goal", body: "Pick a category, set a target, choose the support you need." },
-  { title: "Build your team", body: "Share your link. People who care join your support team." },
-  { title: "Share progress", body: "Log values, milestones, photos, and reflections as you go." },
-  { title: "Reach it together", body: "Real encouragement + accountability + check-ins to the finish." },
+  { title: "Set a meaningful goal", icon: "set", body: "Pick a category, set a target, choose the support you need." },
+  { title: "Build your team", icon: "team", body: "Share your link. People who care join your support team." },
+  { title: "Share progress", icon: "share", body: "Log values, milestones, photos, and reflections as you go." },
+  { title: "Reach it together", icon: "track", body: "Real encouragement + accountability + check-ins to the finish." },
 ];
 
 const SUPPORT_LABEL: Record<string, string> = {

@@ -80,10 +80,16 @@ function DashboardContent() {
 
 function EmptyState() {
   return (
-    <div className="rounded-3xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)]/40 p-12 text-center">
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
-        <Sparkles size={22} />
-      </div>
+    <div className="rounded-3xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)]/40 px-6 py-12 text-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/illustrations/empty-state.png"
+        alt=""
+        aria-hidden
+        width={160}
+        height={160}
+        className="mx-auto mb-4 h-32 w-32 select-none object-contain sm:h-40 sm:w-40"
+      />
       <h2 className="text-lg font-semibold">No goals yet</h2>
       <p className="mx-auto mt-1.5 max-w-sm text-sm text-[var(--color-text-muted)]">
         Pick something you want to achieve. Set a number, a date, and a category. We'll give you

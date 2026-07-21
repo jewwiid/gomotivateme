@@ -85,8 +85,8 @@ export default async function OpengraphImage({
               position: "absolute",
               inset: 0,
               display: "flex",
-              background: "linear-gradient(135deg, #ff7849 0%, #fbbf24 100%)",
-              opacity: 0.18,
+              background: "linear-gradient(135deg, #2541D8 0%, #82D9FF 100%)",
+              opacity: 0.95,
             }}
           />
         )}
@@ -120,8 +120,8 @@ export default async function OpengraphImage({
                 alignItems: "center",
                 justifyContent: "center",
                 borderRadius: 8,
-                background: "linear-gradient(135deg, #ff7849 0%, #fbbf24 100%)",
-                color: "#000",
+                background: "linear-gradient(135deg, #2541D8 0%, #82D9FF 100%)",
+                color: "#fff",
                 fontSize: 20,
                 fontWeight: 800,
               }}

@@ -5,8 +5,17 @@ export default function NotFound() {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="mx-auto flex max-w-md flex-col items-center justify-center px-6 py-32 text-center">
-        <h1 className="text-6xl font-bold tracking-tight">404</h1>
+      <main className="mx-auto flex max-w-md flex-col items-center justify-center px-6 py-20 text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/illustrations/not-found.png"
+          alt=""
+          aria-hidden
+          width={240}
+          height={240}
+          className="mb-2 h-48 w-48 select-none object-contain sm:h-60 sm:w-60"
+        />
+        <h1 className="mt-2 text-6xl font-bold tracking-tight">404</h1>
         <p className="mt-3 text-lg text-[var(--color-text-muted)]">
           That page doesn't exist.
         </p>
