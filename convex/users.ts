@@ -5,6 +5,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { HANDLE_RE, MIN_HANDLE_LENGTH, MAX_HANDLE_LENGTH } from "../lib/handle";
 
 /** Current user profile. */
 export const me = query({
@@ -209,7 +210,35 @@ export const removeCoverImage = mutation({
   },
 });
 
-const HANDLE_RE = /^[a-z0-9](?:[a-z0-9_-]{1,28})[a-z0-9]$/;
+/**
+ * Set the freshly-uploaded avatar as the user's image. Called after the
+ * client POSTs the file to the URL from generateCoverUploadUrl. Resolves
+ * the storageId to a public URL server-side and stores it on the user
+ * record (the @convex-dev/auth `image` field — same one used by the
+ * profile avatar and the Convex auth session).
+ */
+export const setAvatar = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, { storageId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const url = await ctx.storage.getUrl(storageId);
+    if (!url) throw new Error("Upload not found");
+    await ctx.db.patch(userId, { image: url });
+    return { ok: true, url };
+  },
+});
+
+/** Clear the avatar image (falls back to initials on the profile). */
+export const removeAvatar = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    await ctx.db.patch(userId, { image: undefined });
+    return { ok: true };
+  },
+});
 
 /**
  * Update the user's profile fields. Each is optional — only the ones
@@ -254,7 +283,9 @@ export const setHandle = mutation({
     if (!userId) throw new Error("Not signed in");
     const normalized = handle.toLowerCase().trim();
     if (!HANDLE_RE.test(normalized)) {
-      throw new Error("Handle must be 3-30 chars, lowercase letters, digits, _ or -");
+      throw new Error(
+        `Handle must be ${MIN_HANDLE_LENGTH}-${MAX_HANDLE_LENGTH} chars: lowercase letters, digits, _ or -`
+      );
     }
     // Check for a clash against any OTHER user with the same handle.
     const clash = await ctx.db

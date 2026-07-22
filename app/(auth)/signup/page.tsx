@@ -1,34 +1,61 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, AtSign, X } from "lucide-react";
+import { api } from "@/convex/_generated/api";
 import {
   MIN_PASSWORD_LENGTH,
   translateAuthError,
   validatePasswordClient,
 } from "@/lib/authErrors";
+import {
+  MAX_HANDLE_LENGTH,
+  suggestHandle,
+  validateHandleClient,
+} from "@/lib/handle";
 
 export default function SignupPage() {
   const { signIn } = useAuthActions();
   const router = useRouter();
+  const setHandle = useMutation(api.users.setHandle);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [handle, setHandleInput] = useState("");
+  const handleDirtyRef = useRef(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [handleErr, setHandleErr] = useState<string | null>(null);
   const [passwordHint, setPasswordHint] = useState<
     null | "ok" | "short"
   >(null);
+
+  // Auto-suggest handle from the name until the user touches the handle
+  // field. Once they've edited it, the suggestion is frozen so we don't
+  // keep overwriting their choice.
+  useEffect(() => {
+    if (!handleDirtyRef.current) {
+      setHandleInput(suggestHandle(name));
+    }
+  }, [name]);
 
   const onPasswordChange = (v: string) => {
     setPassword(v);
     if (v.length === 0) setPasswordHint(null);
     else if (v.length < MIN_PASSWORD_LENGTH) setPasswordHint("short");
     else setPasswordHint("ok");
+  };
+
+  const onHandleChange = (v: string) => {
+    handleDirtyRef.current = true;
+    const lower = v.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    setHandleInput(lower.slice(0, MAX_HANDLE_LENGTH));
+    setHandleErr(validateHandleClient(lower));
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -48,6 +75,15 @@ export default function SignupPage() {
       setErr("Enter your name");
       return;
     }
+    // Handle is OPTIONAL. Only validate + persist if they typed one.
+    if (handle.trim()) {
+      const v = validateHandleClient(handle);
+      if (v) {
+        setHandleErr(v);
+        setErr("Fix your handle to continue");
+        return;
+      }
+    }
 
     setBusy(true);
     try {
@@ -57,6 +93,29 @@ export default function SignupPage() {
         name,
         flow: "signUp",
       });
+      // Set the handle after auth so the session is established. If it
+      // fails (taken, invalid) the account still exists — they'll fix it
+      // in settings on next visit.
+      if (handle.trim()) {
+        try {
+          await setHandle({ handle: handle.trim() });
+        } catch (handleError) {
+          // Surface a soft warning on the dashboard via localStorage so
+          // the next page can show "your handle couldn't be saved".
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem(
+                "signup-handle-warning",
+                handleError instanceof Error
+                  ? handleError.message
+                  : "Could not save handle"
+              );
+            } catch {
+              // sessionStorage might be unavailable; safe to ignore.
+            }
+          }
+        }
+      }
       router.push("/dashboard");
     } catch (e) {
       setErr(translateAuthError(e, "signUp"));
@@ -64,6 +123,8 @@ export default function SignupPage() {
       setBusy(false);
     }
   };
+
+  const handleValid = handle.trim().length > 0 && !handleErr;
 
   return (
     <motion.div
@@ -92,6 +153,52 @@ export default function SignupPage() {
             placeholder="Your name"
           />
         </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+            Handle <span className="text-[var(--color-text-dim)]">(optional)</span>
+          </label>
+          <div
+            className={`flex items-center rounded-lg border bg-[var(--color-bg-elev)] pr-3 transition ${
+              handleErr
+                ? "border-[var(--color-danger)]/50"
+                : handleValid
+                ? "border-emerald-500/40"
+                : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)]"
+            }`}
+          >
+            <span className="ml-3 select-none text-sm text-[var(--color-text-dim)]">
+              <AtSign size={14} className="inline -translate-y-px" />
+            </span>
+            <input
+              type="text"
+              value={handle}
+              onChange={(e) => onHandleChange(e.target.value)}
+              autoComplete="username"
+              spellCheck={false}
+              className="w-full bg-transparent px-2 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:outline-none"
+              placeholder="your-handle"
+            />
+            {handleValid && (
+              <Check size={14} className="text-emerald-400" />
+            )}
+            {handleErr && (
+              <X size={14} className="text-[var(--color-danger)]" />
+            )}
+          </div>
+          <div className="mt-1 text-[10px] text-[var(--color-text-dim)]">
+            {handleErr ?? (
+              <>
+                Your profile lives at{" "}
+                <span className="font-mono text-[var(--color-text-muted)]">
+                  gomotivateme.com/u/
+                  {handle.trim() || suggestHandle(name) || "your-handle"}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
             Email

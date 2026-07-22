@@ -7,10 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Check,
-  Edit2,
   Image as ImageIcon,
   Loader2,
-  Plus,
   X,
   Camera,
 } from "lucide-react";
@@ -20,6 +18,10 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { RequireAuth } from "@/components/RequireAuth";
+import {
+  MAX_HANDLE_LENGTH,
+  validateHandleClient,
+} from "@/lib/handle";
 
 type Tab = "account" | "notifications";
 
@@ -130,6 +132,8 @@ function AccountTab() {
   );
   const setCoverImage = useMutation(api.users.setCoverImage);
   const removeCoverImage = useMutation(api.users.removeCoverImage);
+  const setAvatar = useMutation(api.users.setAvatar);
+  const removeAvatar = useMutation(api.users.removeAvatar);
   const coverUrl = useQuery(
     api.storage.getUrls,
     me?.coverImageId
@@ -143,6 +147,7 @@ function AccountTab() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [handle, setHandleInput] = useState("");
+  const [handleErr, setHandleErr] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -163,7 +168,8 @@ function AccountTab() {
       await updateProfile({
         name: name !== (me?.name ?? "") ? name : undefined,
         bio: bio !== (me?.bio ?? "") ? bio : undefined,
-        image: undefined, // Profile image URL edit is not exposed in this MVP
+        // image is set via the avatar uploader below, not the form
+        image: undefined,
       });
       if (handle !== (me?.handle ?? "")) {
         await setHandle({ handle });
@@ -178,6 +184,7 @@ function AccountTab() {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const onPickCover = () => fileInputRef.current?.click();
   const onUploadCover = async (file: File) => {
     setBusy(true);
@@ -199,56 +206,139 @@ function AccountTab() {
     }
   };
 
+  const onPickAvatar = () => avatarInputRef.current?.click();
+  const onUploadAvatar = async (file: File) => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const url = await generateCoverUploadUrl();
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { storageId } = await res.json();
+      await setAvatar({ storageId: storageId as Id<"_storage"> });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't upload avatar");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onHandleInput = (v: string) => {
+    const lower = v.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, MAX_HANDLE_LENGTH);
+    setHandleInput(lower);
+    setHandleErr(validateHandleClient(lower));
+  };
+
+  const profileInitials = (me?.name ?? me?.handle ?? "?")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="space-y-6">
-      {/* Cover photo */}
-      <Section title="Cover photo">
-        <div className="relative h-32 w-full overflow-hidden rounded-xl border border-zinc-200 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)]">
-          {coverImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={coverImageUrl}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : null}
-          <div className="absolute right-3 top-3 flex gap-2">
-            <button
-              type="button"
-              onClick={onPickCover}
-              disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-zinc-700 backdrop-blur hover:bg-white"
-            >
-              <Camera size={11} />
-              {coverImageUrl ? "Change" : "Add cover"}
-            </button>
-            {coverImageUrl && (
+      {/* Cover photo + Avatar row */}
+      <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
+        <Section title="Cover photo" className="!mt-0">
+          <div className="relative h-32 w-full overflow-hidden rounded-xl border border-zinc-200 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)]">
+            {coverImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverImageUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : null}
+            <div className="absolute right-3 top-3 flex gap-2">
               <button
                 type="button"
-                onClick={() => removeCoverImage({})}
+                onClick={onPickCover}
                 disabled={busy}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-zinc-700 backdrop-blur hover:bg-white"
               >
-                <X size={11} />
+                <Camera size={11} />
+                {coverImageUrl ? "Change" : "Add cover"}
+              </button>
+              {coverImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => removeCoverImage({})}
+                  disabled={busy}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-zinc-700 backdrop-blur hover:bg-white"
+                >
+                  <X size={11} />
+                  Remove
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onUploadCover(f);
+              }}
+            />
+          </div>
+          <p className="mt-2 text-[11px] text-zinc-500">
+            Shown at the top of your public profile. 16:9 works best.
+          </p>
+        </Section>
+
+        <Section title="Profile photo" className="!mt-0">
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={onPickAvatar}
+              disabled={busy}
+              className="group relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-zinc-300 transition hover:border-[var(--color-primary)]"
+            >
+              {me?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={me.image}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-lg font-bold text-white">
+                  {profileInitials}
+                </div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                {me?.image ? "Change" : "Add photo"}
+              </div>
+            </button>
+            {me?.image && (
+              <button
+                type="button"
+                onClick={() => removeAvatar({})}
+                disabled={busy}
+                className="text-[10px] text-zinc-500 hover:text-red-600"
+              >
                 Remove
               </button>
             )}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onUploadAvatar(f);
+              }}
+            />
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onUploadCover(f);
-            }}
-          />
-        </div>
-        <p className="mt-2 text-[11px] text-zinc-500">
-          Shown at the top of your public profile. 16:9 works best.
-        </p>
-      </Section>
+        </Section>
+      </div>
 
       {/* Name + handle */}
       <Section title="Public identity">
@@ -264,15 +354,16 @@ function AccountTab() {
           <Field
             label="Handle"
             value={handle}
-            onChange={setHandleInput}
+            onChange={onHandleInput}
             placeholder="your-handle"
             prefix="@"
-            maxLength={30}
+            maxLength={MAX_HANDLE_LENGTH}
             hint={
               handle.length === 0
-                ? "3-30 chars · lowercase letters, digits, _, -"
+                ? "3-30 chars · lowercase letters, digits, _ or -"
                 : `Profile: gomotivateme.com/u/${handle}`
             }
+            error={handleErr}
           />
           <Field
             label="Bio"
@@ -300,7 +391,7 @@ function AccountTab() {
             )}
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || !!handleErr}
               className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
             >
               {busy ? (
@@ -494,12 +585,14 @@ function Toggle({
 function Section({
   title,
   children,
+  className = "",
 }: {
   title: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+    <section className={`rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6 ${className}`}>
       <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
         {title}
       </h2>
@@ -518,6 +611,7 @@ function Field({
   rows = 2,
   maxLength,
   hint,
+  error,
 }: {
   label: string;
   value: string;
@@ -528,6 +622,7 @@ function Field({
   rows?: number;
   maxLength?: number;
   hint?: string;
+  error?: string | null;
 }) {
   return (
     <div>
@@ -535,9 +630,11 @@ function Field({
         {label}
       </label>
       <div
-        className={`flex items-center rounded-lg border border-zinc-200 bg-white ${
-          multiline ? "" : "px-3"
-        } focus-within:border-zinc-900`}
+        className={`flex items-center rounded-lg border bg-white transition ${
+          error
+            ? "border-red-300 focus-within:border-red-500"
+            : "border-zinc-200 focus-within:border-zinc-900"
+        } ${multiline ? "" : "px-3"}`}
       >
         {prefix && !multiline && (
           <span className="mr-1 select-none text-sm text-zinc-400">
@@ -563,9 +660,11 @@ function Field({
           />
         )}
       </div>
-      {hint && (
+      {error ? (
+        <div className="mt-1 text-right text-[10px] text-red-600">{error}</div>
+      ) : hint ? (
         <div className="mt-1 text-right text-[10px] text-zinc-500">{hint}</div>
-      )}
+      ) : null}
     </div>
   );
 }
