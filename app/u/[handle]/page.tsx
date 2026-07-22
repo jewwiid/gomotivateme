@@ -24,7 +24,6 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
-import { SiteFooter } from "@/components/SiteFooter";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -351,7 +350,6 @@ export default function ProfilePage() {
           </aside>
         </div>
       </main>
-      <SiteFooter />
     </div>
   );
 }

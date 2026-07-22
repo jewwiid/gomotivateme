@@ -16,7 +16,6 @@ import {
 import { api } from "@/convex/_generated/api";
 import { Header } from "@/components/Header";
 import { RequireAuth } from "@/components/RequireAuth";
-import { SiteFooter } from "@/components/SiteFooter";
 
 const ROLE_META: Record<string, { label: string; icon: typeof Heart; color: string }> = {
   encourager: { label: "Encourager", icon: Heart, color: "text-rose-500" },
@@ -118,7 +117,6 @@ function MotivateContent() {
           </p>
         </aside>
       </main>
-      <SiteFooter />
     </div>
   );
 }

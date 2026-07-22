@@ -11,7 +11,6 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES, FEATURED_CATEGORIES, getCategory } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { Header } from "@/components/Header";
-import { SiteFooter } from "@/components/SiteFooter";
 
 type Tab = "goals" | "motivators" | "categories";
 
@@ -145,8 +144,6 @@ export function ExploreContent() {
         {tab === "motivators" && <MotivatorsTab query={debouncedQ} />}
         {tab === "categories" && <CategoriesTab query={debouncedQ} />}
       </main>
-
-      <SiteFooter />
     </div>
   );
 }

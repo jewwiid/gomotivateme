@@ -11,7 +11,6 @@ import { FEATURED_CATEGORIES } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Header } from "@/components/Header";
-import { Logo } from "@/components/Logo";
 import { WelcomeModal } from "@/components/WelcomeModal";
 
 const FALLBACK_GOAL_MEDIA = [
@@ -212,16 +211,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-
-      <footer className="bg-[#fffdf8] px-5 pt-16 sm:px-8 sm:pt-20">
-        <div className="mx-auto grid max-w-[80rem] gap-12 border-b border-[#e3e1d8] pb-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
-          <div><Logo href="/" height={30} /><p className="mt-4 max-w-xs text-sm leading-6 text-[#676862]">Real goals. Real people. Together.</p></div>
-          <FooterColumn title="Explore" links={[["Explore goals", "/explore"], ["How it works", "#how-it-works"], ["Goal ideas", "/dashboard/new"]]} />
-          <FooterColumn title="Start a goal" links={[["Create a goal", startGoalHref], ["Build your team", "#how-it-works"], ["Share progress", startGoalHref]]} />
-          <FooterColumn title="About" links={[["Our approach", "#how-it-works"], ["Community standards", "#explore"], ["Contact", "mailto:hello@gomotivateme.com"]]} />
-        </div>
-        <div className="mx-auto flex max-w-[80rem] flex-col gap-4 py-7 text-xs text-[#74756f] sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} GoMotivateMe</p><div className="flex flex-wrap gap-x-5 gap-y-2"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Community guidelines</a></div></div>
-      </footer>
     </div>
   );
 }
@@ -243,8 +232,4 @@ function GoalTile({ goal, image, featured }: { goal: any; image: string; feature
 
 function CategoryFilter({ active, label, icon, onClick }: { active: boolean; label: string; icon?: React.ReactNode; onClick: () => void }) {
   return <button onClick={onClick} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${active ? "border-[#292929] bg-[#292929] text-white" : "border-[#cfcfc8] bg-transparent text-[#4c4d48] hover:border-[#777872]"}`}>{icon}{label}</button>;
-}
-
-function FooterColumn({ title, links }: { title: string; links: Array<[string, string]> }) {
-  return <div><h2 className="text-sm font-bold text-[#33332f]">{title}</h2><ul className="mt-4 space-y-2.5 text-sm text-[#656660]">{links.map(([label, href]) => <li key={label}><Link href={href} className="transition hover:text-[var(--color-primary)]">{label}</Link></li>)}</ul></div>;
 }

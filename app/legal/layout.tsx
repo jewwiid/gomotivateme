@@ -1,5 +1,4 @@
 import { Header } from "@/components/Header";
-import { SiteFooter } from "@/components/SiteFooter";
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,7 +7,6 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       <main className="flex-1 px-5 py-12 sm:px-8 sm:py-16">
         <div className="mx-auto max-w-3xl">{children}</div>
       </main>
-      <SiteFooter />
     </div>
   );
 }

@@ -30,7 +30,6 @@ import { MobileActionBar } from "@/components/MobileActionBar";
 import { ReportButton } from "@/components/ReportButton";
 import { MotivationCircleWidget } from "@/components/MotivationCircleWidget";
 import { Header } from "@/components/Header";
-import { SiteFooter } from "@/components/SiteFooter";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 
 export default function PublicGoalPage() {
@@ -390,8 +389,6 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
           />
         </div>
       </section>
-
-      <SiteFooter />
 
       {/* Mobile 3-action sticky bar */}
       <MobileActionBar onSupport={scrollToSupport} onEncourage={scrollToSupport} />

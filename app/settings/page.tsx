@@ -18,7 +18,6 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { RequireAuth } from "@/components/RequireAuth";
-import { SiteFooter } from "@/components/SiteFooter";
 import {
   MAX_HANDLE_LENGTH,
   validateHandleClient,
@@ -93,7 +92,6 @@ function SettingsContent() {
           </AnimatePresence>
         </div>
       </main>
-      <SiteFooter />
     </div>
   );
 }
