@@ -418,8 +418,9 @@ function MotivatorsTab({ query }: { query: string }) {
 function CategoriesTab({ query }: { query: string }) {
   const counts = useQuery(api.public.countByCategory, {});
 
-  if (counts === undefined) return <SkeletonGrid kind="category" />;
-
+  // useMemo MUST come before any early return — Rules of Hooks. The list
+  // it returns doesn't depend on `counts` (only on `query` + the static
+  // CATEGORIES constant), so it's safe to compute up front.
   const filtered = useMemo(() => {
     if (!query.trim()) return CATEGORIES;
     const q = query.toLowerCase();
@@ -427,6 +428,8 @@ function CategoriesTab({ query }: { query: string }) {
       (c) => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)
     );
   }, [query]);
+
+  if (counts === undefined) return <SkeletonGrid kind="category" />;
 
   if (filtered.length === 0) {
     return (
