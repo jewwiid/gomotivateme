@@ -72,7 +72,7 @@ export default function SignupPage() {
       transition={{ duration: 0.4 }}
     >
       <h1 className="mb-1.5 text-2xl font-bold tracking-tight">
-        Start your odyssey
+        Start your momentum
       </h1>
       <p className="mb-6 text-sm text-[var(--color-text-muted)]">
         Set up an account in 30 seconds.

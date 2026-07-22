@@ -66,7 +66,7 @@ export default function LoginPage() {
     >
       <h1 className="mb-1.5 text-2xl font-bold tracking-tight">Welcome back</h1>
       <p className="mb-6 text-sm text-[var(--color-text-muted)]">
-        Sign in to keep your odyssey going.
+        Sign in to keep your momentum going.
       </p>
 
       <form onSubmit={onSubmit} className="space-y-3" noValidate>

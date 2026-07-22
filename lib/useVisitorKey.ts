@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-const KEY = "myodyssey.visitorKey";
+const KEY = "gomotivateme.visitorKey";
+// Previous key used before the brand unification. We read it as a fallback so
+// existing visitors keep their dedup identity instead of being orphaned.
+const LEGACY_KEY = "myodyssey.visitorKey";
 
 /**
  * Stable per-browser visitor identifier, used to dedupe thumbs-up.
@@ -14,10 +17,14 @@ export function useVisitorKey(): string | null {
     try {
       let existing = window.localStorage.getItem(KEY);
       if (!existing) {
-        // 16 random hex chars — enough entropy for the dedup use case.
-        const bytes = new Uint8Array(8);
-        crypto.getRandomValues(bytes);
-        existing = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+        // Migrate any legacy visitor id forward, then persist under the new key.
+        existing = window.localStorage.getItem(LEGACY_KEY);
+        if (!existing) {
+          // 16 random hex chars — enough entropy for the dedup use case.
+          const bytes = new Uint8Array(8);
+          crypto.getRandomValues(bytes);
+          existing = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+        }
         window.localStorage.setItem(KEY, existing);
       }
       setKey(existing);

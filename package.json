@@ -1,8 +1,8 @@
 {
-  "name": "myodyssey",
+  "name": "gomotivateme",
   "version": "0.1.0",
   "private": true,
-  "description": "myodyssey — public motivation app. Set a goal, share the journey, crowdsource encouragement.",
+  "description": "gomotivateme — public motivation app. Set a goal, share the journey, crowdsource encouragement.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

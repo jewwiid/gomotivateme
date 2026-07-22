@@ -10,6 +10,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES, FEATURED_CATEGORIES } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { Logo } from "@/components/Logo";
 
 const SUPPORT_TYPE_META: Array<{
   id: string;
@@ -85,12 +86,7 @@ export default function HomePage() {
       {/* Top nav */}
       <header className="border-b border-zinc-200 bg-white/95 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-xs font-bold text-white">
-              m
-            </div>
-            <span className="font-display text-base font-semibold tracking-tight">gomotivateme</span>
-          </Link>
+          <Logo href="/" markSize={28} />
           <nav className="flex items-center gap-3 text-sm">
             <Link href="#explore" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
               Explore
@@ -493,11 +489,8 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-10 text-xs text-zinc-500">
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
-              <div className="mb-2 flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-xs font-bold text-white">
-                  m
-                </div>
-                <span className="font-display text-sm font-semibold text-zinc-900">gomotivateme</span>
+              <div className="mb-2">
+                <Logo href="/" markSize={24} />
               </div>
               <p>Where personal goals gain momentum.</p>
             </div>
