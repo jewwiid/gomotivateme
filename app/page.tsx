@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Search, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES, FEATURED_CATEGORIES } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Logo } from "@/components/Logo";
+import { WelcomeModal } from "@/components/WelcomeModal";
 
 const SUPPORT_TYPE_META: Array<{
   id: string;
@@ -64,6 +65,17 @@ export default function HomePage() {
     coverIds.length > 0 ? { ids: coverIds as any } : "skip"
   );
 
+  // Hero parallax — the hero illustration drifts up slightly as the page
+  // scrolls, giving the section a sense of depth. Skipped when the user
+  // has prefers-reduced-motion set (GPU-friendly + accessibility-clean).
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, -60]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.4]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -83,6 +95,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-zinc-900">
+      {/* First-visit welcome nudge — only fires for signed-out users. */}
+      {!user && <WelcomeModal />}
+
       {/* Top nav */}
       <header className="border-b border-zinc-200 bg-white/95 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
@@ -130,16 +145,22 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section ref={heroRef} className="relative overflow-hidden">
         <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--color-primary)]/8 blur-3xl" />
-        {/* Hero illustration — full-bleed, sitting behind the headline on desktop. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/illustrations/hero.png"
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute -top-6 left-1/2 hidden w-full max-w-6xl -translate-x-1/2 select-none opacity-90 mix-blend-multiply lg:block"
-        />
+        {/* Hero illustration — full-bleed, sitting behind the headline on desktop.
+            Wrapped in a parallax motion component so it drifts as you scroll. */}
+        <motion.div
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="pointer-events-none absolute inset-x-0 top-0 hidden h-full lg:block"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/illustrations/hero.png"
+            alt=""
+            aria-hidden
+            className="absolute -top-6 left-1/2 w-full max-w-6xl -translate-x-1/2 select-none opacity-90 mix-blend-multiply"
+          />
+        </motion.div>
         <div className="relative mx-auto max-w-4xl px-6 pt-20 pb-12 text-center sm:pt-28">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
