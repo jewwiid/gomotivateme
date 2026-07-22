@@ -1,9 +1,10 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import {
@@ -14,10 +15,12 @@ import {
 
 export default function LoginPage() {
   const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [awaitingSession, setAwaitingSession] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [passwordHint, setPasswordHint] = useState<
     null | "ok" | "short"
@@ -29,6 +32,16 @@ export default function LoginPage() {
     else if (v.length < MIN_PASSWORD_LENGTH) setPasswordHint("short");
     else setPasswordHint("ok");
   };
+
+  // `signIn` has received and stored the token once it resolves, but Convex
+  // still needs a moment to validate that token on its live connection. Going
+  // to the dashboard sooner makes RequireAuth see a transient signed-out
+  // state and send the user straight back here.
+  useEffect(() => {
+    if (awaitingSession && isAuthenticated) {
+      router.replace("/dashboard");
+    }
+  }, [awaitingSession, isAuthenticated, router]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,15 +61,24 @@ export default function LoginPage() {
     }
 
     setBusy(true);
+    let waitingForSession = false;
     try {
-      await signIn("password", { email, password, flow: "signIn" });
-      router.push("/dashboard");
+      const result = await signIn("password", {
+        email,
+        password,
+        flow: "signIn",
+      });
+      if (!result.signingIn) {
+        throw new Error("Sign-in did not create a session");
+      }
+      waitingForSession = true;
+      setAwaitingSession(true);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.warn("[login] auth error:", e);
       setErr(translateAuthError(e, "signIn"));
     } finally {
-      setBusy(false);
+      if (!waitingForSession) setBusy(false);
     }
   };
 

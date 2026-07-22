@@ -12,6 +12,7 @@ import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as badges from "../badges.js";
 import type * as goals from "../goals.js";
+import type * as http from "../http.js";
 import type * as motivation from "../motivation.js";
 import type * as public_ from "../public.js";
 import type * as reactions from "../reactions.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   badges: typeof badges;
   goals: typeof goals;
+  http: typeof http;
   motivation: typeof motivation;
   public: typeof public_;
   reactions: typeof reactions;

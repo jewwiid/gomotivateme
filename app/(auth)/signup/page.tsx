@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useMutation } from "convex/react";
+import { useConvexAuth, useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -21,6 +21,7 @@ import {
 
 export default function SignupPage() {
   const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
   const setHandle = useMutation(api.users.setHandle);
   const [name, setName] = useState("");
@@ -29,6 +30,7 @@ export default function SignupPage() {
   const [handle, setHandleInput] = useState("");
   const handleDirtyRef = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [awaitingSession, setAwaitingSession] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [handleErr, setHandleErr] = useState<string | null>(null);
   const [passwordHint, setPasswordHint] = useState<
@@ -43,6 +45,40 @@ export default function SignupPage() {
       setHandleInput(suggestHandle(name));
     }
   }, [name]);
+
+  // Wait until Convex has validated the fresh token before either making the
+  // authenticated handle mutation or moving to the guarded dashboard route.
+  // `signIn` itself only guarantees that the token was received and stored.
+  useEffect(() => {
+    if (!awaitingSession || !isAuthenticated) return;
+
+    let active = true;
+    const finishSignup = async () => {
+      const desiredHandle = handle.trim();
+      if (desiredHandle) {
+        try {
+          await setHandle({ handle: desiredHandle });
+        } catch {
+          // The account itself is ready. Preserve the warning for settings
+          // rather than blocking the user on a cosmetic profile field.
+          try {
+            sessionStorage.setItem(
+              "signup-handle-warning",
+              "We saved your account but couldn't set the handle — pick one in settings."
+            );
+          } catch {
+            // sessionStorage might be unavailable
+          }
+        }
+      }
+      if (active) router.replace("/dashboard");
+    };
+
+    void finishSignup();
+    return () => {
+      active = false;
+    };
+  }, [awaitingSession, handle, isAuthenticated, router, setHandle]);
 
   const onPasswordChange = (v: string) => {
     setPassword(v);
@@ -86,38 +122,19 @@ export default function SignupPage() {
     }
 
     setBusy(true);
+    let waitingForSession = false;
     try {
-      await signIn("password", {
+      const result = await signIn("password", {
         email,
         password,
         name,
         flow: "signUp",
       });
-      // Navigate IMMEDIATELY so the user lands on the dashboard. The
-      // auth token is still propagating client-side, and the inline
-      // `setHandle` mutation was racing it (Convex logs were full of
-      // "Not signed in" right after signIn). Defer the handle set to
-      // a microtask so the auth context has time to land. If the
-      // handle is missing on the user record, they can set it in
-      // settings on next visit — nothing breaks.
-      if (handle.trim()) {
-        const desiredHandle = handle.trim();
-        queueMicrotask(() => {
-          setHandle({ handle: desiredHandle }).catch(() => {
-            // Soft-fail: queue the warning for the dashboard, never
-            // block the signup flow.
-            try {
-              sessionStorage.setItem(
-                "signup-handle-warning",
-                "We saved your account but couldn't set the handle — pick one in settings."
-              );
-            } catch {
-              // sessionStorage might be unavailable
-            }
-          });
-        });
+      if (!result.signingIn) {
+        throw new Error("Sign-up did not create a session");
       }
-      router.push("/dashboard");
+      waitingForSession = true;
+      setAwaitingSession(true);
     } catch (e) {
       // Log the raw error in the console so we can debug future
       // translation gaps. The Convex HTTP client occasionally hides
@@ -127,7 +144,7 @@ export default function SignupPage() {
       console.warn("[signup] auth error:", e);
       setErr(translateAuthError(e, "signUp"));
     } finally {
-      setBusy(false);
+      if (!waitingForSession) setBusy(false);
     }
   };
 

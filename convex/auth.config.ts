@@ -1,11 +1,13 @@
-/**
- * Convex Auth configuration.
- *
- * For email + password auth only, providers is an empty list. OAuth
- * providers (Google, GitHub, etc.) get added here with their
- * `domain` + `applicationID`. The Password provider itself is wired up
- * in `convex/auth.ts` via `convexAuth({ providers: [Password] })`.
- */
 export default {
-  providers: [],
+  // Convex Auth issues JWTs from this deployment's `.convex.site` URL
+  // with `aud: "convex"`. Convex uses this list to validate those JWTs
+  // before allowing authenticated queries and mutations. Without this
+  // provider, password sign-in appears to succeed but every subsequent
+  // authenticated request is treated as signed out.
+  providers: [
+    {
+      domain: process.env.CONVEX_SITE_URL,
+      applicationID: "convex",
+    },
+  ],
 };
