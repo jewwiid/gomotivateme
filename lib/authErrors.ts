@@ -60,9 +60,15 @@ export function translateAuthError(
       : "Couldn't create your account. Please try again.";
   }
 
-  // @convex-dev/auth throws "Invalid credentials" for both unknown
-  // email and wrong password — we don't differentiate, on purpose.
-  if (lc.includes("invalid credentials") || lc.includes("invalid sign")) {
+  // @convex-dev/auth throws "InvalidSecret" when the account exists
+  // but the password is wrong. We don't differentiate from "Invalid
+  // credentials" for security — same user-facing message.
+  if (
+    lc.includes("invalidsecret") ||
+    lc.includes("invalid secret") ||
+    lc.includes("invalid credentials") ||
+    lc.includes("invalid sign")
+  ) {
     return "Wrong email or password.";
   }
 
