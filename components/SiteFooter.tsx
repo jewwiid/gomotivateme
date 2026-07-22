@@ -22,7 +22,7 @@ const columns = [
     title: "About",
     links: [
       ["Our approach", "/#how-it-works"],
-      ["Community standards", "/explore"],
+      ["Community guidelines", "/legal/community-guidelines"],
       ["Contact", "mailto:hello@gomotivateme.com"],
     ],
   },
@@ -99,9 +99,15 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-[80rem] flex-col gap-4 py-7 text-xs text-[#74756f] sm:flex-row sm:items-center sm:justify-between">
         <p>© {new Date().getFullYear()} GoMotivateMe</p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Community guidelines</a>
+          <Link href="/legal/privacy" className="transition hover:text-[var(--color-primary)]">
+            Privacy
+          </Link>
+          <Link href="/legal/terms" className="transition hover:text-[var(--color-primary)]">
+            Terms
+          </Link>
+          <Link href="/legal/community-guidelines" className="transition hover:text-[var(--color-primary)]">
+            Community guidelines
+          </Link>
         </div>
       </div>
     </footer>
