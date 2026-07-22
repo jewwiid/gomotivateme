@@ -6,6 +6,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { motion } from "framer-motion";
 import { LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { Logo } from "@/components/Logo";
 
 export function Header() {
   const pathname = usePathname();
@@ -23,14 +24,19 @@ export function Header() {
       className="sticky top-0 z-40 border-b border-[var(--color-border)] glass"
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-gold)] text-sm font-bold text-black">
-            m
-          </div>
-          <span className="text-lg font-semibold tracking-tight">gomotivateme</span>
-        </Link>
+        <Logo href="/" markSize={32} />
 
         <nav className="flex items-center gap-1 sm:gap-3 text-sm">
+          <Link
+            href="/explore"
+            className={`rounded-md px-3 py-1.5 transition ${
+              pathname?.startsWith("/explore")
+                ? "bg-[var(--color-bg-card)] font-medium text-[var(--color-text)]"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            Explore
+          </Link>
           {user ? (
             <>
               <Link

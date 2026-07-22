@@ -141,3 +141,88 @@ export const listByCategory = query({
       }));
   },
 });
+
+/**
+ * Discover/search public goals. Optional query string does a case-insensitive
+ * prefix match on title (cheap + predictable). Optional category narrows to one.
+ * Returns goals ordered by recency. Used by the /explore page.
+ */
+export const searchPublicGoals = query({
+  args: {
+    query: v.optional(v.string()),
+    category: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { query, category, limit }) => {
+    const take = limit ?? 60;
+    const q = query?.trim().toLowerCase();
+
+    // Pull a window of recent public goals and filter in-memory. At our
+    // current scale (low hundreds of goals) this is fine. If traffic grows
+    // we'd swap to the searchIndex + filterFields combo on the goals table.
+    const recent = await ctx.db
+      .query("goals")
+      .withIndex("by_public_created", (qq) => qq.eq("visibility", "public"))
+      .order("desc")
+      .take(Math.max(take, 200));
+
+    return recent
+      .filter(
+        (g) =>
+          g.status !== "closed" &&
+          g.status !== "draft" &&
+          (!category || g.category === category) &&
+          (!q ||
+            g.title.toLowerCase().includes(q) ||
+            (g.summary ?? "").toLowerCase().includes(q) ||
+            (g.ownerName ?? "").toLowerCase().includes(q))
+      )
+      .slice(0, take)
+      .map((g) => ({
+        _id: g._id,
+        slug: g.slug,
+        title: g.title,
+        summary: g.summary,
+        category: g.category,
+        unit: g.unit,
+        startValue: g.startValue,
+        targetValue: g.targetValue,
+        currentValue: g.currentValue,
+        direction: g.direction,
+        targetDate: g.targetDate,
+        coverImageId: g.coverImageId,
+        createdAt: g.createdAt,
+        ownerId: g.ownerId,
+        ownerName: g.ownerName,
+        ownerHandle: g.ownerHandle,
+        ownerImage: g.ownerImage,
+        supporterTarget: g.supporterTarget,
+        supporterCount: g.supporterCount,
+        progressType: g.progressType,
+        supportTypes: g.supportTypes,
+        status: g.status,
+        progress: computeProgress(g.startValue, g.currentValue, g.targetValue, g.direction),
+        daysRemaining: g.targetDate ? daysUntil(g.targetDate, Date.now()) : null,
+      }));
+  },
+});
+
+/**
+ * Counts of public active goals per category, sorted descending. Used by
+ * the Categories tab on /explore so visitors can see "Creative — 42" etc.
+ */
+export const countByCategory = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db
+      .query("goals")
+      .withIndex("by_public_created", (q) => q.eq("visibility", "public"))
+      .collect();
+    const counts: Record<string, number> = {};
+    for (const g of all) {
+      if (g.status === "draft" || g.status === "closed") continue;
+      counts[g.category] = (counts[g.category] ?? 0) + 1;
+    }
+    return counts;
+  },
+});

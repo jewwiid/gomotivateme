@@ -268,3 +268,99 @@ export const setHandle = mutation({
     return { handle: normalized };
   },
 });
+
+/**
+ * Discover: "Featured motivators" — users with the most visible activity
+ * on the platform. Score = public goals owned + active motivatorships
+ * + total supporters across their goals. Excludes anonymous / system
+ * accounts (no handle AND no name) so the grid is meaningful.
+ */
+export const listFeaturedMotivators = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const take = limit ?? 12;
+
+    // Pass 1: walk all public non-draft, non-closed goals and tally per user.
+    const publicGoals = await ctx.db
+      .query("goals")
+      .withIndex("by_public_created", (q) => q.eq("visibility", "public"))
+      .collect();
+
+    type Agg = {
+      _id: string;
+      name: string | null;
+      handle: string | null;
+      image: string | null;
+      bio: string | null;
+      goalsCount: number;
+      motivatingCount: number;
+      supportersCount: number;
+      latestActivityAt: number;
+    };
+    const byUser = new Map<string, Agg>();
+
+    for (const g of publicGoals) {
+      if (g.status === "draft" || g.status === "closed") continue;
+      const u = await ctx.db.get(g.ownerId);
+      if (!u) continue;
+      const uu = u as { name?: string; handle?: string; image?: string; bio?: string };
+      const existing = byUser.get(g.ownerId) ?? {
+        _id: g.ownerId,
+        name: uu.name ?? null,
+        handle: uu.handle ?? null,
+        image: uu.image ?? null,
+        bio: uu.bio ?? null,
+        goalsCount: 0,
+        motivatingCount: 0,
+        supportersCount: 0,
+        latestActivityAt: 0,
+      };
+      existing.goalsCount += 1;
+      existing.supportersCount += g.supporterCount ?? 0;
+      existing.latestActivityAt = Math.max(existing.latestActivityAt, g.createdAt);
+      byUser.set(g.ownerId, existing);
+    }
+
+    // Pass 2: walk all active motivator pledges and add to the count.
+    const pledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_goal_status", (q) => q.eq("status", "active"))
+      .collect();
+    for (const p of pledges) {
+      const u = await ctx.db.get(p.userId);
+      if (!u) continue;
+      const uu = u as { name?: string; handle?: string; image?: string; bio?: string };
+      const existing = byUser.get(p.userId) ?? {
+        _id: p.userId,
+        name: uu.name ?? null,
+        handle: uu.handle ?? null,
+        image: uu.image ?? null,
+        bio: uu.bio ?? null,
+        goalsCount: 0,
+        motivatingCount: 0,
+        supportersCount: 0,
+        latestActivityAt: 0,
+      };
+      existing.motivatingCount += 1;
+      existing.latestActivityAt = Math.max(existing.latestActivityAt, p.acceptedAt);
+      byUser.set(p.userId, existing);
+    }
+
+    // Filter anonymous / system users (no name AND no handle) — they
+    // contribute no useful discover card.
+    const candidates = Array.from(byUser.values()).filter(
+      (u) => (u.handle ?? u.name) && (u.goalsCount + u.motivatingCount) > 0
+    );
+
+    // Sort: composite score, with latest-activity as the tiebreaker so the
+    // grid stays fresh.
+    candidates.sort((a, b) => {
+      const scoreA = a.goalsCount * 3 + a.motivatingCount + a.supportersCount * 0.05;
+      const scoreB = b.goalsCount * 3 + b.motivatingCount + b.supportersCount * 0.05;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return b.latestActivityAt - a.latestActivityAt;
+    });
+
+    return candidates.slice(0, take);
+  },
+});
