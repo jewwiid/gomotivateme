@@ -28,6 +28,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [handle, setHandleInput] = useState("");
   const handleDirtyRef = useRef(false);
   const [busy, setBusy] = useState(false);
@@ -36,6 +37,9 @@ export default function SignupPage() {
   const [handleErr, setHandleErr] = useState<string | null>(null);
   const [passwordHint, setPasswordHint] = useState<
     null | "ok" | "short"
+  >(null);
+  const [confirmHint, setConfirmHint] = useState<
+    null | "ok" | "mismatch"
   >(null);
 
   // Auto-suggest handle from the name until the user touches the handle
@@ -86,6 +90,17 @@ export default function SignupPage() {
     if (v.length === 0) setPasswordHint(null);
     else if (v.length < MIN_PASSWORD_LENGTH) setPasswordHint("short");
     else setPasswordHint("ok");
+    // Re-evaluate confirm against the new password so the match hint
+    // doesn't go stale when the user edits one but not the other.
+    if (confirmPassword.length > 0) {
+      setConfirmHint(v === confirmPassword ? "ok" : "mismatch");
+    }
+  };
+
+  const onConfirmPasswordChange = (v: string) => {
+    setConfirmPassword(v);
+    if (v.length === 0) setConfirmHint(null);
+    else setConfirmHint(v === password ? "ok" : "mismatch");
   };
 
   const onHandleChange = (v: string) => {
@@ -102,6 +117,11 @@ export default function SignupPage() {
     const pwErr = validatePasswordClient(password);
     if (pwErr) {
       setErr(pwErr);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErr("Passwords don't match.");
+      setConfirmHint("mismatch");
       return;
     }
     if (!email.trim()) {
@@ -269,6 +289,32 @@ export default function SignupPage() {
             <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-emerald-400">
               <Check size={10} />
               Looks good
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+            Confirm password
+          </label>
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => onConfirmPasswordChange(e.target.value)}
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            placeholder="Type your password again"
+          />
+          {confirmHint === "mismatch" && (
+            <div className="mt-1 text-[10px] text-[var(--color-danger)]">
+              Passwords don&apos;t match
+            </div>
+          )}
+          {confirmHint === "ok" && (
+            <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-emerald-400">
+              <Check size={10} />
+              Matches
             </div>
           )}
         </div>
