@@ -101,41 +101,16 @@ export function WelcomeModal() {
               <X size={16} />
             </button>
 
-            {/* Illustrated cover — composed from existing public/illustrations/ pieces
-                (the four "support types" we already have). Creates a "people coming
-                together" feel that mirrors the GoFundMe welcome without needing new
-                generative assets. */}
-            <div className="relative h-44 overflow-hidden bg-gradient-to-br from-[var(--color-primary-soft)] via-white to-[var(--color-accent-soft)]">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="grid grid-cols-3 gap-2 -rotate-6">
-                  <div className="h-16 w-16 -translate-y-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-zinc-200/60">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/illustrations/support/encourage.png"
-                      alt=""
-                      aria-hidden
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="h-20 w-20 -translate-y-6 overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-zinc-200/60">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/illustrations/support/checkin.png"
-                      alt=""
-                      aria-hidden
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="h-16 w-16 -translate-y-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-zinc-200/60">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/illustrations/support/advice.png"
-                      alt=""
-                      aria-hidden
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                </div>
+            {/* Illustrated cover — AI-generated, soft polaroid stack of community. */}
+            <div className="relative h-52 overflow-hidden bg-gradient-to-br from-[var(--color-primary-soft)] via-white to-[var(--color-accent-soft)]">
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/illustrations/welcome.png"
+                  alt=""
+                  aria-hidden
+                  className="h-44 w-44 rotate-[-4deg] rounded-2xl object-cover shadow-lg ring-1 ring-zinc-200/60"
+                />
               </div>
               {/* Soft fade at the bottom so the cover melts into the white card body */}
               <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent" />

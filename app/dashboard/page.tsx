@@ -83,12 +83,12 @@ function EmptyState() {
     <div className="rounded-3xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)]/40 px-6 py-12 text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/illustrations/empty-state.png"
+        src="/illustrations/empty-goals.png"
         alt=""
         aria-hidden
-        width={160}
-        height={160}
-        className="mx-auto mb-4 h-32 w-32 select-none object-contain sm:h-40 sm:w-40"
+        width={200}
+        height={150}
+        className="mx-auto mb-4 w-48 select-none object-contain sm:w-56"
       />
       <h2 className="text-lg font-semibold">No goals yet</h2>
       <p className="mx-auto mt-1.5 max-w-sm text-sm text-[var(--color-text-muted)]">

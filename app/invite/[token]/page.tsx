@@ -269,6 +269,14 @@ export default function InvitePage() {
             Motivation Circle invite
           </div>
 
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/illustrations/motivation-circle.png"
+            alt=""
+            aria-hidden
+            className="mx-auto mt-4 h-32 w-32 select-none object-contain sm:h-40 sm:w-40"
+          />
+
           <h1 className="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             You've been invited to motivate
             <br />

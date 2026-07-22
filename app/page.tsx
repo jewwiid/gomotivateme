@@ -155,7 +155,7 @@ export default function HomePage() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/illustrations/hero.png"
+            src="/illustrations/hero-v2.png"
             alt=""
             aria-hidden
             className="absolute -top-6 left-1/2 w-full max-w-6xl -translate-x-1/2 select-none opacity-90 mix-blend-multiply"
@@ -220,7 +220,7 @@ export default function HomePage() {
         {/* Mobile-only hero illustration: tucked under the CTA, full-width strip. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/hero.png"
+          src="/illustrations/hero-v2.png"
           alt=""
           aria-hidden
           className="pointer-events-none mx-auto -mb-12 block w-full max-w-3xl select-none opacity-90 mix-blend-multiply lg:hidden"
