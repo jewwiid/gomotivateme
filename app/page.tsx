@@ -14,19 +14,19 @@ import { Logo } from "@/components/Logo";
 import { WelcomeModal } from "@/components/WelcomeModal";
 
 const FALLBACK_GOAL_MEDIA = [
-  "/illustrations/hero-v2.png",
-  "/illustrations/steps/set.png",
-  "/illustrations/steps/share.png",
-  "/illustrations/steps/track.png",
-  "/illustrations/steps/team.png",
+  "/illustrations/hero-community-v3.webp",
+  "/illustrations/steps/plan-v3.webp",
+  "/illustrations/steps/share-v3.webp",
+  "/illustrations/steps/move-v3.webp",
+  "/illustrations/steps/together-v3.webp",
 ];
 
 const HERO_MEDIA = [
-  { src: "/illustrations/steps/track.png", alt: "Illustration of someone working toward a fitness goal", tilt: "-rotate-[7deg]" },
-  { src: "/illustrations/steps/set.png", alt: "Illustration of planning a personal goal", tilt: "-rotate-[3deg]" },
-  { src: "/illustrations/hero-v2.png", alt: "Friends supporting one another toward their goals", tilt: "rotate-0" },
-  { src: "/illustrations/steps/share.png", alt: "Illustration of sharing a progress update", tilt: "rotate-[3deg]" },
-  { src: "/illustrations/steps/team.png", alt: "Illustration of a support team", tilt: "rotate-[7deg]" },
+  { src: "/illustrations/steps/move-v3.webp", alt: "A member getting ready to take the next step toward a goal", tilt: "-rotate-[7deg]" },
+  { src: "/illustrations/steps/plan-v3.webp", alt: "A member planning a personal goal", tilt: "-rotate-[3deg]" },
+  { src: "/illustrations/hero-community-v3.webp", alt: "Friends supporting one another toward their goals", tilt: "rotate-0" },
+  { src: "/illustrations/steps/share-v3.webp", alt: "Friends sharing a progress update", tilt: "rotate-[3deg]" },
+  { src: "/illustrations/steps/together-v3.webp", alt: "A support team working toward a shared goal", tilt: "rotate-[7deg]" },
 ];
 
 export default function HomePage() {
@@ -162,7 +162,7 @@ export default function HomePage() {
             <div className="relative mx-auto w-full max-w-xl rounded-[2rem] bg-[#dff2ae] p-7 sm:p-10">
               <div className="absolute left-8 top-8 h-8 w-8 rounded-full border-[5px] border-[#f7fbeb]" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/illustrations/steps/share.png" alt="Illustration of sharing a progress update with supporters" className="mx-auto w-full max-w-md object-contain" />
+              <img src="/illustrations/steps/share-v3.webp" alt="Friends sharing a progress update with supporters" className="mx-auto w-full max-w-md object-contain" />
               <div className="absolute bottom-7 left-7 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#333] shadow-sm sm:bottom-10 sm:left-10">You&apos;ve got this.</div>
             </div>
             <div>
@@ -208,7 +208,7 @@ export default function HomePage() {
             {filteredGoals.length === 0 ? (
               <div className="mt-12 grid place-items-center border-y border-[#e4e3dc] py-16 text-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/illustrations/empty-state.png" alt="Illustration of an empty goals list" className="h-28 w-28 object-contain" />
+                <img src="/illustrations/empty-new-beginning-v3.webp" alt="A seedling ready to grow" className="h-28 w-28 object-contain" />
                 <p className="mt-4 max-w-sm text-base text-[#666762]">{recent === undefined ? "Finding goals worth cheering for…" : "No goals match that search yet. Be the first to share yours."}</p>
                 <Link href={startGoalHref} className="mt-5 text-sm font-bold text-[var(--color-primary)]">Start a goal <span aria-hidden>→</span></Link>
               </div>

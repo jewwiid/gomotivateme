@@ -27,6 +27,7 @@ import { RecentActivity } from "@/components/RecentActivity";
 import { EditorialTimeline } from "@/components/EditorialTimeline";
 import { MomentumStats } from "@/components/MomentumStats";
 import { MobileActionBar } from "@/components/MobileActionBar";
+import { ReportButton } from "@/components/ReportButton";
 import { MotivationCircleWidget } from "@/components/MotivationCircleWidget";
 import { Header } from "@/components/Header";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -65,16 +66,15 @@ export default function PublicGoalPage() {
 function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
   const { user } = useCurrentUser();
   const isOwner = !!user && user._id === goal.ownerId;
-  const updates = useQuery(api.updates.listForGoal, { goalId });
+  const updatesCount = useQuery(api.updates.countForGoal, { goalId });
   const badges = useQuery(api.badges.listForGoal, { goalId });
   const owner = useQuery(api.users.profilesById, { ids: [goal.ownerId] });
 
   const imageIds = useMemo(() => {
     const ids = new Set<Id<"_storage">>();
     if (goal.coverImageId) ids.add(goal.coverImageId);
-    for (const u of updates ?? []) if (u.imageId) ids.add(u.imageId);
     return Array.from(ids);
-  }, [updates, goal.coverImageId]);
+  }, [goal.coverImageId]);
   const imageUrls = useQuery(
     api.storage.getUrls,
     imageIds.length > 0 ? { ids: imageIds } : "skip"
@@ -118,7 +118,6 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
   const isPaused = goal.status === "paused";
   const isClosed = goal.status === "closed";
   const isInactive = isPaused || isClosed;
-  const updatesCount = updates?.length ?? 0;
 
   const goalPct = goal.progress;
   const goalLabel =
@@ -239,7 +238,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
               supporterCount={supporterCount}
               supporterTarget={supporterTarget}
               unit={goal.unit}
-              updatesCount={updatesCount}
+              updatesCount={updatesCount ?? 0}
               progressType={goal.progressType}
               currentValue={goal.currentValue}
               targetValue={goal.targetValue}
@@ -277,7 +276,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
             <SupporterWall goalId={goalId} />
 
             {/* Editorial timeline */}
-            <EditorialTimeline goalId={goalId} unit={goal.unit} imageUrlOf={imageUrlOf} />
+            <EditorialTimeline goalId={goalId} unit={goal.unit} />
 
             {/* Share preview */}
             <SharePreview
@@ -370,12 +369,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
             {goal.targetDate ? ` · Target ${formatDate(goal.targetDate)}` : ""}
             {goal.category ? ` · ${goal.category}` : ""}
           </p>
-          <a
-            href="#"
-            className="mt-3 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-700"
-          >
-            Report this goal
-          </a>
+          <ReportButton goalId={goalId} className="mt-3 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-700" />
         </section>
       </main>
 

@@ -4,6 +4,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { buildSlug, computeProgress, newMilestoneTiers } from "./utils";
 
@@ -202,6 +203,7 @@ export const create = mutation({
       visibility: args.visibility,
       slug,
       coverImageId: args.coverImageId,
+      moderationStatus: "pending",
       createdAt: now,
       updatedAt: now,
       // --- Motivation Circle ---
@@ -238,6 +240,7 @@ export const create = mutation({
       }
     }
 
+    await ctx.scheduler.runAfter(0, internal.moderation.reviewGoal, { goalId });
     return { goalId, slug };
   },
 });
@@ -310,6 +313,11 @@ export const update = mutation({
     if (!goal || goal.ownerId !== userId) throw new Error("Not found");
 
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    const needsModeration =
+      args.title !== undefined ||
+      args.summary !== undefined ||
+      args.story !== undefined ||
+      args.coverImageId !== undefined;
     if (args.title !== undefined) {
       if (args.title.trim().length === 0) throw new Error("Title is required");
       patch.title = args.title.trim();
@@ -324,7 +332,16 @@ export const update = mutation({
       patch.publicMotivatorPolicy = args.publicMotivatorPolicy;
     }
     if (args.coverImageId !== undefined) patch.coverImageId = args.coverImageId;
+    if (needsModeration) {
+      patch.moderationStatus = "pending";
+      patch.moderationReason = undefined;
+      patch.moderationCategories = undefined;
+      patch.moderatedAt = undefined;
+    }
     await ctx.db.patch(args.goalId, patch);
+    if (needsModeration) {
+      await ctx.scheduler.runAfter(0, internal.moderation.reviewGoal, { goalId: args.goalId });
+    }
   },
 });
 
@@ -419,7 +436,33 @@ export const remove = mutation({
     const goal = await ctx.db.get(goalId);
     if (!goal || goal.ownerId !== userId) throw new Error("Not found");
 
-    for (const table of ["updates", "reactions", "badges", "supporters", "supportMessages"] as const) {
+    const mediaUpdates = await ctx.db
+      .query("updates")
+      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
+      .collect();
+    for (const update of mediaUpdates) {
+      const storageIds = new Set();
+      for (const item of update.media ?? []) {
+        if (item.kind === "image") {
+          if (item.storageId) storageIds.add(item.storageId);
+          if (item.thumbnailId) storageIds.add(item.thumbnailId);
+        }
+      }
+      for (const storageId of storageIds) await ctx.storage.delete(storageId);
+      await ctx.db.delete(update._id);
+    }
+
+    if (goal.coverImageId) await ctx.storage.delete(goal.coverImageId);
+
+    const pendingUploads = await ctx.db
+      .query("mediaUploadIntents")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+    for (const intent of pendingUploads) {
+      if (intent.goalId === goalId) await ctx.db.delete(intent._id);
+    }
+
+    for (const table of ["reactions", "badges", "supporters", "supportMessages"] as const) {
       const rows = await ctx.db
         .query(table as any)
         .withIndex("by_goal" as any, (q: any) => q.eq("goalId", goalId))
@@ -448,15 +491,19 @@ export const recordValue = mutation({
     if (goal.status !== "active") throw new Error("This goal isn't active");
 
     const now = Date.now();
-    await ctx.db.insert("updates", {
+    const updateId = await ctx.db.insert("updates", {
       goalId,
       ownerId: userId,
       type: "value",
       value,
       note: note?.trim() || undefined,
-      publicVisible: true,
+      moderationStatus: note?.trim() ? "pending" : "approved",
+      publicVisible: !note?.trim(),
       createdAt: now,
     });
+    if (note?.trim()) {
+      await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
+    }
     await ctx.db.patch(goalId, { currentValue: value, updatedAt: now });
 
     const pct = computeProgress(goal.startValue, value, goal.targetValue, goal.direction);

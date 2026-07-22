@@ -4,6 +4,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { HANDLE_RE, MIN_HANDLE_LENGTH, MAX_HANDLE_LENGTH } from "../lib/handle";
 
@@ -270,7 +271,32 @@ export const updateProfile = mutation({
       patch.image = args.image.trim() || undefined;
     }
     if (Object.keys(patch).length === 0) return { ok: true, changed: 0 };
+
+    // Detect first-time profile setup (user had no name before) to fire the
+    // welcome email once, and mint an unsubscribe token if none exists yet.
+    const before = await ctx.db.get(userId);
+    const isFirstSetup = !before?.name && patch.name !== undefined;
+
+    if (!before?.unsubscribeToken) {
+      patch.unsubscribeToken =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
     await ctx.db.patch(userId, patch);
+
+    // Email A1 — Welcome (transactional, fires once on first profile setup).
+    if (isFirstSetup && before?.email) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId,
+        toEmail: before.email,
+        templateId: "welcome",
+        category: "transactional",
+        payload: JSON.stringify({ firstName: (patch.name as string)?.split(" ")[0] }),
+      });
+    }
+
     return { ok: true, changed: Object.keys(patch).length };
   },
 });

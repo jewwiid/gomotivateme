@@ -24,10 +24,10 @@ interface GoalDoc {
 }
 
 const goalMedia = [
-  "/illustrations/steps/track.png",
-  "/illustrations/steps/set.png",
-  "/illustrations/steps/share.png",
-  "/illustrations/steps/team.png",
+  "/illustrations/steps/move-v3.webp",
+  "/illustrations/steps/plan-v3.webp",
+  "/illustrations/steps/share-v3.webp",
+  "/illustrations/steps/together-v3.webp",
 ];
 
 function pct(start: number, current: number, target: number, dir: "increase" | "decrease") {

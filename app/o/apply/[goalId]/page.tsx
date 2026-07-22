@@ -18,10 +18,11 @@ import {
   X,
   Lock,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { Header } from "@/components/Header";
 
 const ROLE_META: Record<
   string,
@@ -66,6 +67,15 @@ const FREQ_META: Record<string, { label: string; description: string }> = {
   onRequest: { label: "On request", description: "Stand by — they'll reach out" },
 };
 
+function ApplyShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+      <Header />
+      <main className="mx-auto max-w-[90rem] px-5 py-12 sm:px-8 sm:py-16">{children}</main>
+    </div>
+  );
+}
+
 export default function ApplyPage() {
   const params = useParams<{ goalId: string }>();
   const goalId = params.goalId as Id<"goals">;
@@ -90,66 +100,72 @@ export default function ApplyPage() {
 
   if (userLoading || goal === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
-      </div>
+      <ApplyShell>
+        <div className="flex min-h-[58dvh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#deddd6] border-t-[var(--color-primary)]" />
+        </div>
+      </ApplyShell>
     );
   }
 
   if (goal === null) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Goal not found</h1>
-        <p className="mt-3 text-sm text-zinc-600">
+      <ApplyShell>
+      <div className="mx-auto flex min-h-[58dvh] max-w-lg flex-col items-center justify-center text-center">
+        <p className="brand-kicker">Application</p>
+        <h1 className="mt-3 font-display text-4xl font-bold leading-[0.95] tracking-[-0.055em]">Goal not found</h1>
+        <p className="mt-4 text-sm leading-6 text-[#686963]">
           This goal may have been removed or made private.
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
+          className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
         >
           Go home
         </Link>
       </div>
+      </ApplyShell>
     );
   }
 
   // Not signed in — send to signup with return_to.
   if (!user) {
     return (
-      <div className="min-h-screen bg-zinc-50">
-        <div className="mx-auto max-w-2xl px-6 py-10 sm:py-16">
+      <ApplyShell>
+        <div className="mx-auto max-w-2xl py-6 sm:py-12">
           <Link
             href={`/o/${goal.slug}`}
-            className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-700"
+            className="inline-flex items-center gap-1.5 text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
           >
             <ArrowLeft size={12} />
             Back to goal
           </Link>
-          <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">
+          <p className="brand-kicker mt-12">Join the circle</p>
+          <h1 className="mt-3 font-display text-5xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl">
             Apply to motivate
             <br />
-            <span className="text-zinc-500">{goal.title}</span>
+            <span className="text-[var(--color-primary)]">{goal.title}</span>
           </h1>
-          <p className="mt-4 text-sm text-zinc-600">
+          <p className="mt-5 max-w-lg text-sm leading-6 text-[#686963]">
             Create an account to apply. Your application will include a short
             note explaining how you can help.
           </p>
           <div className="mt-6 flex gap-3">
             <Link
               href={`/signup?return_to=/o/apply/${goalId}`}
-              className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
             >
               Create account
             </Link>
             <Link
               href={`/login?return_to=/o/apply/${goalId}`}
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-900 transition hover:border-zinc-400"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#c9c8c0] bg-white px-5 py-3 text-sm font-semibold text-[#292929] transition hover:border-[var(--color-primary)]"
             >
               Sign in
             </Link>
           </div>
         </div>
-      </div>
+      </ApplyShell>
     );
   }
 
@@ -357,76 +373,86 @@ export default function ApplyPage() {
 
   if (submitted === "pending") {
     return (
-      <div className="min-h-screen bg-zinc-50">
-        <div className="mx-auto max-w-2xl px-6 py-10 sm:py-16">
+      <ApplyShell>
+        <div className="mx-auto max-w-xl py-12 sm:py-20">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="flex flex-col items-center text-center"
           >
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#fff5dd] text-[#9a6900]">
               <Clock size={24} />
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight">
+            <h1 className="mt-5 font-display text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
               Application sent
             </h1>
-            <p className="mt-3 max-w-md text-sm text-zinc-600">
+            <p className="mt-4 max-w-md text-sm leading-6 text-[#686963]">
               The goal owner will see your application and decide. If they accept,
               you'll be added to their Motivation Circle.
             </p>
             <Link
               href={`/o/${goal.slug}`}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
+              className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
             >
               Back to goal
             </Link>
           </motion.div>
         </div>
-      </div>
+      </ApplyShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <div className="mx-auto max-w-2xl px-6 py-10 sm:py-16">
-        <Link
-          href={`/o/${goal.slug}`}
-          className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-700"
-        >
-          <ArrowLeft size={12} />
-          Back to goal
-        </Link>
+    <ApplyShell>
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.82fr)_minmax(30rem,1fr)] lg:gap-20">
+        <aside className="lg:pt-2">
+          <Link
+            href={`/o/${goal.slug}`}
+            className="inline-flex items-center gap-1.5 text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
+          >
+            <ArrowLeft size={14} />
+            Back to goal
+          </Link>
+          <p className="brand-kicker mt-12">Join the circle</p>
+          <h1 className="mt-3 max-w-lg font-display text-5xl font-bold leading-[0.92] tracking-[-0.06em] sm:text-6xl">
+            {goal.title}
+          </h1>
+          {goal.summary && (
+            <p className="mt-5 max-w-md text-base leading-7 text-[#686963]">{goal.summary}</p>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/illustrations/motivation-circle-v3.webp"
+            alt="A circle of people showing up for a shared goal"
+            className="mt-10 h-44 w-44 object-contain"
+          />
+        </aside>
 
+        <section className="flow-form max-w-2xl lg:border-l lg:border-[#deddd6] lg:pl-12">
         {isPreLaunch && (
-          <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+          <div className="inline-flex items-center gap-2 border-b border-[var(--color-gold)] pb-2 text-xs font-semibold text-[#8a6510]">
             <Lock size={12} />
             Pre-launch · {goal.ownerName ?? "Someone"} is still building their circle
           </div>
         )}
 
-        <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-          Apply to motivate
-          <br />
-          <span className="text-zinc-500">{goal.title}</span>
-        </h1>
-
-        {goal.summary && (
-          <p className="mt-3 text-sm text-zinc-600">{goal.summary}</p>
-        )}
+        <h2 className="mt-6 font-display text-4xl font-bold leading-[0.95] tracking-[-0.055em] sm:text-5xl">
+          How will you show up?
+        </h2>
 
         {isAuto && (
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+          <div className="mt-5 inline-flex items-center gap-2 border-b border-[#b8d8c4] pb-2 text-xs font-semibold text-[#248451]">
             <Sparkles size={12} />
             Auto-accept · you'll join the circle right away
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-6">
+        <form onSubmit={onSubmit} className="mt-9 space-y-8">
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="brand-kicker">
               How would you like to help?
             </div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 border-y border-[#deddd6]">
               {Object.entries(ROLE_META).map(([id, m]) => {
                 const Icon = m.icon;
                 const active = role === id;
@@ -435,20 +461,20 @@ export default function ApplyPage() {
                     key={id}
                     type="button"
                     onClick={() => setRole(id)}
-                    className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                    className={`flex w-full items-center gap-3 border-b border-[#e4e2da] px-2 py-4 text-left transition last:border-b-0 ${
                       active
-                        ? "border-zinc-900 bg-zinc-900/5"
-                        : "border-zinc-200 bg-white hover:border-zinc-300"
+                        ? "bg-[#eef3ff] text-[var(--color-primary)]"
+                        : "bg-transparent hover:bg-white"
                     }`}
                   >
                     <div className={`shrink-0 ${m.color}`}>
                       <Icon size={16} />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-zinc-900">
+                      <div className="text-sm font-semibold text-[#292929]">
                         {m.label}
                       </div>
-                      <div className="text-[11px] text-zinc-500">
+                      <div className="text-[11px] text-[#777872]">
                         {m.description}
                       </div>
                     </div>
@@ -459,10 +485,10 @@ export default function ApplyPage() {
           </div>
 
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="brand-kicker">
               Cadence
             </div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {Object.entries(FREQ_META).map(([id, m]) => {
                 const active = frequency === id;
                 return (
@@ -470,16 +496,16 @@ export default function ApplyPage() {
                     key={id}
                     type="button"
                     onClick={() => setFrequency(id)}
-                    className={`rounded-2xl border p-3 text-left transition ${
+                    className={`rounded-xl border p-3 text-left transition ${
                       active
-                        ? "border-zinc-900 bg-zinc-900/5"
-                        : "border-zinc-200 bg-white hover:border-zinc-300"
+                        ? "border-[var(--color-primary)] bg-[#eef3ff]"
+                        : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
                     }`}
                   >
-                    <div className="text-sm font-semibold text-zinc-900">
+                    <div className="text-sm font-semibold text-[#292929]">
                       {m.label}
                     </div>
-                    <div className="text-[11px] text-zinc-500">{m.description}</div>
+                    <div className="text-[11px] text-[#777872]">{m.description}</div>
                   </button>
                 );
               })}
@@ -489,11 +515,11 @@ export default function ApplyPage() {
           <div>
             <label
               htmlFor="message"
-              className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500"
+              className="brand-kicker"
             >
               Message to {goal.ownerName ?? "the goal owner"}
             </label>
-            <p className="mt-0.5 text-[11px] text-zinc-500">
+            <p className="mt-1 text-[11px] leading-5 text-[#777872]">
               Be specific about why you're a good fit. Mention any relevant
               experience or what you'll actually do.
             </p>
@@ -510,9 +536,9 @@ export default function ApplyPage() {
               minLength={20}
               maxLength={500}
               rows={4}
-              className="mt-2 w-full resize-none rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none"
+              className="mt-2 w-full resize-none rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#9aa0a0] focus:border-[var(--color-primary)] focus:outline-none"
             />
-            <div className="mt-1 text-right text-[10px] text-zinc-500">
+            <div className="mt-1 text-right text-[10px] text-[#777872]">
               {message.length}/500
             </div>
           </div>
@@ -520,11 +546,11 @@ export default function ApplyPage() {
           <div>
             <label
               htmlFor="pledge"
-              className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500"
+              className="brand-kicker"
             >
               Public pledge (optional)
             </label>
-            <p className="mt-0.5 text-[11px] text-zinc-500">
+            <p className="mt-1 text-[11px] leading-5 text-[#777872]">
               A short sentence shown on the goal page so the goal owner knows
               what you're committing to.
             </p>
@@ -535,12 +561,12 @@ export default function ApplyPage() {
               onChange={(e) => setPledgeText(e.target.value)}
               placeholder="e.g. Check in every Sunday"
               maxLength={140}
-              className="mt-2 w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none"
+              className="mt-2 w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#9aa0a0] focus:border-[var(--color-primary)] focus:outline-none"
             />
           </div>
 
           {err && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+            <div className="border-l-4 border-[var(--color-danger)] bg-[#fff2f2] px-4 py-3 text-sm text-[#a53b3b]">
               {err}
             </div>
           )}
@@ -548,14 +574,14 @@ export default function ApplyPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link
               href={`/o/${goal.slug}`}
-              className="text-sm text-zinc-500 transition hover:text-zinc-900"
+              className="text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={busy || message.trim().length === 0}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
             >
               <Send size={14} />
               {busy
@@ -566,7 +592,8 @@ export default function ApplyPage() {
             </button>
           </div>
         </form>
+        </section>
       </div>
-    </div>
+    </ApplyShell>
   );
 }

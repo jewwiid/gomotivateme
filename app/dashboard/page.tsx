@@ -150,7 +150,7 @@ function EmptyState() {
     <div className="mt-7 grid place-items-center border-y border-[#deddd6] px-6 py-16 text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/illustrations/empty-goals.png"
+        src="/illustrations/empty-new-beginning-v3.webp"
         alt=""
         aria-hidden
         width={200}

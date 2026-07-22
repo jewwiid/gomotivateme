@@ -16,13 +16,57 @@ import {
   Users,
   Lock,
   Globe,
+  ImagePlus,
+  ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
-import { Header } from "@/components/Header";
+import { Id } from "@/convex/_generated/dataModel";
 import { CATEGORIES, CategoryId } from "@/lib/categories";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { RequireAuth } from "@/components/RequireAuth";
+import { Logo } from "@/components/Logo";
+
+const WIZARD_COPY = [
+  {
+    title: "Let’s begin your goal journey",
+    detail: "We’ll guide you through the essentials, then help you invite the right people in.",
+  },
+  {
+    title: "What’s your goal about?",
+    detail: "A clear category helps people understand what you’re working toward.",
+  },
+  {
+    title: "Choose your progress style",
+    detail: "Pick a way of measuring that will make momentum feel visible.",
+  },
+  {
+    title: "Set a target that matters",
+    detail: "Make the destination clear. You can always adjust the details later.",
+  },
+  {
+    title: "Give it a horizon",
+    detail: "A target date gives your circle something concrete to rally around.",
+  },
+  {
+    title: "Tell people why it matters",
+    detail: "A few honest words help the people in your circle understand the heart behind the goal.",
+  },
+  {
+    title: "Tell people how to help",
+    detail: "Choose the kind of support that would make the biggest difference.",
+  },
+  {
+    title: "Decide who can see it",
+    detail: "Keep it public for discovery, or share it only with people you choose.",
+  },
+  {
+    title: "Review your goal",
+    detail: "Take a final look before you bring your circle together.",
+  },
+];
+
+const PROGRESS_WIDTHS = ["w-[11.111%]", "w-[22.222%]", "w-1/3", "w-[44.444%]", "w-[55.555%]", "w-2/3", "w-[77.777%]", "w-[88.888%]", "w-full"];
 
 const PROGRESS_TEMPLATES = [
   {
@@ -64,6 +108,7 @@ export default function NewGoalPage() {
 function NewGoalContent() {
   const router = useRouter();
   const create = useMutation(api.goals.create);
+  const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
@@ -89,6 +134,7 @@ function NewGoalContent() {
   const [supporterTarget, setSupporterTarget] = useState("");
   const [supportTypes, setSupportTypes] = useState<string[]>(["encourage", "checkin"]);
   const [visibility, setVisibility] = useState<"public" | "unlisted">("public");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -123,16 +169,31 @@ function NewGoalContent() {
     if (step === 4) {
       return new Date(targetDate).getTime() > Date.now();
     }
-    if (step === 5) {
+    if (step === 6) {
       return supportTypes.length > 0;
     }
     return true;
   };
 
+  const totalSteps = WIZARD_COPY.length;
+  const stepCopy = WIZARD_COPY[step];
+
   const onSubmit = async () => {
     setBusy(true);
     setErr(null);
     try {
+      let coverImageId: Id<"_storage"> | undefined;
+      if (coverFile) {
+        const uploadUrl = await generateUploadUrl();
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": coverFile.type },
+          body: coverFile,
+        });
+        if (!response.ok) throw new Error("Could not upload cover photo");
+        const uploaded = (await response.json()) as { storageId: Id<"_storage"> };
+        coverImageId = uploaded.storageId;
+      }
       const start =
         progressType === "streak" ? 0 : parseFloat(startValue);
       const target =
@@ -163,6 +224,7 @@ function NewGoalContent() {
           : undefined,
         supportTypes,
         visibility,
+        coverImageId,
       });
       router.push(`/dashboard/${goalId}`);
     } catch (e) {
@@ -173,20 +235,26 @@ function NewGoalContent() {
   };
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      <main className="mx-auto max-w-2xl px-6 py-10">
-        <Link
-          href="/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-        >
-          <ArrowLeft size={14} />
-          Back to goals
+    <div className="min-h-dvh bg-[#f3f3f1] text-[#292929] lg:grid lg:grid-cols-[minmax(20rem,33%)_1fr]">
+      <aside className="hidden min-h-dvh flex-col justify-between px-14 py-12 lg:flex xl:px-20">
+        <Logo href="/dashboard" height={28} />
+        <div className="max-w-xs pb-16">
+          <p className="text-sm font-semibold text-[var(--color-primary)]">Step {step + 1} of {totalSteps}</p>
+          <h1 className="mt-5 font-display text-5xl font-bold leading-[0.95] tracking-[-0.065em] xl:text-6xl">{stepCopy.title}</h1>
+          <p className="mt-8 text-base leading-7 text-[#5f615d]">{stepCopy.detail}</p>
+        </div>
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[#686963] transition hover:text-[var(--color-primary)]">
+          <ArrowLeft size={15} /> Leave setup
         </Link>
+      </aside>
 
-        <StepIndicator step={step} />
-
-        <div className="mt-8">
+      <section className="flow-form flex min-h-dvh flex-col rounded-tl-[0] bg-white lg:rounded-tl-[4rem]">
+        <div className="flex items-center justify-between border-b border-[#ebeae5] px-5 py-5 lg:hidden">
+          <Logo href="/dashboard" height={24} />
+          <span className="text-xs font-semibold text-[var(--color-primary)]">{step + 1} / {totalSteps}</span>
+        </div>
+        <div className="flex-1 px-5 pb-10 pt-10 sm:px-12 sm:pt-16 lg:px-[10vw] lg:pt-28">
+          <div className="mx-auto w-full max-w-[42rem]">
           {step === 0 && (
             <Step title="What are you trying to achieve?">
               <input
@@ -195,21 +263,14 @@ function NewGoalContent() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Write my first novel"
                 autoFocus
-                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-4 py-3 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
               <input
                 type="text"
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
                 placeholder="One-line pitch (optional)"
-                className="mt-3 w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-              <textarea
-                value={story}
-                onChange={(e) => setStory(e.target.value)}
-                placeholder="Why does this matter? (optional — can edit later)"
-                rows={4}
-                className="mt-3 w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                className="mt-3 w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
             </Step>
           )}
@@ -224,8 +285,8 @@ function NewGoalContent() {
                     onClick={() => onCategoryChange(c.id)}
                     className={`flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition ${
                       category === c.id
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                        : "border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-strong)]"
+                        ? "border-[var(--color-primary)] bg-[#eef3ff]"
+                        : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
                     }`}
                   >
                     <CategoryIcon
@@ -233,7 +294,7 @@ function NewGoalContent() {
                       size={18}
                       className={
                         category === c.id
-                          ? "text-[var(--color-accent)]"
+                          ? "text-[var(--color-primary)]"
                           : "text-[var(--color-text-muted)]"
                       }
                     />
@@ -266,8 +327,8 @@ function NewGoalContent() {
                     }}
                     className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
                       progressType === t.id
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                        : "border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-strong)]"
+                        ? "border-[var(--color-primary)] bg-[#eef3ff]"
+                        : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
                     }`}
                   >
                     <span className="text-2xl leading-none">{t.icon}</span>
@@ -313,7 +374,7 @@ function NewGoalContent() {
                       value={unit}
                       onChange={(e) => setUnit(e.target.value)}
                       placeholder="kg, lbs, miles, books..."
-                      className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                      className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
                     />
                   </div>
                 </>
@@ -344,7 +405,7 @@ function NewGoalContent() {
                               arr.map((x) => (x.id === m.id ? { ...x, title: v } : x))
                             );
                           }}
-                          className="flex-1 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+                          className="flex-1 rounded-xl border border-[#c9c8c0] bg-white px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                         />
                         <button
                           type="button"
@@ -382,7 +443,7 @@ function NewGoalContent() {
                 type="date"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-4 py-3 text-base text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+                className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-base text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               />
               <p className="mt-3 text-sm text-[var(--color-text-muted)]">
                 We'll show a countdown and award badges as you pass 25, 50, 75, and 100%.
@@ -391,9 +452,24 @@ function NewGoalContent() {
           )}
 
           {step === 5 && (
+            <Step title="Tell your story">
+              <p className="mb-5 max-w-lg text-sm leading-6 text-[#686963]">
+                Share what this goal means to you and what a little support could change. You can refine it whenever you like.
+              </p>
+              <textarea
+                value={story}
+                onChange={(e) => setStory(e.target.value)}
+                placeholder="Start with why this goal matters to you…"
+                rows={9}
+                className="w-full resize-none rounded-xl border border-[#c9c8c0] bg-white px-4 py-4 text-sm leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+              />
+            </Step>
+          )}
+
+          {step === 6 && (
             <Step title="What kind of support would help?">
               <p className="mb-4 text-sm text-[var(--color-text-muted)]">
-                Pick the kinds of help you want. Supporters will see these when they open your page.
+                Pick the kinds of help you want. People in your Motivation Circle will see these when they open your goal.
               </p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {SUPPORT_OPTIONS.map((opt) => {
@@ -410,13 +486,13 @@ function NewGoalContent() {
                       }}
                       className={`flex items-start gap-3 rounded-xl border p-3 text-left transition ${
                         active
-                          ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                          : "border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-strong)]"
+                          ? "border-[var(--color-primary)] bg-[#eef3ff]"
+                          : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
                       }`}
                     >
                       <div
                         className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                          active ? "bg-[var(--color-accent)]/20 text-[var(--color-accent)]" : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
+                          active ? "bg-[#d9e3ff] text-[var(--color-primary)]" : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
                         }`}
                       >
                         <Icon size={14} />
@@ -432,7 +508,7 @@ function NewGoalContent() {
 
               <div className="mt-5">
                 <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-                  How many supporters are you hoping for? <span className="text-[var(--color-text-dim)]">(optional)</span>
+                  How many motivators would you like in your circle? <span className="text-[var(--color-text-dim)]">(optional)</span>
                 </label>
                 <input
                   type="number"
@@ -440,16 +516,16 @@ function NewGoalContent() {
                   onChange={(e) => setSupporterTarget(e.target.value)}
                   placeholder="e.g. 50"
                   min={0}
-                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+                  className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                 />
                 <p className="mt-1.5 text-xs text-[var(--color-text-dim)]">
-                  Shown alongside your goal progress. We hide the target until your first 3 supporters join, so new visitors don't see "0 of 50."
+                  Shown alongside goal progress. We wait until three people join your circle before showing the target.
                 </p>
               </div>
             </Step>
           )}
 
-          {step === 6 && (
+          {step === 7 && (
             <Step title="Who's this visible to?">
               <div className="space-y-2">
                 <button
@@ -457,13 +533,13 @@ function NewGoalContent() {
                   onClick={() => setVisibility("public")}
                   className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
                     visibility === "public"
-                      ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                      : "border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-strong)]"
+                      ? "border-[var(--color-primary)] bg-[#eef3ff]"
+                      : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
                   }`}
                 >
                   <Globe
                     size={20}
-                    className={visibility === "public" ? "mt-0.5 text-[var(--color-accent)]" : "mt-0.5 text-[var(--color-text-muted)]"}
+                    className={visibility === "public" ? "mt-0.5 text-[var(--color-primary)]" : "mt-0.5 text-[var(--color-text-muted)]"}
                   />
                   <div>
                     <div className="text-sm font-semibold">Public</div>
@@ -477,13 +553,13 @@ function NewGoalContent() {
                   onClick={() => setVisibility("unlisted")}
                   className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
                     visibility === "unlisted"
-                      ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                      : "border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-strong)]"
+                      ? "border-[var(--color-primary)] bg-[#eef3ff]"
+                      : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
                   }`}
                 >
                   <Lock
                     size={20}
-                    className={visibility === "unlisted" ? "mt-0.5 text-[var(--color-accent)]" : "mt-0.5 text-[var(--color-text-muted)]"}
+                    className={visibility === "unlisted" ? "mt-0.5 text-[var(--color-primary)]" : "mt-0.5 text-[var(--color-text-muted)]"}
                   />
                   <div>
                     <div className="text-sm font-semibold">Unlisted</div>
@@ -495,27 +571,78 @@ function NewGoalContent() {
               </div>
             </Step>
           )}
+
+          {step === totalSteps - 1 && (
+            <Step title="Everything looks good?">
+              <label
+                htmlFor="goal-cover"
+                className="block cursor-pointer rounded-2xl border border-dashed border-[#c9c8c0] bg-[#fffefa] px-6 py-10 text-center transition hover:border-[var(--color-primary)] hover:bg-[#f8faff]"
+              >
+                <input
+                  id="goal-cover"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(event) => setCoverFile(event.target.files?.[0] ?? null)}
+                />
+                <ImagePlus className="mx-auto text-[var(--color-primary)]" size={24} />
+                <p className="mt-3 text-sm font-semibold">{coverFile ? coverFile.name : "Add a cover photo"}</p>
+                <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[#777872]">
+                  {coverFile ? "Your cover will be added when you create the goal." : "A bright, clear image helps people connect with your goal. You can change it later."}
+                </p>
+                <span className="mt-5 inline-flex rounded-full border border-[#c9c8c0] bg-white px-4 py-2 text-xs font-semibold text-[#292929]">
+                  {coverFile ? "Choose another" : "Choose a photo"}
+                </span>
+              </label>
+              <div className="mt-8 divide-y divide-[#e4e2da] border-y border-[#deddd6]">
+                <ReviewItem label="Goal" value={title || "Untitled goal"} onEdit={() => setStep(0)} />
+                <ReviewItem label="Category" value={CATEGORIES.find((item) => item.id === category)?.label ?? category} onEdit={() => setStep(1)} />
+                <ReviewItem label="Progress" value={PROGRESS_TEMPLATES.find((item) => item.id === progressType)?.label ?? progressType} onEdit={() => setStep(2)} />
+                <ReviewItem
+                  label="Target"
+                  value={
+                    progressType === "milestones"
+                      ? `${milestones.filter((milestone) => milestone.title.trim()).length} milestones`
+                      : progressType === "streak"
+                      ? `${targetValue || "—"} days`
+                      : `${startValue || "—"} → ${targetValue || "—"} ${unit}`
+                  }
+                  onEdit={() => setStep(3)}
+                />
+                <ReviewItem label="Timeline" value={targetDate ? new Date(`${targetDate}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }) : "No date set"} onEdit={() => setStep(4)} />
+                <ReviewItem label="Story" value={story || "Add your story later"} onEdit={() => setStep(5)} />
+                <ReviewItem label="Support" value={`${supportTypes.length} ways to show up`} onEdit={() => setStep(6)} />
+                <ReviewItem label="Visibility" value={visibility === "public" ? "Public" : "Unlisted"} onEdit={() => setStep(7)} />
+              </div>
+            </Step>
+          )}
+          </div>
+
+          {err && <p className="mx-auto mt-4 w-full max-w-[42rem] text-sm text-[var(--color-danger)]">{err}</p>}
         </div>
 
-        {err && <p className="mt-4 text-sm text-[var(--color-danger)]">{err}</p>}
-
-        <div className="mt-8 flex items-center justify-between">
+        <footer className="relative mt-auto border-t border-[#e5e4df] bg-white px-5 py-5 sm:px-12 sm:py-7 lg:px-[4.5rem]">
+          <div className="absolute inset-x-0 top-0 h-px bg-[#e5e4df]">
+            <div className={`h-px bg-[var(--color-primary)] transition-[width] duration-300 ${PROGRESS_WIDTHS[step]}`} />
+          </div>
+          <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0}
-            className="rounded-lg px-4 py-2 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] disabled:opacity-30"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[#c9c8c0] bg-white text-[#292929] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Go back"
           >
-            Back
+            <ArrowLeft size={19} />
           </button>
-          {step < 6 ? (
+          {step < totalSteps - 1 ? (
             <button
               type="button"
               onClick={() => canAdvance() && setStep((s) => s + 1)}
               disabled={!canAdvance()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+              className="inline-flex min-w-32 items-center justify-center gap-1.5 rounded-full bg-[var(--color-primary)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Next
+              Continue
               <ArrowRight size={14} />
             </button>
           ) : (
@@ -523,50 +650,40 @@ function NewGoalContent() {
               type="button"
               onClick={onSubmit}
               disabled={!canAdvance() || busy}
-              className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+              className="min-w-36 rounded-full bg-[var(--color-primary)] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {busy ? "Creating..." : "Create campaign"}
+              {busy ? "Creating..." : "Create goal"}
             </button>
           )}
-        </div>
-      </main>
+          </div>
+        </footer>
+        </section>
     </div>
   );
 }
 
-function StepIndicator({ step }: { step: number }) {
-  const labels = ["Title", "Category", "Type", "Numbers", "Date", "Support", "Visibility"];
+function ReviewItem({
+  label,
+  value,
+  onEdit,
+}: {
+  label: string;
+  value: React.ReactNode;
+  onEdit: () => void;
+}) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {labels.map((l, i) => (
-        <div key={l} className="flex items-center gap-2">
-          <div
-            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
-              i < step
-                ? "bg-[var(--color-accent)] text-black"
-                : i === step
-                ? "border border-[var(--color-accent)] text-[var(--color-accent)]"
-                : "border border-[var(--color-border)] text-[var(--color-text-dim)]"
-            }`}
-          >
-            {i + 1}
-          </div>
-          <span
-            className={`text-xs ${
-              i === step ? "text-[var(--color-text)]" : "text-[var(--color-text-dim)]"
-            }`}
-          >
-            {l}
-          </span>
-          {i < labels.length - 1 && (
-            <div
-              className={`h-px w-4 sm:w-6 ${
-                i < step ? "bg-[var(--color-accent)]" : "bg-[var(--color-border)]"
-              }`}
-            />
-          )}
-        </div>
-      ))}
+    <div className="flex items-center justify-between gap-6 py-4">
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-[#292929]">{label}</p>
+        <p className="mt-1 truncate text-sm text-[#686963]">{value}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--color-primary)] transition hover:text-[var(--color-primary-dark)]"
+      >
+        Edit <ChevronRight size={15} />
+      </button>
     </div>
   );
 }
@@ -579,7 +696,7 @@ function Step({ title, children }: { title: string; children: React.ReactNode })
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <h2 className="mb-4 text-xl font-semibold">{title}</h2>
+      <h2 className="mb-7 max-w-3xl font-display text-4xl font-bold leading-[0.96] tracking-[-0.05em] sm:text-5xl">{title}</h2>
       {children}
     </motion.div>
   );
@@ -608,7 +725,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         step={step}
-        className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+        className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
       />
     </div>
   );
@@ -630,7 +747,7 @@ function DirectionToggle({
           onClick={() => onChange(d)}
           className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
             value === d
-              ? "bg-[var(--color-accent)] text-black"
+              ? "bg-[var(--color-primary)] text-white"
               : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
           }`}
         >

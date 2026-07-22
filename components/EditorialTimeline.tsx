@@ -1,17 +1,21 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Calendar, CheckCircle2, Image as ImageIcon, Link as LinkIcon, MessageSquare, TrendingUp } from "lucide-react";
+import { Calendar, CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon, MessageSquare, TrendingUp } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
+import { UpdateMedia, UpdateMediaItem } from "./UpdateMedia";
+import { useMemo } from "react";
+import { ReportButton } from "./ReportButton";
 
 interface UpdateDoc {
   _id: Id<"updates">;
-  type: "value" | "milestone" | "note" | "image" | "link";
+  type: "value" | "milestone" | "note" | "image" | "media" | "link";
   value?: number;
   note?: string;
   imageId?: Id<"_storage">;
+  media?: UpdateMediaItem[];
   linkUrl?: string;
   linkTitle?: string;
   createdAt: number;
@@ -39,15 +43,35 @@ function formatDay(ts: number) {
 export function EditorialTimeline({
   goalId,
   unit = "units",
-  imageUrlOf,
 }: {
   goalId: Id<"goals">;
   unit?: string;
-  imageUrlOf?: (imageId: Id<"_storage">) => string | null;
 }) {
-  const updates = useQuery(api.updates.listForGoal, { goalId });
+  const { results: updates, status, loadMore } = usePaginatedQuery(
+    api.updates.listForGoalPaginated,
+    { goalId },
+    { initialNumItems: 8 }
+  );
+  const imageIds = useMemo(() => {
+    const ids = new Set<Id<"_storage">>();
+    for (const update of updates) {
+      if (update.imageId) ids.add(update.imageId);
+      for (const media of update.media ?? []) {
+        if (media.kind === "image") {
+          if (media.storageId) ids.add(media.storageId);
+          if (media.thumbnailId) ids.add(media.thumbnailId);
+        }
+      }
+    }
+    return Array.from(ids);
+  }, [updates]);
+  const imageUrls = useQuery(
+    api.storage.getUrls,
+    imageIds.length > 0 ? { ids: imageIds } : "skip"
+  );
+  const imageUrlOf = (imageId: Id<"_storage">) => imageUrls?.[imageId] ?? null;
 
-  if (updates === undefined) {
+  if (status === "LoadingFirstPage") {
     return (
       <section className="rounded-2xl border border-zinc-200 bg-white p-6">
         <h2 className="text-base font-semibold text-zinc-900">The journey</h2>
@@ -105,11 +129,24 @@ export function EditorialTimeline({
                     {u.note}
                   </p>
                 )}
+                <ReportButton goalId={goalId} updateId={u._id} className="mt-3 inline-flex items-center gap-1 text-[11px] text-zinc-400 transition hover:text-zinc-700" />
               </div>
             </motion.li>
           );
         })}
       </ol>
+      {status !== "Exhausted" && (
+        <div className="mt-7 text-center">
+          <button
+            type="button"
+            onClick={() => loadMore(8)}
+            disabled={status === "LoadingMore"}
+            className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 disabled:cursor-wait disabled:opacity-60"
+          >
+            {status === "LoadingMore" ? "Loading updates..." : "Load earlier updates"}
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -139,6 +176,14 @@ function EntryHeader({ u }: { u: UpdateDoc }) {
       </div>
     );
   }
+  if (u.type === "media") {
+    return (
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <Images size={11} />
+        Media update
+      </div>
+    );
+  }
   if (u.type === "link") {
     return (
       <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -164,6 +209,9 @@ function EntryBody({
   unit: string;
   imageUrlOf?: (imageId: Id<"_storage">) => string | null;
 }) {
+  if (u.type === "media") {
+    return <UpdateMedia media={u.media} imageUrlOf={imageUrlOf} />;
+  }
   if (u.type === "image" && u.imageId && imageUrlOf) {
     const url = imageUrlOf(u.imageId);
     if (url) {

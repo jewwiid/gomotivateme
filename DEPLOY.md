@@ -132,6 +132,27 @@ Then in Vercel → Project → Domains → add `gomotivateme.com` and `www.gomot
 | `CONVEX_URL` | Same as above | Edge OG image route (server-side) |
 | `CONVEX_DEPLOY_KEY` | Set by `npx convex dev` | Convex CLI only — never commit |
 | `NEXT_PUBLIC_SITE_URL` | Your domain | Absolute share links, OG metadata |
+| `RESEND_API_KEY` | Convex env (`npx convex env set`) | Email drain action |
+| `RESEND_FROM_ADDRESS` | Convex env | Email "from" header |
+| `OPENAI_API_KEY` | Convex env (`npx convex env set`) | Automated text/image moderation |
+
+> **Email is wired but dormant.** Until `RESEND_API_KEY` is set, the drain
+> cron runs every 2 min and no-ops — notifications stay `pending` in the
+> queue. The moment the key lands, queued emails send with zero code changes.
+
+> **Moderation is fail-closed.** Until `OPENAI_API_KEY` is set on Convex,
+> new goals, updates, and support messages remain in the manual review queue
+> instead of being published publicly.
+
+### Email DNS (when you're ready to send)
+
+On your DNS provider for `gomotivateme.com`, add these records so Resend can
+send on your behalf and email reaches inboxes (not spam):
+
+1. **SPF** — `TXT @ v=spf1 include:amazonses.com ~all`
+2. **DKIM** — Resend gives you 3 CNAME records in the dashboard → add as-is.
+3. **DMARC** — `TXT _dmarc v=DMARC1; p=quarantine; rua=mailto:hello@gomotivateme.com`
+4. Verify the sending domain (`gomotivateme.com`) in Resend → Domains.
 
 ---
 

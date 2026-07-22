@@ -486,57 +486,56 @@ function DeactivateSection() {
 // =====================
 
 function NotificationsTab() {
-  // Toggles are local-only placeholders for the MVP — there's no email
-  // infra yet (see DEPLOY.md). The structure is in place so adding real
-  // preference storage is a small follow-up.
-  const [prefs, setPrefs] = useState({
-    yourMotivations: true,
-    newMotivatorOnGoal: true,
-    weeklyDigest: false,
-    urgentCauses: true,
-    productUpdates: false,
-  });
+  const prefs = useQuery(api.notificationPrefs.get, {});
+  const update = useMutation(api.notificationPrefs.update);
 
-  const toggle = (key: keyof typeof prefs) =>
-    setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  const toggle = (key: "yourMotivations" | "newMotivatorOnGoal" | "weeklyDigest" | "urgentCauses" | "productUpdates") => {
+    if (!prefs) return;
+    void update({ [key]: !prefs[key] });
+  };
 
   return (
     <div className="space-y-6">
       <Section title="How you'd like to hear from us">
-        <p className="mb-4 text-xs text-zinc-500">
-          These are placeholder switches. Email delivery isn't wired up yet
-          — toggles are stored locally until backend notification prefs
-          ship.
-        </p>
+        {prefs?.unsubscribedAll && (
+          <p className="mb-4 rounded-lg bg-[var(--color-warning-soft)] px-3 py-2 text-xs text-[var(--color-warning)]">
+            You've unsubscribed from all email. Turn a category back on below
+            or visit your{" "}
+            <Link href="/settings" className="underline">
+              preferences
+            </Link>{" "}
+            to resubscribe.
+          </p>
+        )}
         <div className="divide-y divide-zinc-100">
           <Toggle
             label="Updates on goals you motivate"
             description="Reactions, milestone posts, replies from the goal owner"
-            on={prefs.yourMotivations}
+            on={prefs?.yourMotivations ?? true}
             onChange={() => toggle("yourMotivations")}
           />
           <Toggle
             label="A new motivator joins one of your goals"
             description="When someone commits to your Motivation Circle"
-            on={prefs.newMotivatorOnGoal}
+            on={prefs?.newMotivatorOnGoal ?? true}
             onChange={() => toggle("newMotivatorOnGoal")}
           />
           <Toggle
             label="Weekly digest"
             description="A Monday-morning summary of activity across your goals"
-            on={prefs.weeklyDigest}
+            on={prefs?.weeklyDigest ?? false}
             onChange={() => toggle("weeklyDigest")}
           />
           <Toggle
             label="Urgent causes near you"
             description="Medical, emergency, and memorial goals in your area"
-            on={prefs.urgentCauses}
+            on={prefs?.urgentCauses ?? true}
             onChange={() => toggle("urgentCauses")}
           />
           <Toggle
             label="Product updates"
             description="New features, design changes, occasional surveys"
-            on={prefs.productUpdates}
+            on={prefs?.productUpdates ?? false}
             onChange={() => toggle("productUpdates")}
           />
         </div>

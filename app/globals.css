@@ -125,4 +125,19 @@
     text-transform: uppercase;
     color: #6e981b;
   }
+
+  .flow-form input:not([type="checkbox"]):not([type="radio"]),
+  .flow-form textarea,
+  .flow-form select {
+    border-color: #c9c8c0;
+    background: #fff;
+    border-radius: 0.75rem;
+  }
+
+  .flow-form input:not([type="checkbox"]):not([type="radio"]):focus,
+  .flow-form textarea:focus,
+  .flow-form select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(4, 77, 252, 0.12);
+  }
 }

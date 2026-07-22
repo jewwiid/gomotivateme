@@ -2,7 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Sparkles, TrendingUp, CheckCircle2, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
+import { Heart, MessageCircle, Sparkles, TrendingUp, CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { api } from "@/convex/_generated/api";
@@ -28,7 +28,7 @@ type ActivityItem =
   | { kind: "supporter"; at: number; supportType: string; name: string | null; message?: string }
   | { kind: "message"; at: number; name: string | null; supportType: string; body: string }
   | { kind: "cheer"; at: number; emoji: string }
-  | { kind: "update"; at: number; type: "value" | "milestone" | "note" | "image" | "link"; body: string };
+  | { kind: "update"; at: number; type: "value" | "milestone" | "note" | "image" | "media" | "link"; body: string };
 
 /**
  * The time-anchored activity feed. Merges:
@@ -48,7 +48,7 @@ export function RecentActivity({
   const supporters = useQuery(api.supporters.listForGoal, { goalId, limit: 8 });
   const messages = useQuery(api.supportMessages.listForGoal, { goalId });
   const reactions = useQuery(api.reactions.recentEmoji, { goalId, limit: 8 });
-  const updates = useQuery(api.updates.listForGoal, { goalId });
+  const updates = useQuery(api.updates.listRecentForGoal, { goalId, limit });
   const profiles = useQuery(
     api.users.profilesById,
     supporters && supporters.length > 0
@@ -89,6 +89,7 @@ export function RecentActivity({
       else if (u.type === "milestone") body = "ticked a milestone";
       else if (u.type === "note") body = u.note ? `"${u.note.slice(0, 80)}"` : "shared a note";
       else if (u.type === "image") body = "shared a photo";
+      else if (u.type === "media") body = "shared progress media";
       else if (u.type === "link") body = u.linkTitle || u.linkUrl || "shared a link";
       out.push({ kind: "update", at: u.createdAt, type: u.type, body });
     }
@@ -179,6 +180,13 @@ function ActivityIcon({ item }: { item: ActivityItem }) {
     return (
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
         <ImageIcon size={13} />
+      </span>
+    );
+  }
+  if (item.type === "media") {
+    return (
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+        <Images size={13} />
       </span>
     );
   }

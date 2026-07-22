@@ -12,6 +12,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // =====================================================================
@@ -260,6 +261,25 @@ export const addInvite = mutation({
           ? goal.preLaunchDeadline
           : now + 14 * 24 * 60 * 60 * 1000,
     });
+
+    // Email C1 — "You're invited to motivate" — only if we have an address.
+    if (args.email?.trim()) {
+      const owner = await ctx.db.get(userId);
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: undefined, // may not have an account yet
+        toEmail: args.email.trim(),
+        templateId: "inviteReceived",
+        category: "transactional",
+        payload: JSON.stringify({
+          ownerName: owner?.name ?? "Someone",
+          goalTitle: goal.title,
+          inviteMessage: args.personalMessage,
+          roleLabel: args.proposedRole,
+          inviteToken: token,
+        }),
+      });
+    }
+
     return { inviteId, token };
   },
 });
@@ -526,6 +546,27 @@ export const requestApplication = mutation({
       status: "pending",
       createdAt: now,
     });
+
+    // Email B1 — "New motivator application" → to the goal owner.
+    const owner = await ctx.db.get(goal.ownerId);
+    const applicant = await ctx.db.get(userId);
+    if (owner?.email) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: goal.ownerId,
+        toEmail: owner.email,
+        templateId: "newApplication",
+        category: "transactional",
+        payload: JSON.stringify({
+          ownerName: owner.name ?? "there",
+          motivatorName: applicant?.name ?? applicant?.handle ?? "Someone",
+          goalTitle: goal.title,
+          goalSlug: goal.slug,
+          roleLabel: args.requestedRole,
+          applicationMessage: message,
+        }),
+      });
+    }
+
     return { kind: "pending" as const, applicationId };
   },
 });

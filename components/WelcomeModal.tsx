@@ -101,12 +101,12 @@ export function WelcomeModal() {
               <X size={16} />
             </button>
 
-            {/* Illustrated cover — AI-generated, soft polaroid stack of community. */}
+            {/* Original editorial image of a real-life support circle. */}
             <div className="relative h-52 overflow-hidden bg-gradient-to-br from-[var(--color-primary-soft)] via-white to-[var(--color-accent-soft)]">
               <div className="absolute inset-0 flex items-center justify-center p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/illustrations/welcome.png"
+                  src="/illustrations/motivation-circle-v3.webp"
                   alt=""
                   aria-hidden
                   className="h-44 w-44 rotate-[-4deg] rounded-2xl object-cover shadow-lg ring-1 ring-zinc-200/60"

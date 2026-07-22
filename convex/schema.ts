@@ -16,6 +16,8 @@ import { authTables } from "@convex-dev/auth/server";
  *  - supportMessages: attributed structured messages left by supporters
  *  - badges: milestone badges earned on a goal
  *  - motivators (4 tables): the Motivation Circle
+ *  - notificationPrefs: per-user email preferences (CAN-SPAM/GDPR)
+ *  - notifications: email send queue + audit log
  */
 export default defineSchema({
   ...authTables,
@@ -37,10 +39,13 @@ export default defineSchema({
     handle: v.optional(v.string()),
     bio: v.optional(v.string()),
     coverImageId: v.optional(v.id("_storage")),
+    /** Signed token for one-click email unsubscribe links. */
+    unsubscribeToken: v.optional(v.string()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
-    .index("by_handle", ["handle"]),
+    .index("by_handle", ["handle"])
+    .index("by_unsubscribe_token", ["unsubscribeToken"]),
 
   goals: defineTable({
     ownerId: v.id("users"),
@@ -112,6 +117,18 @@ export default defineSchema({
 
     slug: v.string(),
     coverImageId: v.optional(v.id("_storage")),
+    /** New/edited public goal content waits for a safety decision. */
+    moderationStatus: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("approved"),
+        v.literal("review"),
+        v.literal("rejected")
+      )
+    ),
+    moderationReason: v.optional(v.string()),
+    moderationCategories: v.optional(v.array(v.string())),
+    moderatedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
     completedAt: v.optional(v.number()),
@@ -141,6 +158,7 @@ export default defineSchema({
     .index("by_owner_created", ["ownerId", "createdAt"])
     .index("by_slug", ["slug"])
     .index("by_handle", ["ownerHandle"])
+    .index("by_moderation_status_created", ["moderationStatus", "createdAt"])
     .index("by_public_created", ["visibility", "status", "createdAt"])
     .index("by_category_status", ["category", "status"])
     .searchIndex("search_title", {
@@ -154,6 +172,7 @@ export default defineSchema({
     type: v.union(
       v.literal("note"),
       v.literal("image"),
+      v.literal("media"),
       v.literal("link"),
       v.literal("value"),
       v.literal("milestone")
@@ -163,14 +182,91 @@ export default defineSchema({
     /** For type === "milestone" — id of the milestone that flipped to done. */
     milestoneId: v.optional(v.string()),
     note: v.optional(v.string()),
+    /**
+     * Rich progress media. Images are stored in Convex file storage; public
+     * video embeds are normalized server-side so the client never renders an
+     * arbitrary iframe URL.
+     */
+    media: v.optional(
+      v.array(
+        v.object({
+          kind: v.union(v.literal("image"), v.literal("embed")),
+          storageId: v.optional(v.id("_storage")),
+          /** Smaller responsive variant used for cards and multi-photo grids. */
+          thumbnailId: v.optional(v.id("_storage")),
+          provider: v.optional(
+            v.union(
+              v.literal("youtube"),
+              v.literal("tiktok"),
+              v.literal("instagram")
+            )
+          ),
+          canonicalUrl: v.optional(v.string()),
+          embedUrl: v.optional(v.string()),
+          providerId: v.optional(v.string()),
+          alt: v.optional(v.string()),
+        })
+      )
+    ),
     imageId: v.optional(v.id("_storage")),
     linkUrl: v.optional(v.string()),
     linkTitle: v.optional(v.string()),
+    /** Visibility is only enabled after automated or manual safety review. */
+    moderationStatus: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("approved"),
+        v.literal("review"),
+        v.literal("rejected")
+      )
+    ),
+    moderationReason: v.optional(v.string()),
+    moderationCategories: v.optional(v.array(v.string())),
+    moderatedAt: v.optional(v.number()),
+    reportCount: v.optional(v.number()),
     publicVisible: v.boolean(),
     createdAt: v.number(),
   })
     .index("by_goal", ["goalId"])
-    .index("by_goal_created", ["goalId", "createdAt"]),
+    .index("by_goal_created", ["goalId", "createdAt"])
+    .index("by_goal_visible_created", ["goalId", "publicVisible", "createdAt"])
+    .index("by_moderation_status_created", ["moderationStatus", "createdAt"]),
+
+  /** One-use, owner-bound tokens for direct media uploads. */
+  mediaUploadIntents: defineTable({
+    token: v.string(),
+    ownerId: v.id("users"),
+    goalId: v.id("goals"),
+    createdAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_owner", ["ownerId"]),
+
+  /** Public reports feed an internal moderation review queue. */
+  reports: defineTable({
+    targetType: v.union(v.literal("goal"), v.literal("update")),
+    targetKey: v.string(),
+    goalId: v.id("goals"),
+    updateId: v.optional(v.id("updates")),
+    reporterKey: v.string(),
+    reason: v.union(
+      v.literal("sexual"),
+      v.literal("violence"),
+      v.literal("harassment"),
+      v.literal("hate"),
+      v.literal("self_harm"),
+      v.literal("spam"),
+      v.literal("other")
+    ),
+    details: v.optional(v.string()),
+    status: v.union(v.literal("open"), v.literal("resolved"), v.literal("dismissed")),
+    createdAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    resolutionNote: v.optional(v.string()),
+  })
+    .index("by_status_created", ["status", "createdAt"])
+    .index("by_target_reporter", ["targetKey", "reporterKey"])
+    .index("by_goal", ["goalId"]),
 
   /** Anonymous emoji cheer (replaces the old thumbsUp). One per visitor. */
   reactions: defineTable({
@@ -244,10 +340,22 @@ export default defineSchema({
     body: v.string(),
     /** Soft-delete for moderation. */
     hiddenAt: v.optional(v.number()),
+    moderationStatus: v.optional(
+      v.union(
+        v.literal("pending"),
+        v.literal("approved"),
+        v.literal("review"),
+        v.literal("rejected")
+      )
+    ),
+    moderationReason: v.optional(v.string()),
+    moderationCategories: v.optional(v.array(v.string())),
+    moderatedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_goal", ["goalId"])
-    .index("by_goal_created", ["goalId", "createdAt"]),
+    .index("by_goal_created", ["goalId", "createdAt"])
+    .index("by_moderation_status_created", ["moderationStatus", "createdAt"]),
 
   badges: defineTable({
     goalId: v.id("goals"),
@@ -422,4 +530,61 @@ export default defineSchema({
     .index("by_motivator", ["motivatorId"])
     .index("by_motivator_created", ["motivatorId", "createdAt"])
     .index("by_creator", ["creatorId"]),
+
+  /**
+   * Per-user email notification preferences.
+   * One row per user (created lazily on first signup / first email enqueued).
+   * Drives suppression of lifecycle email per CAN-SPAM / GDPR.
+   */
+  notificationPrefs: defineTable({
+    userId: v.id("users"),
+    /** Email snapshot for the unsubscribe page without a join. */
+    email: v.optional(v.string()),
+    /** Updates on goals you motivate (reactions, replies, milestones). */
+    yourMotivations: v.boolean(),
+    /** A new motivator joins one of your goals. */
+    newMotivatorOnGoal: v.boolean(),
+    /** Monday-morning summary of activity across your goals. */
+    weeklyDigest: v.boolean(),
+    /** Medical / emergency / memorial goals in your area. */
+    urgentCauses: v.boolean(),
+    /** New features, design changes, occasional surveys. */
+    productUpdates: v.boolean(),
+    /** Master opt-out — suppresses ALL lifecycle email. Transactional still sends. */
+    unsubscribedAll: v.boolean(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  /**
+   * Email send queue + audit log.
+   * Trigger mutations enqueue rows here (status "pending" or "suppressed").
+   * A cron-driven action drains "pending" rows → calls Resend → marks "sent"/"failed".
+   */
+  notifications: defineTable({
+    /** Recipient user id (null only for visitor emails, which are rare). */
+    userId: v.optional(v.id("users")),
+    /** Recipient email address (denormalized so we can send without a join). */
+    toEmail: v.string(),
+    /** Which template to render, e.g. "welcome", "newApplication", "inviteReceived". */
+    templateId: v.string(),
+    /** JSON-encoded template variables. */
+    payload: v.string(),
+    /** Lifecycle emails can be suppressed by prefs; transactional always sends. */
+    category: v.union(v.literal("transactional"), v.literal("lifecycle")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("sent"),
+      v.literal("failed"),
+      v.literal("suppressed")
+    ),
+    /** Resend message id (for open/click/bounce tracking). */
+    resendId: v.optional(v.string()),
+    /** Last error message if status === "failed". */
+    error: v.optional(v.string()),
+    attempts: v.number(),
+    createdAt: v.number(),
+    sentAt: v.optional(v.number()),
+  })
+    .index("by_status_created", ["status", "createdAt"])
+    .index("by_user", ["userId"]),
 });

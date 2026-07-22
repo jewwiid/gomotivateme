@@ -5,6 +5,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 const SUPPORT_TYPES = ["encourage", "experience", "advice", "checkin", "join"] as const;
@@ -49,13 +50,16 @@ export const create = mutation({
       });
     }
 
-    return ctx.db.insert("supportMessages", {
+    const messageId = await ctx.db.insert("supportMessages", {
       goalId,
       authorId: userId,
       supportType: supportType as any,
       body: trimmed,
+      moderationStatus: "pending",
       createdAt: Date.now(),
     });
+    await ctx.scheduler.runAfter(0, internal.moderation.reviewSupportMessage, { messageId });
+    return messageId;
   },
 });
 
@@ -68,7 +72,7 @@ export const listForGoal = query({
       .withIndex("by_goal", (q) => q.eq("goalId", goalId))
       .collect();
     return all
-      .filter((m) => !m.hiddenAt)
+      .filter((m) => !m.hiddenAt && (!m.moderationStatus || m.moderationStatus === "approved"))
       .sort((a, b) => a.createdAt - b.createdAt);
   },
 });

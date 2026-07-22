@@ -1,31 +1,37 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Image as ImageIcon, Link as LinkIcon, MessageSquare, TrendingUp } from "lucide-react";
+import { CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon, MessageSquare, TrendingUp } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { CategoryIcon } from "./CategoryIcon";
 import { relativeTime } from "@/lib/format";
+import { UpdateMedia, UpdateMediaItem } from "./UpdateMedia";
 
 interface UpdateDoc {
   _id: Id<"updates">;
-  type: "note" | "image" | "link" | "value";
+  type: "note" | "image" | "media" | "link" | "value" | "milestone";
   value?: number;
   note?: string;
   imageId?: Id<"_storage">;
+  media?: UpdateMediaItem[];
   linkUrl?: string;
   linkTitle?: string;
+  moderationStatus?: "pending" | "approved" | "review" | "rejected";
+  moderationReason?: string;
   createdAt: number;
 }
 
 export function UpdateCard({
   update,
   imageUrl,
+  imageUrlOf,
   unit,
   direction,
   index = 0,
 }: {
   update: UpdateDoc;
   imageUrl?: string | null;
+  imageUrlOf?: (imageId: Id<"_storage">) => string | null;
   unit: string;
   direction: "increase" | "decrease";
   index?: number;
@@ -43,6 +49,9 @@ export function UpdateCard({
         <div className="mb-2.5 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
           <UpdateIcon type={update.type} />
           <span className="font-mono tabular-nums">{relativeTime(update.createdAt)}</span>
+          {update.moderationStatus && update.moderationStatus !== "approved" && (
+            <ModerationPill status={update.moderationStatus} />
+          )}
           {update.type === "value" && (
             <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[var(--color-bg-elev)] px-2 py-0.5 text-xs font-medium text-[var(--color-text)]">
               <TrendingUp size={10} />
@@ -59,6 +68,10 @@ export function UpdateCard({
             className="mb-3 max-h-96 w-full rounded-xl object-cover"
             loading="lazy"
           />
+        )}
+
+        {update.type === "media" && (
+          <UpdateMedia media={update.media} imageUrlOf={imageUrlOf} />
         )}
 
         {update.type === "link" && update.linkUrl && (
@@ -86,12 +99,30 @@ export function UpdateCard({
   );
 }
 
+function ModerationPill({ status }: { status: NonNullable<UpdateDoc["moderationStatus"]> }) {
+  const copy = {
+    pending: "Checking",
+    review: "Needs review",
+    rejected: "Not public",
+    approved: "Approved",
+  }[status];
+  const tone =
+    status === "rejected"
+      ? "bg-red-500/10 text-red-600"
+      : status === "review"
+        ? "bg-amber-500/10 text-amber-700"
+        : "bg-sky-500/10 text-sky-700";
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tone}`}>{copy}</span>;
+}
+
 function UpdateIcon({ type }: { type: UpdateDoc["type"] }) {
   const Icon = {
     note: MessageSquare,
     image: ImageIcon,
+    media: Images,
     link: LinkIcon,
     value: TrendingUp,
+    milestone: CheckCircle2,
   }[type];
   return <Icon size={12} className="text-[var(--color-text-dim)]" />;
 }

@@ -38,6 +38,7 @@ import { UpdateCard } from "@/components/UpdateCard";
 import { DualProgress } from "@/components/DualProgress";
 import { MilestonesList } from "@/components/MilestonesList";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
+import { prepareProgressImage } from "@/lib/media";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
@@ -61,7 +62,26 @@ function GoalDetailContent() {
   const supporters = useQuery(api.supporters.listForOwner, { goalId });
   const supportMessages = useQuery(api.supportMessages.listForOwner, { goalId });
 
-  const [showUpdate, setShowUpdate] = useState<null | "note" | "image" | "link" | "value" | "milestone">(null);
+  const updateImageIds = useMemo(() => {
+    const ids = new Set<Id<"_storage">>();
+    for (const update of updates ?? []) {
+      if (update.imageId) ids.add(update.imageId);
+      for (const media of update.media ?? []) {
+        if (media.kind === "image") {
+          if (media.storageId) ids.add(media.storageId);
+          if (media.thumbnailId) ids.add(media.thumbnailId);
+        }
+      }
+    }
+    return Array.from(ids);
+  }, [updates]);
+  const updateImageUrls = useQuery(
+    api.storage.getUrls,
+    updateImageIds.length > 0 ? { ids: updateImageIds } : "skip"
+  );
+  const updateImageUrlOf = (imageId: Id<"_storage">) => updateImageUrls?.[imageId] ?? null;
+
+  const [showUpdate, setShowUpdate] = useState<null | "note" | "media" | "link" | "value" | "milestone">(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
 
@@ -85,19 +105,19 @@ function GoalDetailContent() {
 
   if (goal === undefined) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-[#fffdf8]">
         <Header />
-        <main className="mx-auto max-w-3xl px-6 py-10">
-          <div className="h-40 animate-pulse rounded-2xl bg-[var(--color-bg-card)]" />
+        <main className="mx-auto max-w-[80rem] px-5 py-12 sm:px-8">
+          <div className="h-40 animate-pulse rounded-[1rem] bg-[#f0efe9]" />
         </main>
       </div>
     );
   }
   if (goal === null) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-[#fffdf8]">
         <Header />
-        <main className="mx-auto max-w-3xl px-6 py-10 text-center">
+        <main className="mx-auto max-w-[48rem] px-5 py-20 text-center sm:px-8">
           <p className="text-[var(--color-text-muted)]">Goal not found.</p>
           <Link
             href="/dashboard"
@@ -122,12 +142,12 @@ function GoalDetailContent() {
   const isClosed = goal.status === "closed";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
       <Header />
-      <main className="mx-auto max-w-3xl px-6 py-10">
+      <main className="mx-auto max-w-[80rem] px-5 py-12 sm:px-8 sm:py-16">
         <Link
           href="/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+          className="mb-10 inline-flex items-center gap-1.5 text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
         >
           <ArrowLeft size={14} />
           Back to goals
@@ -146,18 +166,30 @@ function GoalDetailContent() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6"
+          className="border-b border-[#deddd6] pb-10"
         >
-          <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-[var(--color-text-dim)]">
+          <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#777872]">
             <CategoryIcon category={goal.category} size={12} />
             {goal.category}
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">{goal.title}</h1>
+          <h1 className="max-w-4xl font-display text-balance text-4xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl">{goal.title}</h1>
           {goal.summary && (
-            <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">{goal.summary}</p>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-[#686963]">{goal.summary}</p>
           )}
           {goal.story && (
-            <p className="mt-2 line-clamp-3 text-sm text-[var(--color-text-dim)]">{goal.story}</p>
+            <p className="mt-3 max-w-3xl line-clamp-3 text-sm leading-6 text-[#777872]">{goal.story}</p>
+          )}
+          {goal.moderationStatus && goal.moderationStatus !== "approved" && (
+            <div className={`mt-5 max-w-2xl rounded-xl border px-4 py-3 text-sm ${
+              goal.moderationStatus === "rejected"
+                ? "border-red-200 bg-red-50 text-red-800"
+                : "border-amber-200 bg-amber-50 text-amber-800"
+            }`}>
+              <span className="font-semibold">
+                {goal.moderationStatus === "pending" ? "Your goal is being checked." : goal.moderationStatus === "review" ? "Your goal needs a safety review." : "Your goal is not public."}
+              </span>{" "}
+              {goal.moderationReason ?? "Only you can see it until this is resolved."}
+            </div>
           )}
 
           <div className="mt-5">
@@ -191,11 +223,11 @@ function GoalDetailContent() {
           )}
 
           {/* Status actions */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--color-border)] pt-4">
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[#deddd6] pt-5">
             {!isCompleted && !isClosed && (
               <button
                 onClick={() => setShowStatus(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] transition hover:border-[var(--color-text-muted)]"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#c9c8c0] bg-white px-4 py-2 text-xs font-semibold text-[#454540] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
               >
                 {isPaused ? <PlayCircle size={12} /> : <PauseCircle size={12} />}
                 {isPaused ? "Resume" : "Pause / complete"}
@@ -213,7 +245,7 @@ function GoalDetailContent() {
           </div>
 
           {/* Share link */}
-          <div className="mt-4 rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] p-3">
+          <div className="mt-6 border-y border-dashed border-[#c9c8c0] py-4">
             <p className="mb-1.5 text-xs font-medium text-[var(--color-text-muted)]">
               Your public link
             </p>
@@ -223,7 +255,7 @@ function GoalDetailContent() {
               </code>
               <button
                 onClick={onCopyLink}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[var(--color-accent-soft)]"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
               >
                 {linkCopied ? <Check size={12} /> : <Copy size={12} />}
                 {linkCopied ? "Copied" : "Copy"}
@@ -231,7 +263,7 @@ function GoalDetailContent() {
               <Link
                 href={`/o/${goal.slug}`}
                 target="_blank"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-border-strong)] px-3 py-1.5 text-xs text-[var(--color-text)] transition hover:border-[var(--color-text-muted)]"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#c9c8c0] px-4 py-2 text-xs font-semibold text-[#454540] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
               >
                 <ExternalLink size={12} />
                 Open
@@ -282,8 +314,8 @@ function GoalDetailContent() {
 
         {/* Milestones (if milestone template) */}
         {goal.progressType === "milestones" && goal.milestones && goal.milestones.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+          <div className="mt-10 border-y border-[#deddd6] py-7">
+            <h2 className="mb-4 font-display text-2xl font-bold tracking-[-0.04em]">
               Milestones
             </h2>
             <MilestonesList
@@ -304,10 +336,10 @@ function GoalDetailContent() {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="mt-6"
         >
-          <h2 className="mb-2 text-sm font-medium text-[var(--color-text-muted)]">
+          <h2 className="mb-4 font-display text-2xl font-bold tracking-[-0.04em]">
             Log progress
           </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid divide-x divide-[#deddd6] border-y border-[#deddd6] sm:grid-cols-4">
             <QuickAddButton
               icon={TrendingUp}
               label="New value"
@@ -321,8 +353,8 @@ function GoalDetailContent() {
             />
             <QuickAddButton
               icon={ImageIcon}
-              label="Photo"
-              onClick={() => setShowUpdate("image")}
+              label="Media"
+              onClick={() => setShowUpdate("media")}
             />
             <QuickAddButton
               icon={LinkIcon}
@@ -405,6 +437,8 @@ function GoalDetailContent() {
                 <UpdateCard
                   key={u._id}
                   update={u}
+                  imageUrl={u.imageId ? updateImageUrlOf(u.imageId) : null}
+                  imageUrlOf={updateImageUrlOf}
                   unit={goal.unit}
                   direction={goal.direction}
                   index={i}
@@ -577,7 +611,7 @@ function UpdateModal({
   milestones,
   onClose,
 }: {
-  type: "note" | "image" | "link" | "value" | "milestone";
+  type: "note" | "media" | "link" | "value" | "milestone";
   goalId: Id<"goals">;
   unit: string;
   milestones: any[];
@@ -602,7 +636,7 @@ function UpdateModal({
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">
             {type === "note" && "Add a note"}
-            {type === "image" && "Add a photo"}
+            {type === "media" && "Share progress media"}
             {type === "link" && "Add a link"}
             {type === "value" && `New ${unit} value`}
             {type === "milestone" && "Mark milestone done"}
@@ -616,7 +650,7 @@ function UpdateModal({
           </button>
         </div>
         {type === "note" && <NoteForm goalId={goalId} onDone={onClose} />}
-        {type === "image" && <ImageForm goalId={goalId} onDone={onClose} />}
+        {type === "media" && <MediaForm goalId={goalId} onDone={onClose} />}
         {type === "link" && <LinkForm goalId={goalId} onDone={onClose} />}
         {type === "value" && <ValueForm goalId={goalId} unit={unit} onDone={onClose} />}
         {type === "milestone" && (
@@ -666,59 +700,132 @@ function NoteForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void 
   );
 }
 
-function ImageForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void }) {
-  const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
-  const add = useMutation(api.updates.add);
+function MediaForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void }) {
+  const generateUploadUrl = useMutation(api.updates.generateMediaUploadUrl);
+  const addMedia = useMutation(api.updates.addMedia);
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [busyLabel, setBusyLabel] = useState("Posting...");
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [caption, setCaption] = useState("");
+  const [embedUrls, setEmbedUrls] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
-  const onFile = (f: File | null) => {
-    setFile(f);
+  const onFiles = (selected: FileList | null) => {
+    const next = Array.from(selected ?? []);
     setErr(null);
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(f ? URL.createObjectURL(f) : null);
+    if (next.length > 6) {
+      setErr("You can share up to 6 photos at a time.");
+      return;
+    }
+    if (next.some((file) => !file.type.startsWith("image/") || file.size > 25 * 1024 * 1024)) {
+      setErr("Choose image files smaller than 25 MB. We’ll optimise them before upload.");
+      return;
+    }
+    previews.forEach((preview) => URL.revokeObjectURL(preview));
+    setFiles(next);
+    setPreviews(next.map((file) => URL.createObjectURL(file)));
   };
+
+  const removeImage = (index: number) => {
+    URL.revokeObjectURL(previews[index]);
+    setFiles((current) => current.filter((_, i) => i !== index));
+    setPreviews((current) => current.filter((_, i) => i !== index));
+    if (fileInput.current) fileInput.current.value = "";
+  };
+
+  const urls = embedUrls.split("\n").map((url) => url.trim()).filter(Boolean);
 
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!file) return;
+        if (!files.length && !urls.length) {
+          setErr("Add at least one photo or public video link.");
+          return;
+        }
+        if (urls.length > 3) {
+          setErr("You can share up to 3 public video links at a time.");
+          return;
+        }
         setBusy(true);
         setErr(null);
         try {
-          const uploadUrl = await generateUploadUrl();
-          const res = await fetch(uploadUrl, {
-            method: "POST",
-            headers: { "Content-Type": file.type },
-            body: file,
-          });
-          if (!res.ok) throw new Error("Upload failed");
-          const { storageId } = await res.json();
-          await add({ goalId, type: "image", imageId: storageId as Id<"_storage"> });
+          const uploadFile = async (file: File) => {
+            const { uploadUrl, uploadToken } = await generateUploadUrl({ goalId });
+            const response = await fetch(uploadUrl, {
+              method: "POST",
+              headers: { "Content-Type": file.type },
+              body: file,
+            });
+            if (!response.ok) throw new Error("A photo could not be uploaded");
+            const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
+            return { storageId, uploadToken };
+          };
+
+          const uploads = [];
+          for (let index = 0; index < files.length; index += 1) {
+            setBusyLabel(`Optimising photo ${index + 1} of ${files.length}...`);
+            const prepared = await prepareProgressImage(files[index]);
+            if (prepared.display.size > 10 * 1024 * 1024) {
+              throw new Error("A photo could not be optimised below the 10 MB upload limit");
+            }
+            const display = await uploadFile(prepared.display);
+            let thumbnail: { storageId: Id<"_storage">; uploadToken: string } | undefined;
+            if (prepared.thumbnail) {
+              if (prepared.thumbnail.size > 1 * 1024 * 1024) {
+                throw new Error("A photo preview could not be optimised for the feed");
+              }
+              thumbnail = await uploadFile(prepared.thumbnail);
+            }
+            uploads.push({
+              storageId: display.storageId,
+              uploadToken: display.uploadToken,
+              thumbnailId: thumbnail?.storageId,
+              thumbnailUploadToken: thumbnail?.uploadToken,
+            });
+          }
+          setBusyLabel("Posting update...");
+          await addMedia({ goalId, note: caption || undefined, uploads, embedUrls: urls });
           onDone();
         } catch (e) {
           setErr(e instanceof Error ? e.message : "Upload failed");
         } finally {
           setBusy(false);
+          setBusyLabel("Posting...");
         }
       }}
       className="space-y-3"
     >
       <div
         onClick={() => fileInput.current?.click()}
-        className="flex aspect-video cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] transition hover:border-[var(--color-accent)]"
+        className="flex min-h-32 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-4 py-5 transition hover:border-[var(--color-accent)]"
       >
-        {preview ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="" className="h-full w-full object-cover" />
+        {previews.length > 0 ? (
+          <div className="grid w-full grid-cols-3 gap-2">
+            {previews.map((preview, index) => (
+              <div key={preview} className="group relative aspect-square overflow-hidden rounded-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={preview} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    removeImage(index);
+                  }}
+                  className="absolute right-1 top-1 rounded-full bg-black/65 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                  aria-label={`Remove photo ${index + 1}`}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-1 text-xs text-[var(--color-text-dim)]">
             <ImageIcon size={20} />
-            <span>Click to choose a photo</span>
+            <span>Choose up to 6 photos</span>
           </div>
         )}
       </div>
@@ -726,17 +833,36 @@ function ImageForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void
         ref={fileInput}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
-        onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => onFiles(e.target.files)}
       />
+      <textarea
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+        rows={2}
+        maxLength={2000}
+        placeholder="Add context for this progress update (optional)"
+        className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+      />
+      <textarea
+        value={embedUrls}
+        onChange={(e) => setEmbedUrls(e.target.value)}
+        rows={2}
+        placeholder="Paste public YouTube, TikTok, or Instagram links — one per line"
+        className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+      />
+      <p className="text-xs leading-relaxed text-[var(--color-text-dim)]">
+        Only public posts can be embedded. You can combine photos and social proof in one update.
+      </p>
       {err && <p className="text-xs text-[var(--color-danger)]">{err}</p>}
       <button
         type="submit"
-        disabled={busy || !file}
+        disabled={busy || (!files.length && !urls.length)}
         className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--color-accent)] py-2 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
       >
         <Plus size={14} />
-        {busy ? "Uploading..." : "Post photo"}
+        {busy ? busyLabel : "Post media update"}
       </button>
     </form>
   );

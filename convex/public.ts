@@ -7,6 +7,12 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { computeProgress, daysUntil } from "./utils";
 
+// Existing goals predate moderation and remain visible. New/edited goals are
+// only exposed once a decision has approved their public content.
+function isModerationApproved(goal: any) {
+  return !goal.moderationStatus || goal.moderationStatus === "approved";
+}
+
 /** Fetch a public goal by slug, with computed progress + days remaining. */
 export const getGoalBySlug = query({
   args: { slug: v.string() },
@@ -17,6 +23,7 @@ export const getGoalBySlug = query({
       .first();
     if (!goal) return null;
     if (goal.visibility !== "public") return null;
+    if (!isModerationApproved(goal)) return null;
     // Pre-launch goals (status: "draft") are not visible on the public page.
     // The creator manages them via the dashboard.
     if (goal.status === "draft") return null;
@@ -40,6 +47,7 @@ export const getGoalById = query({
     const goal = await ctx.db.get(goalId);
     if (!goal) return null;
     if (goal.visibility !== "public") return null;
+    if (!isModerationApproved(goal)) return null;
     // Pre-launch goals are still public-readable for the apply page — the
     // widget on the public page is hidden but anyone with the direct link
     // (which the creator sends in invite flows) can land here.
@@ -75,14 +83,16 @@ export const getGoalById = query({
 export const listRecentPublic = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
+    const take = limit ?? 24;
     const goals = await ctx.db
       .query("goals")
       .withIndex("by_public_created", (q) => q.eq("visibility", "public"))
       .order("desc")
-      .take(limit ?? 24);
+      .take(take * 4);
 
     return goals
-      .filter((g) => g.status !== "closed" && g.status !== "draft")
+      .filter((g) => g.status !== "closed" && g.status !== "draft" && isModerationApproved(g))
+      .slice(0, take)
       .map((g) => ({
         _id: g._id,
         slug: g.slug,
@@ -114,16 +124,19 @@ export const listRecentPublic = query({
 export const listByCategory = query({
   args: { category: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { category, limit }) => {
+    const take = limit ?? 24;
     const all = await ctx.db
       .query("goals")
       .withIndex("by_category_status", (q) => q.eq("category", category))
       .order("desc")
-      .take(limit ?? 24);
+      .take(take * 4);
     return all
       .filter(
         (g) =>
           g.visibility === "public" && g.status !== "closed" && g.status !== "draft"
+          && isModerationApproved(g)
       )
+      .slice(0, take)
       .map((g) => ({
         _id: g._id,
         slug: g.slug,
@@ -171,6 +184,7 @@ export const searchPublicGoals = query({
         (g) =>
           g.status !== "closed" &&
           g.status !== "draft" &&
+          isModerationApproved(g) &&
           (!category || g.category === category) &&
           (!q ||
             g.title.toLowerCase().includes(q) ||
@@ -220,7 +234,7 @@ export const countByCategory = query({
       .collect();
     const counts: Record<string, number> = {};
     for (const g of all) {
-      if (g.status === "draft" || g.status === "closed") continue;
+      if (g.status === "draft" || g.status === "closed" || !isModerationApproved(g)) continue;
       counts[g.category] = (counts[g.category] ?? 0) + 1;
     }
     return counts;

@@ -155,7 +155,7 @@ export default function ProfilePage() {
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src="/illustrations/hero-v2.png" alt="" className="h-full w-full object-cover opacity-90" />
+                    <img src="/illustrations/hero-community-v3.webp" alt="" className="h-full w-full object-cover opacity-90" />
                   )}
                   {isMe && (
                     <Link

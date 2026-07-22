@@ -1,69 +1,115 @@
-# Brand unification & assets for GoMotivateMe
+# Email notification system — infra + first 3 emails
 
-## Goal
-Unify the app under one canonical brand — **GoMotivateMe** — across every surface (wordmark, logo mark, metadata, favicon, package name, internal IDs), and ship a real, reusable SVG logo based on the brand kit's upward-momentum mark. Also fix the broken `--color-gold` / `--color-bg-card` CSS variables that currently make ~22 usages render incorrectly.
+## Architecture (the key decision)
 
-The canonical brand name in code is `gomotivateme` (lowercase, as today's CSS comment already states and the README already uses). "GoMotivateMe" is the styled/display form.
+Convex mutations run in an isolate runtime and **cannot** import `resend`/`react-email` directly. The standard pattern:
 
----
+1. **Mutations** (trigger points) enqueue a row in a new `notifications` table — fast, transactional, never blocks the user action.
+2. **A Convex action** (`internalAction` with `use node`) drains the queue: renders the React Email template to HTML, calls Resend's HTTP API, marks the row sent/failed.
+3. The action is invoked by a **cron** (every ~2 min) OR scheduled immediately via `ctx.scheduler.runAfter(0, ...)` for near-realtime transactional emails.
 
-## Step 1 — Fix the broken color tokens first (foundation)
+This keeps email sending out of the request path, gives us retry/failure visibility, and works with the "no API key yet" constraint — the action no-ops gracefully when `RESEND_API_KEY` is unset.
 
-`app/globals.css`:
-- Add `--color-gold` to `:root` (brand kit gold ~`#f0b429`) and to `.dark-surface` (a brighter gold for dark).
-- Add `--color-bg-card` as an alias of `--color-card` in both `:root` and `.dark-surface` (the ~12 usages of `--color-bg-card` currently resolve to nothing). This is non-breaking and makes existing code correct.
+## Dependencies to add
+- `resend` (Node SDK — Resend also has a plain fetch API, but the SDK is cleaner and we run it in a `use node` action)
+- `react-email` + `@react-email/components` (template authoring)
 
-This alone fixes every broken gradient (progress bars, supporter avatars, completion banner, organizer card, header mark).
+## New files
 
-## Step 2 — Create the real brand assets
+### Schema additions (`convex/schema.ts`)
+Two new tables:
 
-**`components/Logo.tsx`** (new) — a single source of truth with:
-- `<LogoMark />`: inline SVG of the upward-momentum/chevron mark in the kit's rounded-square tile, gradient cobalt→sky with a gold spark. Accepts `className`/`size`.
-- `<Logo />`: `<LogoMark/>` + the wordmark `gomotivateme` (uses the existing `--font-jakarta` variable, `tracking-tight`). Accepts `variant` (`"light" | "dark"`) and `showWordmark`.
-- Replaces the copy-pasted `<div>m</div>` blocks in `Header.tsx`, `app/(auth)/layout.tsx`, `app/page.tsx`.
+**`notificationPrefs`** — per-user email preferences (CAN-SPAM/GDPR requirement).
+- `userId` (id users), `email` (string, denormalized snapshot)
+- `yourMotivations: boolean` (default true) — replaces the settings placeholder toggle
+- `newMotivatorOnGoal: boolean` (default true)
+- `weeklyDigest: boolean` (default false)
+- `urgentCauses: boolean` (default true)
+- `productUpdates: boolean` (default false)
+- `unsubscribedAll: boolean` (default false) — master opt-out for lifecycle email
+- index: `by_user`
+- Created lazily on first signup (defaults inserted via a mutation called from the auth flow / a backfill)
 
-**Static SVG icons under `app/`** (Next.js App Router metadata conventions — auto-detected, no config):
-- `app/icon.svg` — the momentum mark in a rounded tile (favicon, 32×32).
-- `app/apple-icon.png` — derived tile at 180×180 (PNG; I'll generate via a tiny node script using the SVG, or hand-author a static PNG-safe equivalent).
-- `app/opengraph-image` — already exists as a PNG; I'll keep it but also ensure the landing/OG generator references the new wordmark consistently (Step 3).
+**`notifications`** — the send queue / audit log.
+- `userId` (id users, nullable — visitor emails rare but possible), `toEmail` (string)
+- `templateId` (string — e.g. `"welcome"`, `"newApplication"`, `"inviteReceived"`)
+- `payload` (string — JSON blob with template variables)
+- `status` (`"pending" | "sent" | "failed" | "suppressed"`)
+- `category` (`"transactional" | "lifecycle"`) — drives suppression logic
+- `resendId` (string, optional — Resend message id for tracking)
+- `error` (string, optional — last failure message)
+- `attempts` (number, default 0)
+- `createdAt`, `sentAt?`
+- indexes: `by_status_created` (for the drain query), `by_user`
 
-**`public/brand/`** — canonical raw assets for external use (social, pitch decks):
-- `public/brand/logo-mark.svg` — mark only.
-- `public/brand/logo-full.svg` — mark + wordmark, light bg.
-- `public/brand/logo-full-dark.svg` — dark-bg variant.
+### `convex/emails.ts` (new) — the sending layer
+- `enqueue(internalMutation)` — writes a notification row. Called from trigger points via `ctx.runMutation(internal.emails.enqueue, {...})`. Checks prefs here: if the category is `lifecycle` and the user has it disabled (or `unsubscribedAll`), writes status `"suppressed"` and returns — no send.
+- `drainQueue(internalAction, use node)` — queries pending notifications (batch of ~20), renders each template to HTML via React Email, calls Resend, updates rows to `sent`/`failed`. If `RESEND_API_KEY` is missing, logs and exits (no-op) — emails stay `pending` and will send the moment the key lands.
+- `renderTemplate(templateId, payload)` — maps template id → React Email component, returns `{ subject, html, text }`.
 
-## Step 3 — Replace every brand string with the canonical name
+### `convex/crons.ts` (new) — the scheduler
+```ts
+export default crons.cronJobs({
+  drainEmails: crons.interval("drain email queue", { seconds: 120 }, internal.emails.drainQueue),
+});
+```
+Convex auto-discovers this file.
 
-Mechanical find/replace across these files (verified by grep, exact lines known):
+### `emails/` (new directory, Next.js side) — React Email templates
+- `emails/components/Layout.tsx` — the shared brand shell: off-white bg, wordmark header, cobalt CTA button, footer with unsubscribe + physical address placeholder. All emails inherit this.
+- `emails/welcome.tsx` — A1 (Welcome) → fires on signup
+- `emails/newApplication.tsx` — B1 (new motivator application) → fires from `motivation.requestApplication`
+- `emails/inviteReceived.tsx` — C1 (you're invited to motivate) → fires from `motivation.addInvite`
 
-User-facing strings → `gomotivateme` (display `GoMotivateMe` where it's a headline):
-- `app/layout.tsx` (metadata title/description/OG — already `gomotivateme`, keep)
-- `components/Header.tsx` — wordmark now from `<Logo/>`; "About gomotivateme" kept.
-- `app/(auth)/layout.tsx` — **`myodyssey` → `gomotivateme`** + swap mark for `<Logo/>`.
-- `app/(auth)/login/page.tsx` — `odyssey` → `gomotivateme`.
-- `app/(auth)/signup/page.tsx` — `odyssey` → `gomotivateme`.
-- `lib/useVisitorKey.ts` — **migration-safe**: read both old `myodyssey.visitorKey` and new `gomotivateme.visitorKey`, write the new key, so existing visitor IDs aren't orphaned.
+These use the brand tokens (cobalt `#044dfc`, gold `#feb604`, Plus Jakarta Sans) so emails match the app.
 
-Internal identifiers:
-- `package.json` — `name: "myodyssey"` → `"gomotivateme"`.
-- `convex/schema.ts` comment, `.env.local.example`, `README.md` — already `gomotivateme`; no change needed (verified).
+## Trigger wiring (3 emails, end-to-end)
 
-## Step 4 — Wire `<Logo/>` everywhere the old `<div>m</div>` appeared
+Each trigger point gets one added line — `await ctx.runMutation(internal.emails.enqueue, {...})`:
 
-Replace the hardcoded mark blocks in: `Header.tsx`, `app/(auth)/layout.tsx`, `app/page.tsx` landing nav. Keeps the surrounding layout/animation untouched.
+1. **Welcome (A1)** → in the signup flow. Since Convex Auth creates the user row via `auth:store`, I'll add a scheduled action hook or enqueue from the existing `users.setHandle`/profile setup (first user write). *Or* cleaner: enqueue from a small `onUserCreated` internal mutation. I'll wire it to the first realistic touchpoint and document the exact spot.
+2. **New application (B1)** → `convex/motivation.ts:requestApplication` (line ~521, after the `motivatorApplications` insert). Payload: `{ goalTitle, goalSlug, motivatorName, roleLabel, applicationMessage, supportTypes }`. Recipient: `goal.ownerId`.
+3. **Invite received (C1)** → `convex/motivation.ts:addInvite` (line ~227, after the `motivatorInvites` insert). Payload: `{ ownerName, goalTitle, inviteMessage, roleLabel, supportTypes, inviteToken }`. Recipient: `invite.email` or `invite.invitedUserId`.
 
-## Step 5 — Verify
+## Unsubscribe system
+- On user creation, generate a random `unsubscribeToken` (stored on `users` — one new optional field).
+- Every lifecycle email footer includes `https://{SITE_URL}/email/unsubscribe?token={token}`.
+- New route `app/email/unsubscribe/page.tsx` → calls `users.unsubscribeByToken` mutation → sets `notificationPrefs.unsubscribedAll = true`.
+- Transactional emails (password reset, application notices) are exempt — they always send.
 
-- `npm run typecheck` passes.
-- `npm run build` succeeds (favicon/icon metadata is picked up at build).
-- Grep confirms zero remaining `myodyssey`/bare `odyssey` brand strings in `app/`, `components/`, `lib/`.
+## Settings UI wiring (`app/settings/page.tsx`)
+Replace the placeholder `NotificationsTab` local state with real Convex queries/mutations:
+- Query `api.notificationPrefs.get` for current prefs
+- Mutation `api.notificationPrefs.update` on toggle
+- Remove the "placeholder" disclaimer copy
 
----
+## Env vars (added to `.env.local.example`, NOT set yet)
+- `RESEND_API_KEY` — the API key (you'll add when ready)
+- `RESEND_FROM_ADDRESS` — default `GoMotivateMe <hello@gomotivateme.com>`
+- `NEXT_PUBLIC_SITE_URL` — already exists, reused for unsubscribe links + email CTAs
 
-## Files touched
-**New:** `components/Logo.tsx`, `app/icon.svg`, `app/apple-icon.png`, `public/brand/logo-mark.svg`, `public/brand/logo-full.svg`, `public/brand/logo-full-dark.svg`
-**Edited:** `app/globals.css`, `components/Header.tsx`, `app/(auth)/layout.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/signup/page.tsx`, `app/page.tsx`, `lib/useVisitorKey.ts`, `package.json`
+## Graceful no-op behavior (the "ENVs later" constraint)
+`drainQueue` checks for `RESEND_API_KEY` at the top:
+```ts
+if (!process.env.RESEND_API_KEY) {
+  console.log("[emails] RESEND_API_KEY not set — skipping drain, emails remain pending");
+  return;
+}
+```
+**Result**: all the code is real and wired. The moment you drop the key into Convex env vars (`npx convex env set RESEND_API_KEY`), queued emails start flowing with zero code changes.
+
+## Verification
+- `npm run typecheck` passes
+- `npm run build` passes
+- `npx convex dev` pushes schema + functions without error
+- Triggering `requestApplication` in dev enqueues a `notifications` row with status `pending` (visible in Convex dashboard)
+- The drain cron runs, sees no API key, logs the no-op — row stays `pending`
 
 ## Not in scope (flagging)
-- The ~10 `from-accent to-gold` *gradient* usages on progress bars/avatars will now render correctly once `--color-gold` exists; I'm not redesigning those components, just fixing the missing token.
-- Replacing PNG illustrations (`public/illustrations/*`) with on-brand versions — those are content illustrations, separate from the brand mark. Happy to do that as a follow-up.
+- The remaining 9 MVP emails (password reset, weekly digest, supporter emails, etc.) — same pattern, just more templates. I'll set up the system so adding each one is ~30 min of work.
+- Resend webhook for bounce/complaint handling — defer until sending at volume.
+- DNS setup (SPF/DKIM/DMARC) — that's in your DNS provider, not code. I'll document the records needed in DEPLOY.md.
+
+## Files touched
+**New:** `convex/emails.ts`, `convex/crons.ts`, `convex/notificationPrefs.ts`, `emails/components/Layout.tsx`, `emails/welcome.tsx`, `emails/newApplication.tsx`, `emails/inviteReceived.tsx`, `app/email/unsubscribe/page.tsx`
+**Edited:** `convex/schema.ts` (2 tables + 1 field), `convex/motivation.ts` (2 trigger lines), `app/settings/page.tsx` (real prefs), `.env.local.example`, `package.json` (2 deps)
