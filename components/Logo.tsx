@@ -1,110 +1,78 @@
 import Link from "next/link";
+import Image from "next/image";
 
 /**
- * gomotivateme brand system.
+ * GoMotivateMe brand system.
  *
- * The mark is an upward momentum glyph (a rising bar/chevron stack) set in a
- * rounded-square tile with a cobalt→sky gradient and a gold spark — the three
- * signature colors from the brand kit. It reads as "forward motion / momentum",
- * which is the product's core idea.
+ * Brand assets live in /public/brand/:
+ *   - GoMotivateMe_Logo.png          the icon/mark (1000×1000, colored)
+ *   - GoMotivateMe_Wordmark.png      the wordmark text (2172×724, 2-tone)
+ *   - GoMotivateMe_Wordmark.svg      clean vector source of the wordmark
+ *   - GoMotivateMe_Logo_Wordmark.png mark + wordmark lockup
  *
- * Colors reference the CSS custom properties in globals.css so the mark
- * automatically adapts to light/dark surfaces.
+ * The mark ships only as a raster PNG (no vector source exists), so LogoMark
+ * renders it via next/image. The wordmark is a single two-tone lockup
+ * ("Go" blue · "Motivate" gold · "Me" blue) — render it whole rather than
+ * reconstructing the split from text, to stay faithful to the official asset.
+ *
+ * Colors: brand blue #044dfc, brand gold #feb604.
  */
 
-const GOLD = "#f0b429";
-const COBALT = "#2541d8";
-const SKY = "#82d9ff";
+const MARK_SRC = "/brand/GoMotivateMe_Logo.png";
+const WORDMARK_SRC = "/brand/GoMotivateMe_Wordmark.png";
 
 /**
- * The brand mark — the momentum glyph in its tile. Use standalone for favicons,
- * app icons, or compact placements.
+ * The brand mark — the GoMotivateMe icon. Square, renders at `size`×`size`.
  */
 export function LogoMark({
   size = 32,
   className,
-  title = "gomotivateme",
 }: {
   size?: number;
   className?: string;
-  title?: string;
 }) {
   return (
-    <svg
+    <Image
+      src={MARK_SRC}
+      alt="GoMotivateMe"
       width={size}
       height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      role="img"
-      aria-label={title}
       className={className}
-    >
-      <title>{title}</title>
-      {/* Tile */}
-      <defs>
-        <linearGradient id="gmm-tile" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop stopColor={COBALT} />
-          <stop offset="1" stopColor={SKY} />
-        </linearGradient>
-        <linearGradient id="gmm-bar" x1="6" y1="24" x2="26" y2="8" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#ffffff" />
-          <stop offset="1" stopColor="#eaf6ff" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="8" fill="url(#gmm-tile)" />
-      {/* Upward momentum: three rising bars + an arrow chevron */}
-      <g fill="url(#gmm-bar)">
-        <rect x="7.5" y="18" width="4" height="6.5" rx="1.25" />
-        <rect x="14" y="13.5" width="4" height="11" rx="1.25" />
-        <rect x="20.5" y="9" width="4" height="15.5" rx="1.25" />
-      </g>
-      {/* Arrow tip pointing up-right, suggesting growth */}
-      <path
-        d="M11 11.2 L16.8 7.6 L18.6 10.4 L12.8 14 Z"
-        fill={GOLD}
-      />
-      <path
-        d="M16.8 7.6 L20.5 9.4 L19.9 12.2 Z"
-        fill="#f5c33b"
-      />
-    </svg>
+      // The mark has transparent corners; let the parent clip if it needs to.
+      unoptimized={false}
+    />
   );
 }
 
 /**
  * Full lockup: mark + wordmark. Defaults to linking home.
  *
- * @param variant  "light" renders dark text (for light surfaces);
- *                 "dark" renders light text (for dark surfaces).
+ * @param markSize  square size of the icon mark in px (default 32)
+ * @param href      link target; pass null to render without a link wrapper
  */
 export function Logo({
-  variant = "light",
-  showWordmark = true,
   href = "/",
   markSize = 32,
   className,
 }: {
-  variant?: "light" | "dark";
-  showWordmark?: boolean;
   href?: string | null;
   markSize?: number;
   className?: string;
-}) {
-  const wordmark = (
-    <span
-      className={`text-lg font-semibold tracking-tight ${
-        variant === "dark" ? "text-white" : "text-[var(--color-text)]"
-      }`}
-      style={{ fontFamily: "var(--font-jakarta, inherit)" }}
-    >
-      gomotivateme
-    </span>
-  );
+} = {}) {
+  // Wordmark image is 2172×724 → aspect ~3.0028:1. Size it to match the mark height.
+  const wordmarkWidth = Math.round(markSize * (2172 / 724) * 1.15);
+  const wordmarkHeight = Math.round(markSize * 1.15);
 
   const content = (
     <span className={`inline-flex items-center gap-2 ${className ?? ""}`}>
       <LogoMark size={markSize} />
-      {showWordmark && wordmark}
+      <Image
+        src={WORDMARK_SRC}
+        alt="GoMotivateMe"
+        width={wordmarkWidth}
+        height={wordmarkHeight}
+        className="h-auto"
+      />
     </span>
   );
 
