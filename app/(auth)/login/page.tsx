@@ -95,6 +95,14 @@ export default function LoginPage() {
         Sign in to keep your momentum going.
       </p>
 
+      <GoogleSignInButton mode="signIn" />
+
+      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
+        <span className="h-px flex-1 bg-[#deddd6]" />
+        or
+        <span className="h-px flex-1 bg-[#deddd6]" />
+      </div>
+
       <form onSubmit={onSubmit} className="space-y-3" noValidate>
         <div>
           <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
@@ -150,14 +158,6 @@ export default function LoginPage() {
           {busy ? "Signing in..." : "Sign in"}
         </button>
       </form>
-
-      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
-        <span className="h-px flex-1 bg-[#deddd6]" />
-        or
-        <span className="h-px flex-1 bg-[#deddd6]" />
-      </div>
-
-      <GoogleSignInButton mode="signIn" />
 
       <p className="mt-7 text-center text-sm text-[#686963]">
         New here?{" "}
