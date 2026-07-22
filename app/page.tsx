@@ -88,7 +88,7 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
           <Logo href="/" markSize={28} />
           <nav className="flex items-center gap-3 text-sm">
-            <Link href="#explore" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
+            <Link href="/explore" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
               Explore
             </Link>
             <Link href="#how-it-works" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
