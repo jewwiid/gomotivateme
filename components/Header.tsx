@@ -1,23 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
+import { ChevronDown, Search, User as UserIcon } from "lucide-react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Logo } from "@/components/Logo";
 
 export function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user } = useCurrentUser();
-  const { signOut } = useAuthActions();
 
-  const onPublicPage = pathname?.startsWith("/o/");
   const isExplore = pathname?.startsWith("/explore");
   const isDashboard = pathname?.startsWith("/dashboard");
   const isMotivate = pathname?.startsWith("/motivate");
+  const accountLabel = user?.name?.split(" ")[0] || user?.handle || "Account";
+  const startGoalHref = user ? "/dashboard/new" : "/signup";
 
   return (
     <motion.header
@@ -26,103 +24,71 @@ export function Header() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="sticky top-0 z-40 border-b border-[#e9e7df] bg-[#fffdf8]/95 backdrop-blur"
     >
-      <div className="mx-auto flex h-[4.6rem] max-w-[90rem] items-center justify-between px-5 sm:px-8">
-        <div className="flex items-center gap-8 lg:gap-10">
-          <Logo href="/" height={28} />
-          <nav className="hidden items-center gap-6 text-sm font-medium text-[#383834] md:flex">
-            <Link
-              href="/explore"
-              className={`transition hover:text-[var(--color-primary)] ${
-                isExplore ? "text-[var(--color-primary)]" : ""
-              }`}
-            >
-              Explore
-            </Link>
-            <Link href="/#how-it-works" className="transition hover:text-[var(--color-primary)]">
-              How it works
-            </Link>
-            {user && (
-              <>
-                <Link
-                  href="/dashboard"
-                  className={`transition hover:text-[var(--color-primary)] ${
-                    isDashboard ? "text-[var(--color-primary)]" : ""
-                  }`}
-                >
-                  My goals
-                </Link>
-                <Link
-                  href="/motivate"
-                  className={`transition hover:text-[var(--color-primary)] ${
-                    isMotivate ? "text-[var(--color-primary)]" : ""
-                  }`}
-                >
-                  My circle
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
+      <div className="relative mx-auto flex h-[4.25rem] max-w-[50rem] items-center px-5 sm:px-6">
+        <nav aria-label="Primary navigation" className="hidden items-center gap-5 text-sm font-medium text-[#31312e] md:flex">
+          <Link
+            href="/explore"
+            className={`inline-flex items-center gap-1.5 transition hover:text-[var(--color-primary)] ${
+              isExplore ? "text-[var(--color-primary)]" : ""
+            }`}
+          >
+            <Search size={14} strokeWidth={1.9} aria-hidden />
+            Explore
+          </Link>
+          <Link href="/#how-it-works" className="transition hover:text-[var(--color-primary)]">
+            How it works
+          </Link>
+          <Link href={startGoalHref} className="hidden transition hover:text-[var(--color-primary)] lg:inline-flex">
+            Start a goal
+          </Link>
+        </nav>
 
-        <nav className="flex items-center gap-2 text-sm font-semibold">
+        <Logo
+          href="/"
+          height={36}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        />
+
+        <nav aria-label="Account navigation" className="ml-auto flex items-center gap-4 text-sm font-medium text-[#31312e]">
           {user ? (
             <>
-              {user.handle && (
-                <Link
-                  href={`/@${user.handle}`}
-                  className="hidden px-2 py-2 text-[#4c4d48] transition hover:text-[var(--color-primary)] sm:inline-flex"
-                >
-                  My profile
-                </Link>
-              )}
+              <Link
+                href="/dashboard"
+                className={`hidden transition hover:text-[var(--color-primary)] sm:inline-flex ${
+                  isDashboard ? "text-[var(--color-primary)]" : ""
+                }`}
+              >
+                My goals
+              </Link>
+              <Link
+                href="/motivate"
+                className={`hidden transition hover:text-[var(--color-primary)] xl:inline-flex ${
+                  isMotivate ? "text-[var(--color-primary)]" : ""
+                }`}
+              >
+                My circle
+              </Link>
               <Link
                 href="/settings"
-                className="rounded-lg p-2 text-[#5e605a] transition hover:bg-[#f0efe8] hover:text-[var(--color-primary)]"
-                aria-label="Settings"
-                title="Settings"
+                className="inline-flex items-center gap-1.5 transition hover:text-[var(--color-primary)]"
+                aria-label="Account settings"
               >
-                <SettingsIcon size={16} />
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.image} alt="" className="h-6 w-6 rounded-full object-cover" />
+                ) : (
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#f0efe9] text-[#4d4e48]">
+                    <UserIcon size={13} aria-hidden />
+                  </span>
+                )}
+                <span className="hidden sm:inline">{accountLabel}</span>
+                <ChevronDown size={13} strokeWidth={1.8} aria-hidden />
               </Link>
-              <Link
-                href="/dashboard/new"
-                className="hidden rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white sm:inline-flex"
-              >
-                Start a goal
-              </Link>
-              <button
-                onClick={async () => {
-                  await signOut();
-                  router.push("/");
-                }}
-                className="hidden rounded-lg p-2 text-[#5e605a] transition hover:bg-[#f0efe8] hover:text-[var(--color-primary)] lg:inline-flex"
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut size={16} />
-              </button>
             </>
-          ) : onPublicPage ? (
-            <Link
-              href="/"
-              className="px-3 py-2 text-[#4c4d48] transition hover:text-[var(--color-primary)]"
-            >
-              About gomotivateme
-            </Link>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="hidden px-3 py-2 text-[#4c4d48] transition hover:text-[var(--color-primary)] sm:inline-flex"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/signup"
-                className="rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white"
-              >
-                Start a goal
-              </Link>
-            </>
+            <Link href="/login" className="transition hover:text-[var(--color-primary)]">
+              Sign in
+            </Link>
           )}
         </nav>
       </div>

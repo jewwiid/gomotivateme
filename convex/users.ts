@@ -24,6 +24,7 @@ export const me = query({
       handle: (user as { handle?: string }).handle ?? null,
       bio: (user as { bio?: string }).bio ?? null,
       coverImageId: (user as { coverImageId?: string }).coverImageId ?? null,
+      isAdmin: (user as { isAdmin?: boolean }).isAdmin ?? false,
     };
   },
 });

@@ -41,6 +41,8 @@ export default defineSchema({
     coverImageId: v.optional(v.id("_storage")),
     /** Signed token for one-click email unsubscribe links. */
     unsubscribeToken: v.optional(v.string()),
+    /** Admin flag — gates access to moderation + admin functions. */
+    isAdmin: v.optional(v.boolean()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])

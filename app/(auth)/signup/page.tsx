@@ -18,6 +18,7 @@ import {
   suggestHandle,
   validateHandleClient,
 } from "@/lib/handle";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function SignupPage() {
   const { signIn } = useAuthActions();
@@ -278,6 +279,14 @@ export default function SignupPage() {
           {busy ? "Creating account..." : "Create account"}
         </button>
       </form>
+
+      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
+        <span className="h-px flex-1 bg-[#deddd6]" />
+        or
+        <span className="h-px flex-1 bg-[#deddd6]" />
+      </div>
+
+      <GoogleSignInButton mode="signUp" />
 
       <p className="mt-7 text-center text-sm text-[#686963]">
         Already have an account?{" "}

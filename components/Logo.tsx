@@ -21,7 +21,7 @@ import Image from "next/image";
  * Colors: brand blue #044dfc, brand gold #feb604.
  */
 
-const WORDMARK_SRC = "/brand/GoMotivateMe_Wordmark.png";
+const WORDMARK_SRC = "/brand/GoMotivateMe_Wordmark.svg";
 // Wordmark intrinsic size: 2172×724 → aspect ratio ≈ 3.003:1.
 const WORDMARK_ASPECT = 2172 / 724;
 
@@ -58,4 +58,3 @@ export function Logo({
   if (href === null) return content;
   return <Link href={href}>{content}</Link>;
 }
-

@@ -10,6 +10,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { FEATURED_CATEGORIES } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
 import { WelcomeModal } from "@/components/WelcomeModal";
 
@@ -68,30 +69,7 @@ export default function HomePage() {
     <div className="min-h-screen overflow-x-hidden bg-[#fffdf8] text-[#242424]">
       {!user && <WelcomeModal />}
 
-      <header className="sticky top-0 z-30 border-b border-[#e9e7df] bg-[#fffdf8]/95 backdrop-blur">
-        <div className="mx-auto flex h-[4.6rem] max-w-[90rem] items-center justify-between px-5 sm:px-8">
-          <div className="flex items-center gap-10">
-            <Logo href="/" height={28} />
-            <nav aria-label="Primary navigation" className="hidden items-center gap-7 text-sm font-medium text-[#363636] md:flex">
-              <Link href="#explore" className="transition hover:text-[var(--color-primary)]">Explore</Link>
-              <Link href="#how-it-works" className="transition hover:text-[var(--color-primary)]">How it works</Link>
-            </nav>
-          </div>
-          <nav aria-label="Account navigation" className="flex items-center gap-4 text-sm font-semibold">
-            {user ? (
-              <>
-                <Link href="/dashboard" className="hidden text-[#363636] transition hover:text-[var(--color-primary)] sm:inline">My goals</Link>
-                <Link href="/dashboard/new" className="rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white">Start a goal</Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="hidden text-[#363636] transition hover:text-[var(--color-primary)] sm:inline">Sign in</Link>
-                <Link href="/signup" className="rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white">Start a goal</Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <main>
         <section className="relative px-5 pb-6 pt-20 sm:px-8 sm:pt-28 lg:pt-32">

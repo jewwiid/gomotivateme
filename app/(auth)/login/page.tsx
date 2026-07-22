@@ -12,6 +12,7 @@ import {
   translateAuthError,
   validatePasswordClient,
 } from "@/lib/authErrors";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function LoginPage() {
   const { signIn } = useAuthActions();
@@ -149,6 +150,14 @@ export default function LoginPage() {
           {busy ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
+      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
+        <span className="h-px flex-1 bg-[#deddd6]" />
+        or
+        <span className="h-px flex-1 bg-[#deddd6]" />
+      </div>
+
+      <GoogleSignInButton mode="signIn" />
 
       <p className="mt-7 text-center text-sm text-[#686963]">
         New here?{" "}
