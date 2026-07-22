@@ -17,6 +17,9 @@ export const getGoalBySlug = query({
       .first();
     if (!goal) return null;
     if (goal.visibility !== "public") return null;
+    // Pre-launch goals (status: "draft") are not visible on the public page.
+    // The creator manages them via the dashboard.
+    if (goal.status === "draft") return null;
 
     const progress = computeProgress(
       goal.startValue,
@@ -30,7 +33,45 @@ export const getGoalBySlug = query({
   },
 });
 
-/** Recent public campaigns for the discovery feed. Filters out "closed". */
+/** Fetch a goal by id (for the apply-to-motivate page). */
+export const getGoalById = query({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    const goal = await ctx.db.get(goalId);
+    if (!goal) return null;
+    if (goal.visibility !== "public") return null;
+    // Pre-launch goals are still public-readable for the apply page — the
+    // widget on the public page is hidden but anyone with the direct link
+    // (which the creator sends in invite flows) can land here.
+    const progress = computeProgress(
+      goal.startValue,
+      goal.currentValue,
+      goal.targetValue,
+      goal.direction
+    );
+    return {
+      _id: goal._id,
+      slug: goal.slug,
+      title: goal.title,
+      summary: goal.summary,
+      story: goal.story,
+      category: goal.category,
+      status: goal.status,
+      visibility: goal.visibility,
+      ownerId: goal.ownerId,
+      ownerName: goal.ownerName,
+      ownerImage: goal.ownerImage,
+      publicMotivatorPolicy: goal.publicMotivatorPolicy,
+      coreMotivatorMin: goal.coreMotivatorMin,
+      preLaunchAt: goal.preLaunchAt,
+      preLaunchDeadline: goal.preLaunchDeadline,
+      coverImageId: goal.coverImageId,
+      progress,
+    };
+  },
+});
+
+/** Recent public campaigns for the discovery feed. Filters out pre-launch + closed. */
 export const listRecentPublic = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
@@ -41,7 +82,7 @@ export const listRecentPublic = query({
       .take(limit ?? 24);
 
     return goals
-      .filter((g) => g.status !== "closed")
+      .filter((g) => g.status !== "closed" && g.status !== "draft")
       .map((g) => ({
         _id: g._id,
         slug: g.slug,
@@ -79,7 +120,10 @@ export const listByCategory = query({
       .order("desc")
       .take(limit ?? 24);
     return all
-      .filter((g) => g.visibility === "public" && g.status !== "closed")
+      .filter(
+        (g) =>
+          g.visibility === "public" && g.status !== "closed" && g.status !== "draft"
+      )
       .map((g) => ({
         _id: g._id,
         slug: g.slug,

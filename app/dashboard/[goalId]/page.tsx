@@ -31,6 +31,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { MotivationCircleManager } from "@/components/MotivationCircleManager";
+import { ApplicationQueue } from "@/components/ApplicationQueue";
 import { ProgressBar } from "@/components/ProgressBar";
 import { BadgeChip } from "@/components/BadgeChip";
 import { UpdateCard } from "@/components/UpdateCard";
@@ -248,6 +249,13 @@ function GoalDetailContent() {
             preLaunchDeadline={goal.preLaunchDeadline}
           />
         </div>
+
+        {/* Public motivator application queue (owner only) */}
+        {goal.publicMotivatorPolicy !== "disabled" && (
+          <div className="mt-4">
+            <ApplicationQueue goalId={goalId} />
+          </div>
+        )}
 
         {/* Status modal */}
         <AnimatePresence>

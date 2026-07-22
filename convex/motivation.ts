@@ -410,3 +410,243 @@ export const listMyMotivations = query({
       }));
   },
 });
+
+// =====================================================================
+// Applications — public users applying to join a goal's circle
+// =====================================================================
+
+const roleArg = v.union(
+  v.literal("encourager"),
+  v.literal("accountability"),
+  v.literal("advice"),
+  v.literal("review"),
+  v.literal("challenge")
+);
+
+const frequencyArg = v.union(
+  v.literal("afterUpdate"),
+  v.literal("weekly"),
+  v.literal("monthly"),
+  v.literal("onRequest")
+);
+
+/**
+ * Public user applies to motivate a goal.
+ * - Rejects if the goal's publicMotivatorPolicy === "disabled".
+ * - Rejects if the user already has an active pledge on this goal.
+ * - Rejects if the user has a pending application.
+ * - If the goal's publicMotivatorPolicy === "auto", creates the pledge
+ *   immediately and returns {kind: "auto-accepted", pledgeId}.
+ * - Otherwise creates an application in "pending" status and returns
+ *   {kind: "pending", applicationId}.
+ */
+export const requestApplication = mutation({
+  args: {
+    goalId: v.id("goals"),
+    requestedRole: roleArg,
+    requestedFrequency: frequencyArg,
+    message: v.string(),
+    pledgeText: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Sign in to apply");
+    const goal = await ctx.db.get(args.goalId);
+    if (!goal) throw new Error("Goal not found");
+    if (goal.ownerId === userId) {
+      throw new Error("You can't apply to your own goal");
+    }
+    if (goal.status === "closed") {
+      throw new Error("This goal is closed");
+    }
+    if (goal.publicMotivatorPolicy === "disabled") {
+      throw new Error("The goal owner isn't accepting public motivators");
+    }
+
+    // Already motivating?
+    const existingPledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_goal", (q) => q.eq("goalId", args.goalId))
+      .collect();
+    const alreadyActive = existingPledges.some(
+      (p) => p.userId === userId && (p.status === "active" || p.status === "paused")
+    );
+    if (alreadyActive) {
+      throw new Error("You're already motivating this goal");
+    }
+
+    // Already applied?
+    const myApps = await ctx.db
+      .query("motivatorApplications")
+      .withIndex("by_applicant", (q) => q.eq("applicantId", userId))
+      .collect();
+    const pendingApp = myApps.find(
+      (a) => a.goalId === args.goalId && a.status === "pending"
+    );
+    if (pendingApp) {
+      throw new Error("You already have a pending application");
+    }
+
+    const now = Date.now();
+    const message = args.message.trim();
+    if (message.length === 0) throw new Error("Tell the goal owner why you'd be a good fit");
+
+    if (goal.publicMotivatorPolicy === "auto") {
+      // Auto-accept: create the pledge directly.
+      const pledgeId = await ctx.db.insert("motivatorPledges", {
+        goalId: args.goalId,
+        userId,
+        role: args.requestedRole,
+        checkInFrequency: args.requestedFrequency,
+        pledgeText: args.pledgeText?.trim() || undefined,
+        notificationPref: "weeklyDigest",
+        status: "active",
+        isCoreMotivator: false,
+        acceptedAt: now,
+      });
+      // Also record the application as accepted (audit trail).
+      await ctx.db.insert("motivatorApplications", {
+        goalId: args.goalId,
+        applicantId: userId,
+        requestedRole: args.requestedRole,
+        message,
+        status: "accepted",
+        pledgeId,
+        createdAt: now,
+      });
+      return { kind: "auto-accepted" as const, pledgeId };
+    }
+
+    // "approval" — pending application.
+    const applicationId = await ctx.db.insert("motivatorApplications", {
+      goalId: args.goalId,
+      applicantId: userId,
+      requestedRole: args.requestedRole,
+      message,
+      status: "pending",
+      createdAt: now,
+    });
+    return { kind: "pending" as const, applicationId };
+  },
+});
+
+/** Owner: approve a pending application — creates a public pledge. */
+export const approveApplication = mutation({
+  args: {
+    applicationId: v.id("motivatorApplications"),
+    role: v.optional(roleArg),
+    checkInFrequency: v.optional(frequencyArg),
+    pledgeText: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const app = await ctx.db.get(args.applicationId);
+    if (!app) throw new Error("Application not found");
+    if (app.status !== "pending") {
+      throw new Error("This application has already been decided");
+    }
+    const goal = await ctx.db.get(app.goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not the goal owner");
+
+    // Check the applicant isn't already motivating (race condition guard).
+    const pledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_goal", (q) => q.eq("goalId", app.goalId))
+      .collect();
+    const already = pledges.some(
+      (p) => p.userId === app.applicantId && (p.status === "active" || p.status === "paused")
+    );
+    if (already) {
+      // Mark the application accepted but don't double-pledge.
+      await ctx.db.patch(args.applicationId, { status: "accepted" });
+      return { alreadyMotivating: true };
+    }
+
+    const now = Date.now();
+    const pledgeId = await ctx.db.insert("motivatorPledges", {
+      goalId: app.goalId,
+      userId: app.applicantId,
+      role: args.role ?? app.requestedRole,
+      checkInFrequency: args.checkInFrequency ?? "weekly",
+      pledgeText: args.pledgeText?.trim() || undefined,
+      notificationPref: "weeklyDigest",
+      status: "active",
+      isCoreMotivator: false,
+      acceptedAt: now,
+    });
+    await ctx.db.patch(args.applicationId, {
+      status: "accepted",
+      pledgeId,
+    });
+    return { pledgeId };
+  },
+});
+
+/** Owner: decline a pending application. */
+export const declineApplication = mutation({
+  args: { applicationId: v.id("motivatorApplications") },
+  handler: async (ctx, { applicationId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const app = await ctx.db.get(applicationId);
+    if (!app) throw new Error("Application not found");
+    if (app.status !== "pending") {
+      throw new Error("This application has already been decided");
+    }
+    const goal = await ctx.db.get(app.goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not the goal owner");
+    await ctx.db.patch(applicationId, { status: "declined" });
+    return { declined: true };
+  },
+});
+
+/** Owner: list pending applications for a goal, hydrated with the applicant. */
+export const listPendingApplications = query({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const goal = await ctx.db.get(goalId);
+    if (!goal || goal.ownerId !== userId) return [];
+    const apps = await ctx.db
+      .query("motivatorApplications")
+      .withIndex("by_goal_status", (q) =>
+        q.eq("goalId", goalId).eq("status", "pending")
+      )
+      .collect();
+    return Promise.all(
+      apps.map(async (a) => {
+        const u = await ctx.db.get(a.applicantId);
+        return {
+          _id: a._id,
+          requestedRole: a.requestedRole,
+          message: a.message,
+          createdAt: a.createdAt,
+          applicant: u
+            ? {
+                _id: u._id,
+                name: (u as { name?: string }).name ?? null,
+                email: (u as { email?: string }).email ?? null,
+                image: (u as { image?: string }).image ?? null,
+              }
+            : null,
+        };
+      })
+    );
+  },
+});
+
+/** Public: my application status for a goal (or null). */
+export const myApplicationForGoal = query({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const apps = await ctx.db
+      .query("motivatorApplications")
+      .withIndex("by_applicant", (q) => q.eq("applicantId", userId))
+      .collect();
+    return apps.find((a) => a.goalId === goalId) ?? null;
+  },
+});
