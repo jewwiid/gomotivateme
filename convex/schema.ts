@@ -8,15 +8,39 @@ import { authTables } from "@convex-dev/auth/server";
  *
  * Tables:
  *  - users / sessions / accounts / verificationCodes: from @convex-dev/auth
+ *    (users extended below with handle/bio/coverImageId for the profile)
  *  - goals: a single motivation campaign owned by a user, public-friendly
  *  - updates: progress updates on a goal (note, image, link, value, milestone)
  *  - reactions: anonymous emoji cheer (one per visitor per goal)
  *  - supporters: structured support team — a user joins a goal with a pledge
  *  - supportMessages: attributed structured messages left by supporters
  *  - badges: milestone badges earned on a goal
+ *  - motivators (4 tables): the Motivation Circle
  */
 export default defineSchema({
   ...authTables,
+  /**
+   * Extend the auth users table with profile fields + a handle index.
+   * Re-declaring here so we can add the by_handle index + bio/coverImageId
+   * that the public profile page needs. Must mirror the @convex-dev/auth
+   * defaults or the codegen will complain.
+   */
+  users: defineTable({
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    // Profile extensions
+    handle: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    coverImageId: v.optional(v.id("_storage")),
+  })
+    .index("email", ["email"])
+    .index("phone", ["phone"])
+    .index("by_handle", ["handle"]),
 
   goals: defineTable({
     ownerId: v.id("users"),

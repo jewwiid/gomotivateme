@@ -22,12 +22,14 @@
     --color-text-muted: #6c706f;
     --color-text-dim: #9aa0a0;
 
-    /* Primary = deep cobalt. Accent = electric sky blue. */
+    /* Primary = deep cobalt. Accent = electric sky blue. Gold = momentum spark. */
     --color-primary: #2541d8;
     --color-primary-dark: #18276f;
     --color-primary-soft: #d9e0ff;
     --color-accent: #82d9ff;
     --color-accent-soft: #d8f1ff;
+    --color-gold: #f0b429;
+    --color-gold-soft: #fcefc8;
     --color-success: #28a76a;
     --color-success-soft: #d8f1e3;
     --color-warning: #f0a91e;
@@ -37,6 +39,8 @@
     /* Surfaces for the campaign/landing */
     --color-card: #ffffff;
     --color-card-elev: #ffffff;
+    /* Alias: --color-bg-card is widely used but was never declared. */
+    --color-bg-card: var(--color-card);
   }
 
   .dark-surface {
@@ -51,6 +55,9 @@
     --color-text-dim: #6b6b7a;
     --color-card: #1a2030;
     --color-card-elev: #222940;
+    --color-bg-card: var(--color-card);
+    /* Gold reads a touch brighter on navy. */
+    --color-gold: #f5c33b;
   }
 
   html,

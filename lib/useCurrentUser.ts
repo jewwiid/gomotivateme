@@ -9,6 +9,9 @@ export type CurrentUser = {
   name: string | null;
   email: string | null;
   image: string | null;
+  handle: string | null;
+  bio: string | null;
+  coverImageId: string | null;
 };
 
 /**

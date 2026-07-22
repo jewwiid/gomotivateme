@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { motion } from "framer-motion";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export function Header() {
@@ -44,6 +44,22 @@ export function Header() {
                 className="rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
               >
                 Goals I motivate
+              </Link>
+              {user.handle && (
+                <Link
+                  href={`/u/${user.handle}`}
+                  className="hidden sm:inline-flex rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+                >
+                  My profile
+                </Link>
+              )}
+              <Link
+                href="/settings"
+                className="rounded-md p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-card)] hover:text-[var(--color-text)]"
+                aria-label="Settings"
+                title="Settings"
+              >
+                <SettingsIcon size={16} />
               </Link>
               <Link
                 href="/dashboard/new"
