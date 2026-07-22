@@ -85,6 +85,16 @@
     border-radius: 4px;
   }
 
+  /* iOS Safari + Android Chrome auto-zoom the viewport when an input
+     is focused and its computed font-size is < 16px. Force 16px on every
+     form control so tapping an input never zooms the page. The visual
+     jump from 14px → 16px is small and arguably more readable. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
   /* Editorial display type */
   h1, h2, h3 {
     line-height: 1.04;
