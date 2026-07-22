@@ -363,7 +363,7 @@ function AccountTab() {
             hint={
               handle.length === 0
                 ? "3-30 chars · lowercase letters, digits, _ or -"
-                : `Profile: gomotivateme.com/u/${handle}`
+                : `Profile: gomotivateme.com/@${handle}`
             }
             error={handleErr}
           />

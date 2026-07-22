@@ -121,7 +121,7 @@ function DashboardContent() {
             </p>
             {user?.handle && (
               <Link
-                href={`/u/${user.handle}`}
+                href={`/@${user.handle}`}
                 className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3"
               >
                 View your profile <ArrowRight size={15} />

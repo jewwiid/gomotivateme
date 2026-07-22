@@ -358,7 +358,7 @@ function MotivatorsTab({ query }: { query: string }) {
             transition={{ duration: 0.3, delay: Math.min(i * 0.02, 0.3) }}
           >
             <Link
-              href={m.handle ? `/u/${m.handle}` : "#"}
+              href={m.handle ? `/@${m.handle}` : "#"}
               className="group block rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-md"
             >
               <div className="flex items-center gap-3">

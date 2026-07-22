@@ -69,7 +69,7 @@ export function Header() {
             <>
               {user.handle && (
                 <Link
-                  href={`/u/${user.handle}`}
+                  href={`/@${user.handle}`}
                   className="hidden px-2 py-2 text-[#4c4d48] transition hover:text-[var(--color-primary)] sm:inline-flex"
                 >
                   My profile

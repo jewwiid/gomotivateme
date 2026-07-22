@@ -216,7 +216,7 @@ export default function SignupPage() {
               <>
                 Your profile lives at{" "}
                 <span className="font-mono text-[var(--color-text-muted)]">
-                  gomotivateme.com/u/
+                  gomotivateme.com/@
                   {handle.trim() || suggestHandle(name) || "your-handle"}
                 </span>
               </>

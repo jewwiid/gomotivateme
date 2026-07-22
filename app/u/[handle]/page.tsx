@@ -115,9 +115,9 @@ export default function ProfilePage() {
   const initials = initialsOf(user.name, user.handle);
   const profileUrl =
     typeof window !== "undefined" && user.handle
-      ? `${window.location.origin}/u/${user.handle}`
+      ? `${window.location.origin}/@${user.handle}`
       : user.handle
-      ? `/u/${user.handle}`
+      ? `/@${user.handle}`
       : "";
 
   // Setup progress: 0/3 when avatar + bio + cover are all missing
@@ -633,7 +633,7 @@ function DiscoverSidebar({
             return (
               <li key={m._id}>
                 <Link
-                  href={m.handle ? `/u/${m.handle}` : "#"}
+                  href={m.handle ? `/@${m.handle}` : "#"}
                   className="group flex items-center gap-3"
                 >
                   {m.image ? (
