@@ -156,16 +156,17 @@ export default function SignupPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <h1 className="mb-1.5 text-2xl font-bold tracking-tight">
+      <p className="brand-kicker">A goal is better with company</p>
+      <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">
         Start your momentum
       </h1>
-      <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+      <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
         Set up an account in 30 seconds.
       </p>
 
       <form onSubmit={onSubmit} className="space-y-3" noValidate>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
             Name
           </label>
           <input
@@ -173,22 +174,22 @@ export default function SignupPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
-            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="Your name"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
             Handle <span className="text-[var(--color-text-dim)]">(optional)</span>
           </label>
           <div
-            className={`flex items-center rounded-lg border bg-[var(--color-bg-elev)] pr-3 transition ${
+            className={`flex items-center rounded-xl border bg-white pr-3 transition ${
               handleErr
                 ? "border-[var(--color-danger)]/50"
                 : handleValid
                 ? "border-emerald-500/40"
-                : "border-[var(--color-border-strong)] focus-within:border-[var(--color-accent)]"
+                : "border-[#c9c8c0] focus-within:border-[var(--color-primary)]"
             }`}
           >
             <span className="ml-3 select-none text-sm text-[var(--color-text-dim)]">
@@ -224,7 +225,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
             Email
           </label>
           <input
@@ -233,12 +234,12 @@ export default function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="you@example.com"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
             Password
           </label>
           <input
@@ -247,7 +248,7 @@ export default function SignupPage() {
             value={password}
             onChange={(e) => onPasswordChange(e.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="At least 8 characters"
           />
           {passwordHint === "short" && (
@@ -272,17 +273,17 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+          className="mt-2 w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
         >
           {busy ? "Creating account..." : "Create account"}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
+      <p className="mt-7 text-center text-sm text-[#686963]">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+          className="font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
         >
           Sign in
         </Link>

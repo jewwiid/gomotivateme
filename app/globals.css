@@ -13,11 +13,11 @@
 @layer base {
   :root {
     /* === Light surface (primary brand) === */
-    --color-bg: #fafaf6;
-    --color-bg-elev: #f1f1ea;
+    --color-bg: #fffdf8;
+    --color-bg-elev: #f3f1ea;
     --color-surface: #ffffff;
-    --color-border: #e4e4dc;
-    --color-border-strong: #c8c8be;
+    --color-border: #e9e7df;
+    --color-border-strong: #c9c8c0;
     --color-text: #202124;
     --color-text-muted: #6c706f;
     --color-text-dim: #9aa0a0;
@@ -109,8 +109,20 @@
     color: transparent;
   }
   .glass {
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 253, 248, 0.9);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+
+  .brand-rule {
+    border-color: #e9e7df;
+  }
+
+  .brand-kicker {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #6e981b;
   }
 }

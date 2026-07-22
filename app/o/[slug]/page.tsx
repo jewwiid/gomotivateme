@@ -28,6 +28,8 @@ import { EditorialTimeline } from "@/components/EditorialTimeline";
 import { MomentumStats } from "@/components/MomentumStats";
 import { MobileActionBar } from "@/components/MobileActionBar";
 import { MotivationCircleWidget } from "@/components/MotivationCircleWidget";
+import { Header } from "@/components/Header";
+import { SiteFooter } from "@/components/SiteFooter";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 
 export default function PublicGoalPage() {
@@ -127,11 +129,11 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
       : `${formatNumber(goal.currentValue)} of ${formatNumber(goal.targetValue)} ${goal.unit}`;
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-zinc-900">
-      <LightHeader />
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+      <Header />
+      <main className="mx-auto max-w-[90rem] px-5 py-10 sm:px-8 sm:py-14">
         {/* Breadcrumb */}
-        <nav className="mb-3 text-xs text-zinc-500">
+        <nav className="mb-5 text-sm text-[#777872]">
           <Link href="/#explore" className="hover:text-zinc-700">
             Goals
           </Link>
@@ -140,13 +142,13 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
         </nav>
 
         {/* Title */}
-        <h1 className="text-balance font-display text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl md:text-5xl">
+        <h1 className="max-w-4xl text-balance font-display text-4xl font-bold leading-[0.95] tracking-[-0.06em] text-[#292929] sm:text-6xl">
           {goal.title}
         </h1>
 
         {/* Cover image */}
         {coverUrl && (
-          <div className="relative mt-5 overflow-hidden rounded-2xl bg-zinc-200">
+          <div className="relative mt-7 overflow-hidden rounded-[1.1rem] bg-[#e8edf9]">
             <div className="aspect-[16/7] w-full">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={coverUrl} alt="" className="h-full w-full object-cover" />
@@ -155,7 +157,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
         )}
 
         {/* Byline + status */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
+        <div className="mt-5 flex flex-wrap items-center gap-2 text-sm text-[#686963]">
           <span>By</span>
           <span className="flex items-center gap-1.5 font-medium text-zinc-900">
             {ownerImage ? (
@@ -227,7 +229,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
         )}
 
         {/* Two-column layout */}
-        <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-14">
           {/* Left column: main story + sections */}
           <div className="min-w-0 space-y-6">
             <MomentumStats
@@ -292,7 +294,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
 
           {/* Right column: sticky support card (desktop only) */}
           <aside className="hidden lg:block">
-            <div className="sticky top-6 space-y-4">
+            <div className="sticky top-24 space-y-4">
               <RightSupportCard
                 goal={goal}
                 goalId={goalId}
@@ -378,8 +380,8 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
       </main>
 
       {/* Trust footer */}
-      <section className="mt-12 border-t border-zinc-200 bg-white py-10">
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 px-6 sm:grid-cols-3">
+      <section className="mt-16 border-y border-[#deddd6] bg-[#f2f4ee] py-12">
+        <div className="mx-auto grid max-w-[80rem] grid-cols-1 gap-8 px-5 sm:px-8 sm:grid-cols-3">
           <TrustItem
             title="Easy"
             body="Send support in seconds. No forms, no friction."
@@ -395,15 +397,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
         </div>
       </section>
 
-      <footer className="border-t border-zinc-200 bg-white">
-        <div className="mx-auto max-w-5xl px-6 py-6 text-center text-xs text-zinc-500">
-          Powered by{" "}
-          <Link href="/" className="text-zinc-700 hover:text-zinc-900">
-            gomotivateme
-          </Link>{" "}
-          · {new Date().getFullYear()}
-        </div>
-      </footer>
+      <SiteFooter />
 
       {/* Mobile 3-action sticky bar */}
       <MobileActionBar onSupport={scrollToSupport} onEncourage={scrollToSupport} />
@@ -433,7 +427,7 @@ function RightSupportCard({
       : null;
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <div className="rounded-[1.1rem] border border-[#deddd6] bg-white p-6 shadow-[0_10px_28px_rgba(31,31,27,0.05)]">
       {/* Goal progress */}
       <div>
         <div className="flex items-baseline justify-between">
@@ -443,16 +437,16 @@ function RightSupportCard({
           <span className="font-mono text-xs text-zinc-500">{Math.round(goalPct)}%</span>
         </div>
         <div className="mt-1 text-2xl font-bold text-zinc-900">{goalLabel}</div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#dce5ff]">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] transition-all"
+            className="h-full rounded-full bg-[var(--color-primary)] transition-all"
             style={{ width: `${Math.round(goalPct)}%` }}
           />
         </div>
       </div>
 
       {/* Supporters */}
-      <div className="mt-5 border-t border-zinc-100 pt-4">
+      <div className="mt-6 border-t border-[#e2e1da] pt-5">
         <div className="flex items-baseline justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
             Supporters
@@ -495,7 +489,7 @@ function RightSupportCard({
         {!isInactive && (
           <a
             href="#support"
-            className="block w-full rounded-full bg-[var(--color-primary)] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+            className="block w-full rounded-xl bg-[var(--color-primary)] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
           >
             Support this goal
           </a>
@@ -503,14 +497,14 @@ function RightSupportCard({
         {!isInactive && (
           <a
             href="#support"
-            className="block w-full rounded-full border border-[var(--color-primary)] bg-white px-5 py-3 text-center text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
+            className="block w-full rounded-xl border border-[var(--color-primary)] bg-white px-5 py-3 text-center text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
           >
             Send encouragement
           </a>
         )}
         <button
           onClick={onShare}
-          className="block w-full rounded-full border border-zinc-300 bg-white px-5 py-3 text-center text-sm font-semibold text-zinc-900 transition hover:border-zinc-400"
+          className="block w-full rounded-xl border border-[#bebeb7] bg-white px-5 py-3 text-center text-sm font-semibold text-[#383834] transition hover:border-[var(--color-primary)]"
         >
           {copied ? (
             <span className="inline-flex items-center gap-1.5">
@@ -537,7 +531,7 @@ function RightSupportCard({
 
 function OrganiserMini({ ownerName, ownerImage }: { ownerName: string; ownerImage: string | null }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+    <div className="border-t border-[#deddd6] pt-5">
       <div className="flex items-center gap-2">
         {ownerImage ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -625,42 +619,10 @@ function TrustItem({ title, body }: { title: string; body: string }) {
   );
 }
 
-function LightHeader() {
-  return (
-    <header className="border-b border-zinc-200 bg-white/95 backdrop-blur sticky top-0 z-20">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-xs font-bold text-white">
-            m
-          </div>
-          <span className="font-display text-base font-semibold tracking-tight">gomotivateme</span>
-        </Link>
-        <nav className="flex items-center gap-3 text-sm">
-          <Link href="/#explore" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
-            Explore
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-zinc-700 transition hover:text-zinc-900"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className="rounded-full bg-[var(--color-primary)] px-4 py-1.5 font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-          >
-            Start a goal
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
 function LightShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-zinc-900">
-      <LightHeader />
+    <div className="min-h-screen bg-[#fffdf8] text-zinc-900">
+      <Header />
       <main className="mx-auto max-w-3xl px-6 py-16 text-center">{children}</main>
     </div>
   );

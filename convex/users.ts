@@ -353,10 +353,12 @@ export const listFeaturedMotivators = query({
     }
 
     // Pass 2: walk all active motivator pledges and add to the count.
-    const pledges = await ctx.db
-      .query("motivatorPledges")
-      .withIndex("by_goal_status", (q) => q.eq("status", "active"))
-      .collect();
+    // `by_goal_status` starts with goalId, so it cannot serve a status-only
+    // lookup. This is a small discovery aggregation; collect then filter
+    // until a dedicated status index is warranted.
+    const pledges = (await ctx.db.query("motivatorPledges").collect()).filter(
+      (pledge) => pledge.status === "active"
+    );
     for (const p of pledges) {
       const u = await ctx.db.get(p.userId);
       if (!u) continue;

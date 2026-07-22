@@ -2,61 +2,43 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, Search, Sparkles } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, Heart, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { CATEGORIES, FEATURED_CATEGORIES } from "@/lib/categories";
+import { FEATURED_CATEGORIES } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Logo } from "@/components/Logo";
 import { WelcomeModal } from "@/components/WelcomeModal";
 
-const SUPPORT_TYPE_META: Array<{
-  id: string;
-  label: string;
-  description: string;
-  iconSrc: string;
-  color: string;
-}> = [
-  {
-    id: "encourage",
-    label: "Encouragement",
-    description: "Cheer them on when motivation dips",
-    iconSrc: "/illustrations/support/encourage.png",
-    color: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
-  },
-  {
-    id: "advice",
-    label: "Practical advice",
-    description: "Specific tips, resources, know-how",
-    iconSrc: "/illustrations/support/advice.png",
-    color: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
-  },
-  {
-    id: "checkin",
-    label: "Regular check-ins",
-    description: "Keep them accountable on a schedule",
-    iconSrc: "/illustrations/support/checkin.png",
-    color: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
-  },
-  {
-    id: "join",
-    label: "Join me",
-    description: "Set your own version of the same goal",
-    iconSrc: "/illustrations/support/join.png",
-    color: "bg-[var(--color-accent-soft)] text-[var(--color-primary-dark)]",
-  },
+const FALLBACK_GOAL_MEDIA = [
+  "/illustrations/hero-v2.png",
+  "/illustrations/steps/set.png",
+  "/illustrations/steps/share.png",
+  "/illustrations/steps/track.png",
+  "/illustrations/steps/team.png",
+];
+
+const HERO_MEDIA = [
+  { src: "/illustrations/steps/track.png", alt: "Illustration of someone working toward a fitness goal", tilt: "-rotate-[7deg]" },
+  { src: "/illustrations/steps/set.png", alt: "Illustration of planning a personal goal", tilt: "-rotate-[3deg]" },
+  { src: "/illustrations/hero-v2.png", alt: "Friends supporting one another toward their goals", tilt: "rotate-0" },
+  { src: "/illustrations/steps/share.png", alt: "Illustration of sharing a progress update", tilt: "rotate-[3deg]" },
+  { src: "/illustrations/steps/team.png", alt: "Illustration of a support team", tilt: "rotate-[7deg]" },
 ];
 
 export default function HomePage() {
   const { user } = useCurrentUser();
   const recent = useQuery(api.public.listRecentPublic, { limit: 12 });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
   const coverIds = useMemo(
     () =>
       Array.from(
-        new Set((recent ?? []).map((g: any) => g.coverImageId).filter(Boolean))
+        new Set((recent ?? []).map((goal: any) => goal.coverImageId).filter(Boolean))
       ),
     [recent]
   );
@@ -65,549 +47,226 @@ export default function HomePage() {
     coverIds.length > 0 ? { ids: coverIds as any } : "skip"
   );
 
-  // Hero parallax — the hero illustration drifts up slightly as the page
-  // scrolls, giving the section a sense of depth. Skipped when the user
-  // has prefers-reduced-motion set (GPU-friendly + accessibility-clean).
-  const heroRef = useRef<HTMLDivElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, -60]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.4]);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-
-  const filtered = useMemo(() => {
-    let arr = (recent ?? []) as any[];
-    if (activeCategory) arr = arr.filter((g) => g.category === activeCategory);
+  const filteredGoals = useMemo(() => {
+    let goals = (recent ?? []) as any[];
+    if (activeCategory) goals = goals.filter((goal) => goal.category === activeCategory);
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      arr = arr.filter(
-        (g) =>
-          g.title.toLowerCase().includes(q) ||
-          (g.summary || "").toLowerCase().includes(q)
+      const query = searchQuery.trim().toLowerCase();
+      goals = goals.filter(
+        (goal) =>
+          goal.title.toLowerCase().includes(query) ||
+          (goal.summary ?? "").toLowerCase().includes(query) ||
+          (goal.ownerName ?? "").toLowerCase().includes(query)
       );
     }
-    return arr;
-  }, [recent, activeCategory, searchQuery]);
+    return goals.slice(0, 5);
+  }, [activeCategory, recent, searchQuery]);
+
+  const startGoalHref = user ? "/dashboard/new" : "/signup";
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-zinc-900">
-      {/* First-visit welcome nudge — only fires for signed-out users. */}
+    <div className="min-h-screen overflow-x-hidden bg-[#fffdf8] text-[#242424]">
       {!user && <WelcomeModal />}
 
-      {/* Top nav */}
-      <header className="border-b border-zinc-200 bg-white/95 backdrop-blur sticky top-0 z-20">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
-          <Logo href="/" height={28} />
-          <nav className="flex items-center gap-3 text-sm">
-            <Link href="/explore" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
-              Explore
-            </Link>
-            <Link href="#how-it-works" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
-              How it works
-            </Link>
+      <header className="sticky top-0 z-30 border-b border-[#e9e7df] bg-[#fffdf8]/95 backdrop-blur">
+        <div className="mx-auto flex h-[4.6rem] max-w-[90rem] items-center justify-between px-5 sm:px-8">
+          <div className="flex items-center gap-10">
+            <Logo href="/" height={28} />
+            <nav aria-label="Primary navigation" className="hidden items-center gap-7 text-sm font-medium text-[#363636] md:flex">
+              <Link href="#explore" className="transition hover:text-[var(--color-primary)]">Explore</Link>
+              <Link href="#how-it-works" className="transition hover:text-[var(--color-primary)]">How it works</Link>
+            </nav>
+          </div>
+          <nav aria-label="Account navigation" className="flex items-center gap-4 text-sm font-semibold">
             {user ? (
               <>
-                <Link
-                  href="/dashboard"
-                  className="text-zinc-700 transition hover:text-zinc-900"
-                >
-                  My goals
-                </Link>
-                <Link
-                  href="/dashboard/new"
-                  className="rounded-full bg-[var(--color-primary)] px-4 py-1.5 font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-                >
-                  New goal
-                </Link>
+                <Link href="/dashboard" className="hidden text-[#363636] transition hover:text-[var(--color-primary)] sm:inline">My goals</Link>
+                <Link href="/dashboard/new" className="rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white">Start a goal</Link>
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-full bg-[var(--color-primary)] px-4 py-1.5 font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-                >
-                  Start a goal
-                </Link>
+                <Link href="/login" className="hidden text-[#363636] transition hover:text-[var(--color-primary)] sm:inline">Sign in</Link>
+                <Link href="/signup" className="rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white">Start a goal</Link>
               </>
             )}
           </nav>
         </div>
       </header>
 
-      {/* Hero */}
-      <section ref={heroRef} className="relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[1100px] -translate-x-1/2 rounded-full bg-[var(--color-primary)]/8 blur-3xl" />
-        {/* Hero illustration — full-bleed, sitting behind the headline on desktop.
-            Wrapped in a parallax motion component so it drifts as you scroll. */}
-        <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          className="pointer-events-none absolute inset-x-0 top-0 hidden h-full lg:block"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/illustrations/hero-v2.png"
-            alt=""
-            aria-hidden
-            className="absolute -top-6 left-1/2 w-full max-w-6xl -translate-x-1/2 select-none opacity-90 mix-blend-multiply"
-          />
-        </motion.div>
-        <div className="relative mx-auto max-w-4xl px-6 pt-20 pb-12 text-center sm:pt-28">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--color-primary)]/20 bg-white/80 px-3 py-1 text-xs font-medium text-[var(--color-primary)]"
-          >
-            <Sparkles size={12} />
-            Motivation works better together
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="font-display text-balance text-5xl font-bold tracking-tight text-zinc-900 sm:text-6xl md:text-[68px]"
-            style={{ lineHeight: 1.02, letterSpacing: "-0.03em" }}
-          >
-            Where personal goals
-            <br />
-            <span className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
-              gain momentum.
-            </span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mx-auto mt-6 max-w-2xl text-balance text-lg text-zinc-600 sm:text-xl"
-          >
-            Share what you want to achieve, document your progress and build a
-            community that keeps you moving.
-          </motion.p>
+      <main>
+        <section className="relative px-5 pb-6 pt-20 sm:px-8 sm:pt-28 lg:pt-32">
+          <div className="mx-auto max-w-5xl text-center">
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6e981b]"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#b9e85f]" />
+              Goals grow with support
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.07 }}
+              className="mx-auto mt-5 max-w-5xl text-balance font-display text-[clamp(3rem,7.25vw,6.5rem)] font-bold leading-[0.92] tracking-[-0.06em] text-[#242424]"
+            >
+              Every goal goes further
+              <br className="hidden sm:block" />
+              with people behind it.
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.14 }}
+              className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-[#666762] sm:text-lg"
+            >
+              Share your progress. Let the people who care help you keep going.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.21 }}
+              className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
+            >
+              <Link href={startGoalHref} className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 py-3.5 text-base font-bold text-white shadow-[0_8px_20px_rgba(4,77,252,0.18)] transition hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)]">
+                Start a goal <ArrowRight size={17} />
+              </Link>
+              <a href="#explore" className="inline-flex items-center gap-2 px-3 py-3 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">
+                Explore goals <ArrowRight size={16} />
+              </a>
+            </motion.div>
+          </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
+            transition={{ duration: 0.65, delay: 0.28 }}
+            className="mx-auto mt-16 grid max-w-[88rem] grid-cols-3 items-end gap-3 sm:mt-20 sm:grid-cols-5 sm:gap-5"
           >
-            <Link
-              href={user ? "/dashboard/new" : "/signup"}
-              className="group inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-6 py-3 text-base font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-            >
-              Start your goal
-              <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
-            </Link>
-            <a
-              href="#explore"
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-900 transition hover:border-zinc-400"
-            >
-              Explore goals
-            </a>
+            {HERO_MEDIA.map((media, index) => (
+              <div
+                key={media.src}
+                className={`${media.tilt} ${index > 2 ? "hidden sm:block" : ""} relative overflow-hidden rounded-[1.35rem] bg-[#edece6] shadow-[0_14px_30px_rgba(31,31,27,0.08)] ${index === 2 ? "aspect-[1.05/1] sm:-translate-y-5" : "aspect-[.84/1]"}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={media.src} alt={media.alt} className="h-full w-full object-cover" />
+              </div>
+            ))}
           </motion.div>
-        </div>
-        {/* Mobile-only hero illustration: tucked under the CTA, full-width strip. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/illustrations/hero-v2.png"
-          alt=""
-          aria-hidden
-          className="pointer-events-none mx-auto -mb-12 block w-full max-w-3xl select-none opacity-90 mix-blend-multiply lg:hidden"
-        />
-      </section>
+        </section>
 
-      {/* Platform promise */}
-      <section className="border-y border-zinc-200 bg-white py-14">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-            You bring the goal.
-            <br />
-            Your community brings the momentum.
-          </h2>
-          <p className="mt-3 text-base text-zinc-600">
-            Whether you're building a habit, learning a skill, or creating something new — the
-            right people can help you stay committed.
-          </p>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="py-16">
-        <div className="mx-auto max-w-5xl px-6">
-          <h2 className="text-center font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-            How it works
-          </h2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-4">
-            {HOW_IT_WORKS.map((step, i) => (
-              <motion.div
-                key={step.title}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="rounded-2xl border border-zinc-200 bg-white p-5"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/illustrations/steps/${step.icon}.png`}
-                  alt=""
-                  aria-hidden
-                  width={96}
-                  height={96}
-                  className="mb-3 h-16 w-16 select-none object-contain"
-                />
-                <h3 className="text-sm font-semibold text-zinc-900">{step.title}</h3>
-                <p className="mt-1.5 text-xs text-zinc-600">{step.body}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Support types */}
-      <section className="border-t border-zinc-200 bg-white py-16">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="mb-10 text-center">
-            <h2 className="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-              More than a like
-            </h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              Real support, in the form that actually helps.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {SUPPORT_TYPE_META.map((s, i) => (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={s.iconSrc}
-                  alt=""
-                  aria-hidden
-                  width={120}
-                  height={120}
-                  className="mb-3 h-20 w-20 select-none object-contain"
-                />
-                <h3 className="text-sm font-semibold text-zinc-900">{s.label}</h3>
-                <p className="mt-1 text-xs text-zinc-600">{s.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Explore */}
-      <section id="explore" className="py-16">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-                Live goals
-              </h2>
-              <p className="mt-1 text-sm text-zinc-600">
-                Real people, real progress. Show up for them.
-              </p>
-            </div>
-            <div className="relative w-full sm:w-64">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-              />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search goals"
-                className="w-full rounded-full border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-[var(--color-primary)] focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="mb-6 flex flex-wrap gap-2">
-            <CategoryPill
-              active={activeCategory === null}
-              onClick={() => setActiveCategory(null)}
-              label="All"
-            />
-            {FEATURED_CATEGORIES.map((c) => (
-              <CategoryPill
-                key={c.id}
-                active={activeCategory === c.id}
-                onClick={() => setActiveCategory(c.id)}
-                label={c.label}
-                icon={<CategoryIcon category={c.id} size={12} />}
-              />
-            ))}
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-14 text-center">
+        <section id="how-it-works" className="relative mt-12 overflow-hidden bg-[#f1f3ed] px-5 py-20 sm:mt-16 sm:px-8 sm:py-28">
+          <div className="pointer-events-none absolute inset-x-[-8%] -top-14 h-24 rounded-[50%] bg-[#fffdf8]" />
+          <div className="relative mx-auto grid max-w-[80rem] items-center gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-24">
+            <div className="relative mx-auto w-full max-w-xl rounded-[2rem] bg-[#dff2ae] p-7 sm:p-10">
+              <div className="absolute left-8 top-8 h-8 w-8 rounded-full border-[5px] border-[#f7fbeb]" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/illustrations/empty-state.png"
-                alt=""
-                aria-hidden
-                width={160}
-                height={160}
-                className="mb-6 h-32 w-32 select-none object-contain sm:h-40 sm:w-40"
-              />
-              <p className="text-sm text-zinc-600">
-                {recent === undefined
-                  ? "Loading goals…"
-                  : "No public goals in this category yet. Be the first."}
-              </p>
+              <img src="/illustrations/steps/share.png" alt="Illustration of sharing a progress update with supporters" className="mx-auto w-full max-w-md object-contain" />
+              <div className="absolute bottom-7 left-7 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#333] shadow-sm sm:bottom-10 sm:left-10">You&apos;ve got this.</div>
             </div>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((g: any, i: number) => (
-                <motion.div
-                  key={g._id}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-30px" }}
-                  transition={{ duration: 0.4, delay: i * 0.04 }}
-                >
-                  <Link
-                    href={`/o/${g.slug}`}
-                    className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:border-zinc-300 hover:shadow-md"
-                  >
-                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-[var(--color-primary-soft)] to-[var(--color-accent-soft)]">
-                      {g.coverImageId && coverUrls?.[g.coverImageId] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={coverUrls[g.coverImageId]}
-                          alt=""
-                          className="h-full w-full object-cover transition group-hover:scale-105"
-                        />
-                      ) : null}
-                      <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-zinc-700 backdrop-blur">
-                        <CategoryIcon category={g.category} size={10} />
-                        {g.category}
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug text-zinc-900">
-                        {g.title}
-                      </h3>
-                      {g.summary && (
-                        <p className="mt-1 line-clamp-2 text-xs text-zinc-600">{g.summary}</p>
-                      )}
-                      <div className="mt-2 text-xs text-zinc-500">
-                        by {g.ownerName || "Someone"} · {relativeTime(g.createdAt)}
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        <MiniProgress
-                          label="Goal"
-                          pct={g.progress}
-                          hint={`${formatNumber(g.currentValue)} / ${formatNumber(g.targetValue)} ${g.unit}`}
-                        />
-                        <MiniProgress
-                          label="Supporters"
-                          pct={
-                            g.supporterTarget && g.supporterTarget > 0
-                              ? Math.min(100, (g.supporterCount / g.supporterTarget) * 100)
-                              : 0
-                          }
-                          hint={
-                            g.supporterTarget
-                              ? `${g.supporterCount} / ${g.supporterTarget}`
-                              : `${g.supporterCount}`
-                          }
-                        />
-                      </div>
-                      {g.supportTypes && g.supportTypes.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {g.supportTypes.slice(0, 3).map((t: string) => (
-                            <span
-                              key={t}
-                              className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600"
-                            >
-                              {SUPPORT_LABEL[t] ?? t}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6e981b]">How it works</p>
+              <h2 className="mt-4 max-w-xl text-balance font-display text-4xl font-bold leading-[0.98] tracking-[-0.05em] text-[#252525] sm:text-6xl">Support makes progress stick.</h2>
+              <p className="mt-5 max-w-xl text-base leading-7 text-[#646560] sm:text-lg">GoMotivateMe helps you turn a meaningful goal into lasting change—with encouragement from people who want to see you win.</p>
+              <ol className="mt-9 divide-y divide-[#d3d5ce] border-y border-[#d3d5ce]">
+                {[
+                  ["01", "Set a goal", "Choose something meaningful, then decide what progress looks like."],
+                  ["02", "Invite your people", "Share one link with the people you want beside you."],
+                  ["03", "Keep showing up", "Post the small wins, the stuck moments, and what comes next."],
+                ].map(([number, title, body]) => (
+                  <li key={number} className="grid grid-cols-[3.5rem_1fr] gap-3 py-5 sm:grid-cols-[5rem_1fr] sm:py-6">
+                    <span className="pt-0.5 text-2xl font-bold tracking-[-0.05em] text-[var(--color-primary)]">{number}</span>
+                    <div><h3 className="text-lg font-bold tracking-[-0.03em] text-[#292929]">{title}</h3><p className="mt-1 text-sm leading-6 text-[#686963]">{body}</p></div>
+                  </li>
+                ))}
+              </ol>
+              <a href="#explore" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">See how GoMotivateMe works <ArrowRight size={16} /></a>
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* Bright CTA */}
-      <section className="bg-[var(--color-accent-soft)] py-14">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Someone's next breakthrough
-            <br />
-            may start with your message.
-          </h2>
-          <p className="mt-3 text-base text-zinc-700">
-            Even a short note can be the thing that gets someone back to work.
-          </p>
-          <Link
-            href="#explore"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            Show up for someone
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-      </section>
-
-      {/* Dark trust section */}
-      <section className="bg-[var(--color-primary-dark)] py-16 text-white">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-            A healthier place
-            <br className="hidden sm:inline" />
-            to pursue real progress.
-          </h2>
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {[
-              { title: "Moderated", body: "Reporting, blocking, and community rules keep it safe." },
-              { title: "Private by choice", body: "Pause, hide, or unlist a goal whenever you need." },
-              { title: "No failure labels", body: "Reframe, extend, or close — never 'failed'." },
-            ].map((it) => (
-              <div key={it.title}>
-                <div className="text-sm font-semibold text-[var(--color-accent)]">
-                  {it.title}
-                </div>
-                <p className="mt-1.5 text-sm text-zinc-300">{it.body}</p>
-              </div>
-            ))}
           </div>
-          <Link
-            href={user ? "/dashboard/new" : "/signup"}
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--color-primary-dark)] transition hover:bg-zinc-100"
-          >
-            Start your goal
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-10 text-xs text-zinc-500">
-          <div className="grid gap-8 sm:grid-cols-3">
-            <div>
-              <div className="mb-2">
-                <Logo href="/" height={24} />
+        <section id="explore" className="px-5 py-20 sm:px-8 sm:py-28">
+          <div className="mx-auto max-w-[80rem]">
+            <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6e981b]">Find a goal to stand behind</p>
+                <h2 className="mt-4 text-balance font-display text-4xl font-bold leading-[0.96] tracking-[-0.055em] text-[#252525] sm:text-6xl">Small steps. Real people.</h2>
               </div>
-              <p>Where personal goals gain momentum.</p>
+              <label className="relative block w-full max-w-sm">
+                <span className="sr-only">Search goals</span>
+                <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#71736d]" />
+                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search goals" className="w-full rounded-xl border border-[#bdbeb7] bg-transparent py-3 pl-11 pr-4 text-sm text-[#252525] placeholder:text-[#72736e] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15" />
+              </label>
             </div>
-            <div>
-              <p className="mb-2 text-sm font-semibold text-zinc-900">Explore</p>
-              <div className="grid grid-cols-2 gap-1">
-                {FEATURED_CATEGORIES.map((c) => (
-                  <a
-                    key={c.id}
-                    href="#explore"
-                    onClick={() => setActiveCategory(c.id)}
-                  >
-                    {c.label}
-                  </a>
+
+            <div className="mt-7 flex flex-wrap gap-2">
+              <CategoryFilter active={activeCategory === null} label="All goals" onClick={() => setActiveCategory(null)} />
+              {FEATURED_CATEGORIES.map((category) => <CategoryFilter key={category.id} active={activeCategory === category.id} label={category.label} icon={<CategoryIcon category={category.id} size={14} />} onClick={() => setActiveCategory(category.id)} />)}
+            </div>
+
+            {filteredGoals.length === 0 ? (
+              <div className="mt-12 grid place-items-center border-y border-[#e4e3dc] py-16 text-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/illustrations/empty-state.png" alt="Illustration of an empty goals list" className="h-28 w-28 object-contain" />
+                <p className="mt-4 max-w-sm text-base text-[#666762]">{recent === undefined ? "Finding goals worth cheering for…" : "No goals match that search yet. Be the first to share yours."}</p>
+                <Link href={startGoalHref} className="mt-5 text-sm font-bold text-[var(--color-primary)]">Start a goal <span aria-hidden>→</span></Link>
+              </div>
+            ) : (
+              <div className="mt-10 grid gap-x-5 gap-y-9 md:grid-cols-2 lg:grid-cols-4">
+                {filteredGoals.map((goal: any, index) => (
+                  <GoalTile key={goal._id} goal={goal} image={goal.coverImageId ? coverUrls?.[goal.coverImageId] ?? FALLBACK_GOAL_MEDIA[index] : FALLBACK_GOAL_MEDIA[index]} featured={index === 0} />
                 ))}
               </div>
-            </div>
-            <div>
-              <p className="mb-2 text-sm font-semibold text-zinc-900">About</p>
-              <a href="#how-it-works" className="block">How it works</a>
-              <a href="#" className="block">Community guidelines</a>
-              <a href="#" className="block">Contact</a>
-            </div>
+            )}
+            <div className="mt-11"><Link href="/explore" className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-primary)] px-5 py-3 text-sm font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white">Explore all goals <ArrowRight size={16} /></Link></div>
           </div>
-          <p className="mt-8 border-t border-zinc-200 pt-6">
-            © {new Date().getFullYear()} gomotivateme · Where personal goals gain momentum.
-          </p>
+        </section>
+
+        <section className="relative overflow-hidden bg-[#ffe28a] px-5 py-24 text-center sm:px-8 sm:py-32">
+          <div className="pointer-events-none absolute inset-x-[-10%] -top-12 h-20 rounded-[50%] bg-[#fffdf8]" />
+          <div className="pointer-events-none absolute inset-x-[-10%] -bottom-12 h-20 rounded-[50%] bg-[#fffdf8]" />
+          <div className="relative mx-auto max-w-4xl">
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#63572d]"><Heart size={17} className="text-[#b48900]" fill="currentColor" /> A little support changes the whole journey</p>
+            <h2 className="mt-5 text-balance font-display text-4xl font-bold leading-[0.96] tracking-[-0.055em] text-[#2b2a24] sm:text-6xl">Your next step deserves a team.</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5f583d] sm:text-lg">Share your goal, rally your people, and move forward with confidence.</p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"><Link href={startGoalHref} className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 py-3.5 text-base font-bold text-white transition hover:bg-[var(--color-primary-dark)]">Start a goal <ArrowRight size={17} /></Link><a href="#explore" className="inline-flex items-center gap-2 px-3 py-3 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">Explore goals <ArrowRight size={16} /></a></div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="bg-[#fffdf8] px-5 pt-16 sm:px-8 sm:pt-20">
+        <div className="mx-auto grid max-w-[80rem] gap-12 border-b border-[#e3e1d8] pb-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+          <div><Logo href="/" height={30} /><p className="mt-4 max-w-xs text-sm leading-6 text-[#676862]">Real goals. Real people. Together.</p></div>
+          <FooterColumn title="Explore" links={[["Explore goals", "/explore"], ["How it works", "#how-it-works"], ["Goal ideas", "/dashboard/new"]]} />
+          <FooterColumn title="Start a goal" links={[["Create a goal", startGoalHref], ["Build your team", "#how-it-works"], ["Share progress", startGoalHref]]} />
+          <FooterColumn title="About" links={[["Our approach", "#how-it-works"], ["Community standards", "#explore"], ["Contact", "mailto:hello@gomotivateme.com"]]} />
         </div>
+        <div className="mx-auto flex max-w-[80rem] flex-col gap-4 py-7 text-xs text-[#74756f] sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} GoMotivateMe</p><div className="flex flex-wrap gap-x-5 gap-y-2"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Community guidelines</a></div></div>
       </footer>
     </div>
   );
 }
 
-const HOW_IT_WORKS = [
-  { title: "Set a meaningful goal", icon: "set", body: "Pick a category, set a target, choose the support you need." },
-  { title: "Build your team", icon: "team", body: "Share your link. People who care join your support team." },
-  { title: "Share progress", icon: "share", body: "Log values, milestones, photos, and reflections as you go." },
-  { title: "Reach it together", icon: "track", body: "Real encouragement + accountability + check-ins to the finish." },
-];
-
-const SUPPORT_LABEL: Record<string, string> = {
-  encourage: "Encouragement",
-  experience: "Shared experience",
-  advice: "Advice",
-  checkin: "Check-ins",
-  join: "Joining in",
-};
-
-function CategoryPill({
-  active,
-  onClick,
-  label,
-  icon,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  icon?: React.ReactNode;
-}) {
+function GoalTile({ goal, image, featured }: { goal: any; image: string; featured: boolean }) {
+  const progress = Math.max(0, Math.min(100, Number(goal.progress ?? 0)));
   return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-        active
-          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-          : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
+    <motion.article initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.4 }} className={featured ? "md:col-span-2 lg:row-span-2 lg:col-span-2" : ""}>
+      <Link href={`/o/${goal.slug}`} className="group block">
+        <div className={`overflow-hidden rounded-[1rem] bg-[#edede8] ${featured ? "aspect-[1.32/1]" : "aspect-[1.45/1]"}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt={`${goal.title} goal by ${goal.ownerName || "a GoMotivateMe member"}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />
+        </div>
+        <div className="px-1 pt-3"><div className="flex items-start justify-between gap-3"><h3 className={`${featured ? "text-xl sm:text-2xl" : "text-base"} font-bold leading-tight tracking-[-0.035em] text-[#2a2a2a]`}>{goal.title}</h3><span className="shrink-0 text-[11px] font-medium text-[#777872]"><CategoryIcon category={goal.category} size={15} /></span></div><p className="mt-1 text-sm text-[#73746e]">by {goal.ownerName || "Someone"} · {relativeTime(goal.createdAt)}</p><div className="mt-4 flex items-center gap-3"><div className="h-1 flex-1 overflow-hidden rounded-full bg-[#e1e1dc]"><div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${progress}%` }} /></div><span className="whitespace-nowrap text-xs font-semibold text-[#656660]">{Math.round(progress)}% complete</span></div>{featured && <p className="mt-3 text-sm text-[#70716a]">{goal.supporterCount ? `${formatNumber(goal.supporterCount)} people cheering them on` : "Be one of the first people behind this goal"}</p>}</div>
+      </Link>
+    </motion.article>
   );
 }
 
-function MiniProgress({
-  label,
-  pct,
-  hint,
-}: {
-  label: string;
-  pct: number;
-  hint: string;
-}) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
-        <span>{label}</span>
-        <span className="font-mono tabular-nums text-zinc-700">{Math.round(pct)}%</span>
-      </div>
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)]"
-          style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
-        />
-      </div>
-      <div className="mt-0.5 text-[10px] text-zinc-500">{hint}</div>
-    </div>
-  );
+function CategoryFilter({ active, label, icon, onClick }: { active: boolean; label: string; icon?: React.ReactNode; onClick: () => void }) {
+  return <button onClick={onClick} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${active ? "border-[#292929] bg-[#292929] text-white" : "border-[#cfcfc8] bg-transparent text-[#4c4d48] hover:border-[#777872]"}`}>{icon}{label}</button>;
+}
+
+function FooterColumn({ title, links }: { title: string; links: Array<[string, string]> }) {
+  return <div><h2 className="text-sm font-bold text-[#33332f]">{title}</h2><ul className="mt-4 space-y-2.5 text-sm text-[#656660]">{links.map(([label, href]) => <li key={label}><Link href={href} className="transition hover:text-[var(--color-primary)]">{label}</Link></li>)}</ul></div>;
 }

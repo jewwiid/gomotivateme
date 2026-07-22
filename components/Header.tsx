@@ -15,53 +15,69 @@ export function Header() {
   const { signOut } = useAuthActions();
 
   const onPublicPage = pathname?.startsWith("/o/");
+  const isExplore = pathname?.startsWith("/explore");
+  const isDashboard = pathname?.startsWith("/dashboard");
+  const isMotivate = pathname?.startsWith("/motivate");
 
   return (
     <motion.header
       initial={{ y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="sticky top-0 z-40 border-b border-[var(--color-border)] glass"
+      className="sticky top-0 z-40 border-b border-[#e9e7df] bg-[#fffdf8]/95 backdrop-blur"
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Logo href="/" height={32} />
+      <div className="mx-auto flex h-[4.6rem] max-w-[90rem] items-center justify-between px-5 sm:px-8">
+        <div className="flex items-center gap-8 lg:gap-10">
+          <Logo href="/" height={28} />
+          <nav className="hidden items-center gap-6 text-sm font-medium text-[#383834] md:flex">
+            <Link
+              href="/explore"
+              className={`transition hover:text-[var(--color-primary)] ${
+                isExplore ? "text-[var(--color-primary)]" : ""
+              }`}
+            >
+              Explore
+            </Link>
+            <Link href="/#how-it-works" className="transition hover:text-[var(--color-primary)]">
+              How it works
+            </Link>
+            {user && (
+              <>
+                <Link
+                  href="/dashboard"
+                  className={`transition hover:text-[var(--color-primary)] ${
+                    isDashboard ? "text-[var(--color-primary)]" : ""
+                  }`}
+                >
+                  My goals
+                </Link>
+                <Link
+                  href="/motivate"
+                  className={`transition hover:text-[var(--color-primary)] ${
+                    isMotivate ? "text-[var(--color-primary)]" : ""
+                  }`}
+                >
+                  My circle
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
 
-        <nav className="flex items-center gap-1 sm:gap-3 text-sm">
-          <Link
-            href="/explore"
-            className={`rounded-md px-3 py-1.5 transition ${
-              pathname?.startsWith("/explore")
-                ? "bg-[var(--color-bg-card)] font-medium text-[var(--color-text)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-            }`}
-          >
-            Explore
-          </Link>
+        <nav className="flex items-center gap-2 text-sm font-semibold">
           {user ? (
             <>
-              <Link
-                href="/dashboard"
-                className="rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-              >
-                My goals
-              </Link>
-              <Link
-                href="/motivate"
-                className="rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
-              >
-                Goals I motivate
-              </Link>
               {user.handle && (
                 <Link
                   href={`/u/${user.handle}`}
-                  className="hidden sm:inline-flex rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+                  className="hidden px-2 py-2 text-[#4c4d48] transition hover:text-[var(--color-primary)] sm:inline-flex"
                 >
                   My profile
                 </Link>
               )}
               <Link
                 href="/settings"
-                className="rounded-md p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-card)] hover:text-[var(--color-text)]"
+                className="rounded-lg p-2 text-[#5e605a] transition hover:bg-[#f0efe8] hover:text-[var(--color-primary)]"
                 aria-label="Settings"
                 title="Settings"
               >
@@ -69,30 +85,26 @@ export function Header() {
               </Link>
               <Link
                 href="/dashboard/new"
-                className="hidden sm:inline-flex rounded-md bg-[var(--color-accent)] px-3 py-1.5 font-medium text-black transition hover:bg-[var(--color-accent-soft)]"
+                className="hidden rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white sm:inline-flex"
               >
-                New goal
+                Start a goal
               </Link>
-              <div className="ml-2 flex items-center gap-2">
-                <span className="hidden md:inline text-xs text-[var(--color-text-dim)]">
-                  {user.email ?? user.name}
-                </span>
-                <button
-                  onClick={async () => {
-                    await signOut();
-                    router.push("/");
-                  }}
-                  className="rounded-md p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-card)] hover:text-[var(--color-text)]"
-                  aria-label="Sign out"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
+              <button
+                onClick={async () => {
+                  await signOut();
+                  router.push("/");
+                }}
+                className="hidden rounded-lg p-2 text-[#5e605a] transition hover:bg-[#f0efe8] hover:text-[var(--color-primary)] lg:inline-flex"
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut size={16} />
+              </button>
             </>
           ) : onPublicPage ? (
             <Link
               href="/"
-              className="rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+              className="px-3 py-2 text-[#4c4d48] transition hover:text-[var(--color-primary)]"
             >
               About gomotivateme
             </Link>
@@ -100,15 +112,15 @@ export function Header() {
             <>
               <Link
                 href="/login"
-                className="rounded-md px-3 py-1.5 text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
+                className="hidden px-3 py-2 text-[#4c4d48] transition hover:text-[var(--color-primary)] sm:inline-flex"
               >
                 Sign in
               </Link>
               <Link
                 href="/signup"
-                className="rounded-md bg-[var(--color-accent)] px-3 py-1.5 font-medium text-black transition hover:bg-[var(--color-accent-soft)]"
+                className="rounded-xl border border-[var(--color-primary)] px-4 py-2 text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white"
               >
-                Get started
+                Start a goal
               </Link>
             </>
           )}

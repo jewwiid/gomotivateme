@@ -18,6 +18,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { RequireAuth } from "@/components/RequireAuth";
+import { SiteFooter } from "@/components/SiteFooter";
 import {
   MAX_HANDLE_LENGTH,
   validateHandleClient,
@@ -36,23 +37,23 @@ export default function SettingsPage() {
 function SettingsContent() {
   const [tab, setTab] = useState<Tab>("account");
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
       <Header />
 
-      <main className="mx-auto max-w-3xl px-6 py-10">
+      <main className="mx-auto max-w-[48rem] px-5 py-14 sm:px-8 sm:py-20">
         <Link
           href="/dashboard"
-          className="mb-3 inline-flex items-center gap-1.5 text-sm text-zinc-500 transition hover:text-zinc-900"
+          className="mb-8 inline-flex items-center gap-1.5 text-sm text-[#6d6e69] transition hover:text-[var(--color-primary)]"
         >
           <ArrowLeft size={14} />
           Back
         </Link>
 
-        <h1 className="font-display text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="font-display text-5xl font-bold tracking-[-0.055em] sm:text-6xl">Settings</h1>
 
         {/* Tabs */}
-        <div className="mt-8 border-b border-zinc-200">
-          <div className="flex gap-1">
+        <div className="mt-10 border-b border-[#d9d8d1]">
+          <div className="flex gap-8">
             <TabButton
               active={tab === "account"}
               onClick={() => setTab("account")}
@@ -92,6 +93,7 @@ function SettingsContent() {
           </AnimatePresence>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
@@ -110,8 +112,8 @@ function TabButton({
       onClick={onClick}
       className={`relative -mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition ${
         active
-          ? "border-zinc-900 text-zinc-900"
-          : "border-transparent text-zinc-500 hover:text-zinc-700"
+          ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+          : "border-transparent text-[#777872] hover:text-[#33332f]"
       }`}
     >
       {children}
@@ -241,11 +243,11 @@ function AccountTab() {
     .toUpperCase();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* Cover photo + Avatar row */}
       <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
-        <Section title="Cover photo" className="!mt-0">
-          <div className="relative h-32 w-full overflow-hidden rounded-xl border border-zinc-200 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)]">
+        <Section title="Cover photo" className="!mt-0 !border-0 !pt-0">
+          <div className="relative h-36 w-full overflow-hidden rounded-[1rem] border border-[#deddd6] bg-[var(--color-primary)]">
             {coverImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -259,7 +261,7 @@ function AccountTab() {
                 type="button"
                 onClick={onPickCover}
                 disabled={busy}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-zinc-700 backdrop-blur hover:bg-white"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#3d3d39] backdrop-blur hover:bg-white"
               >
                 <Camera size={11} />
                 {coverImageUrl ? "Change" : "Add cover"}
@@ -269,7 +271,7 @@ function AccountTab() {
                   type="button"
                   onClick={() => removeCoverImage({})}
                   disabled={busy}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-zinc-700 backdrop-blur hover:bg-white"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#3d3d39] backdrop-blur hover:bg-white"
                 >
                   <X size={11} />
                   Remove
@@ -292,13 +294,13 @@ function AccountTab() {
           </p>
         </Section>
 
-        <Section title="Profile photo" className="!mt-0">
+        <Section title="Profile photo" className="!mt-0 !border-0 !pt-0">
           <div className="flex flex-col items-center gap-2">
             <button
               type="button"
               onClick={onPickAvatar}
               disabled={busy}
-              className="group relative h-24 w-24 overflow-hidden rounded-full border-2 border-dashed border-zinc-300 transition hover:border-[var(--color-primary)]"
+              className="group relative h-28 w-28 overflow-hidden rounded-[1.25rem] border-2 border-dashed border-[#c9c8c0] transition hover:border-[var(--color-primary)]"
             >
               {me?.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -308,7 +310,7 @@ function AccountTab() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-lg font-bold text-white">
+                <div className="flex h-full w-full items-center justify-center bg-[var(--color-primary)] text-xl font-bold text-white">
                   {profileInitials}
                 </div>
               )}
@@ -392,7 +394,7 @@ function AccountTab() {
             <button
               type="submit"
               disabled={busy || !!handleErr}
-              className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 size={12} className="animate-spin" />
@@ -455,7 +457,7 @@ function DeactivateSection() {
           <button
             onClick={onDeactivate}
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100"
           >
             {busy ? "Deactivating..." : "Yes, deactivate"}
           </button>
@@ -470,7 +472,7 @@ function DeactivateSection() {
       ) : (
         <button
           onClick={() => setConfirming(true)}
-          className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
         >
           Deactivate
         </button>
@@ -564,7 +566,7 @@ function Toggle({
         type="button"
         onClick={onChange}
         className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          on ? "bg-zinc-900" : "bg-zinc-200"
+          on ? "bg-[var(--color-primary)]" : "bg-[#ddddd6]"
         }`}
         aria-pressed={on}
       >
@@ -592,8 +594,8 @@ function Section({
   className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6 ${className}`}>
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+    <section className={`border-t border-[#deddd6] py-8 first:border-t-0 ${className}`}>
+      <h2 className="text-sm font-bold text-[#33332f]">
         {title}
       </h2>
       <div className="mt-3">{children}</div>

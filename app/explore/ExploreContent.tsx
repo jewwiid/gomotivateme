@@ -10,8 +10,8 @@ import { api } from "@/convex/_generated/api";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES, FEATURED_CATEGORIES, getCategory } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
-import { useCurrentUser } from "@/lib/useCurrentUser";
-import { Logo } from "@/components/Logo";
+import { Header } from "@/components/Header";
+import { SiteFooter } from "@/components/SiteFooter";
 
 type Tab = "goals" | "motivators" | "categories";
 
@@ -35,7 +35,6 @@ export function ExploreContent() {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useCurrentUser();
 
   const initialTabRaw = params.get("tab") as Tab | null;
   const initialTab: Tab = initialTabRaw && VALID_TABS.includes(initialTabRaw) ? initialTabRaw : "goals";
@@ -66,76 +65,30 @@ export function ExploreContent() {
   }, [tab, activeCategory, debouncedQ]);
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-zinc-900">
-      {/* Top nav — same shape as the home page, with an "Explore" active
-          indicator so the location is obvious. */}
-      <header className="border-b border-zinc-200 bg-white/95 backdrop-blur sticky top-0 z-20">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
-          <Logo href="/" height={28} />
-          <nav className="flex items-center gap-1 sm:gap-3 text-sm">
-            <Link
-              href="/explore"
-              className="rounded-md bg-zinc-100 px-3 py-1.5 font-medium text-zinc-900"
-              aria-current="page"
-            >
-              Explore
-            </Link>
-            {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="hidden sm:inline text-zinc-700 transition hover:text-zinc-900"
-                >
-                  My goals
-                </Link>
-                <Link
-                  href="/dashboard/new"
-                  className="rounded-full bg-[var(--color-primary)] px-4 py-1.5 font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-                >
-                  New goal
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden sm:inline text-zinc-700 transition hover:text-zinc-900"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-full bg-[var(--color-primary)] px-4 py-1.5 font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-                >
-                  Start a goal
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+      <Header />
 
       {/* Page hero — title, subtitle, search bar */}
-      <section className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
+      <section>
+        <div className="mx-auto max-w-[80rem] px-5 py-14 sm:px-8 sm:py-20">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-center"
+            className="max-w-4xl"
           >
+            <p className="brand-kicker">Find a goal to stand behind</p>
             <h1
-              className="font-display text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl"
-              style={{ letterSpacing: "-0.02em" }}
+              className="mt-3 font-display text-balance text-5xl font-bold leading-[0.93] tracking-[-0.06em] text-[#292929] sm:text-7xl"
             >
-              Explore goals &amp; the people behind them
+              Small steps. Real people.
             </h1>
-            <p className="mx-auto mt-2 max-w-2xl text-sm text-zinc-600 sm:text-base">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[#686963] sm:text-lg">
               Browse public goals, follow motivators, or jump into a category that fits you.
             </p>
           </motion.div>
 
-          <div className="mx-auto mt-6 max-w-2xl">
+          <div className="mt-8 max-w-xl">
             <div className="relative">
               <Search
                 size={16}
@@ -151,24 +104,24 @@ export function ExploreContent() {
                     ? "Search by name or handle…"
                     : "Search categories…"
                 }
-                className="w-full rounded-full border border-zinc-300 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 placeholder:text-zinc-400 shadow-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                className="w-full rounded-xl border border-[#c9c8c0] bg-transparent py-3.5 pl-11 pr-4 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
               />
             </div>
           </div>
 
           {/* Tab bar — pill style, single-select */}
-          <div className="mt-8 flex items-center justify-center">
-            <div className="inline-flex rounded-full border border-zinc-200 bg-white p-1 shadow-sm">
+          <div className="mt-10 flex items-center">
+            <div className="inline-flex gap-5 border-b border-[#deddd6]">
               {TAB_META.map((t) => {
                 const active = tab === t.id;
                 return (
                   <button
                     key={t.id}
                     onClick={() => setTab(t.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                    className={`inline-flex items-center gap-1.5 -mb-px border-b-2 px-0 py-2.5 text-sm font-semibold transition ${
                       active
-                        ? "bg-[var(--color-primary)] text-white shadow-sm"
-                        : "text-zinc-600 hover:text-zinc-900"
+                        ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                        : "border-transparent text-[#777872] hover:text-[#33332f]"
                     }`}
                   >
                     {t.icon}
@@ -181,7 +134,7 @@ export function ExploreContent() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main className="mx-auto max-w-[80rem] px-5 py-8 sm:px-8 sm:py-12">
         {tab === "goals" && (
           <GoalsTab
             activeCategory={activeCategory}
@@ -193,11 +146,7 @@ export function ExploreContent() {
         {tab === "categories" && <CategoriesTab query={debouncedQ} />}
       </main>
 
-      <footer className="border-t border-zinc-200 bg-white py-10 text-xs text-zinc-500">
-        <div className="mx-auto max-w-6xl px-6">
-          <p>© {new Date().getFullYear()} gomotivateme · Where personal goals gain momentum.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
@@ -257,7 +206,7 @@ function GoalsTab({
       {goals === undefined ? (
         <SkeletonGrid />
       ) : goals.length === 0 ? (
-        <div className="flex flex-col items-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-16 text-center">
+        <div className="flex flex-col items-center border-y border-dashed border-[#c9c8c0] px-6 py-16 text-center">
           <Sparkles size={28} className="mb-3 text-zinc-400" />
           <p className="text-sm text-zinc-600">
             {query
@@ -268,7 +217,7 @@ function GoalsTab({
           </p>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {goals.map((g: any, i: number) => {
             const coverUrl = g.coverImageId ? coverUrls?.[g.coverImageId] : null;
             return (
@@ -280,9 +229,9 @@ function GoalsTab({
               >
                 <Link
                   href={`/o/${g.slug}`}
-                  className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:border-zinc-300 hover:shadow-md"
+                  className="group block"
                 >
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-[var(--color-primary-soft)] to-[var(--color-accent-soft)]">
+                  <div className="relative aspect-[1.4/1] w-full overflow-hidden rounded-[1rem] bg-[#e8edf9]">
                     {coverUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -291,13 +240,13 @@ function GoalsTab({
                         className="h-full w-full object-cover transition group-hover:scale-105"
                       />
                     ) : null}
-                    <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-zinc-700 backdrop-blur">
+                    <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#4d4e49] backdrop-blur">
                       <CategoryIcon category={g.category} size={10} />
                       {g.category}
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug text-zinc-900">
+                  <div className="px-1 pt-3">
+                    <h3 className="line-clamp-2 font-display text-lg font-bold leading-snug tracking-[-0.035em] text-[#292929]">
                       {g.title}
                     </h3>
                     {g.summary && (
@@ -312,7 +261,7 @@ function GoalsTab({
                       <span className="mx-1.5">·</span>
                       <span>{relativeTime(g.createdAt)}</span>
                     </div>
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-4 space-y-2">
                       <MiniProgress
                         label="Goal"
                         pct={g.progress}
