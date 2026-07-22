@@ -7,11 +7,9 @@ import { ArrowRight, Search, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, FEATURED_CATEGORIES } from "@/lib/categories";
 import { formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-
-const FEATURED_CATEGORIES = CATEGORIES.slice(0, 6);
 
 const SUPPORT_TYPE_META: Array<{
   id: string;
@@ -506,7 +504,7 @@ export default function HomePage() {
             <div>
               <p className="mb-2 text-sm font-semibold text-zinc-900">Explore</p>
               <div className="grid grid-cols-2 gap-1">
-                {CATEGORIES.slice(0, 8).map((c) => (
+                {FEATURED_CATEGORIES.map((c) => (
                   <a
                     key={c.id}
                     href="#explore"

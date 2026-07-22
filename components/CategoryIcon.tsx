@@ -1,22 +1,47 @@
 import {
-  Scale,
-  Dumbbell,
-  BookOpen,
-  Repeat,
-  Palette,
+  // New (GoFundMe-shaped) categories
+  Stethoscope,
+  Flame,
+  Siren,
+  HeartHandshake,
+  GraduationCap,
+  PawPrint,
+  Leaf,
   Briefcase,
+  Users,
+  Trophy,
+  Palette,
+  Calendar,
+  Church,
+  UsersRound,
+  Dumbbell,
+  Plane,
+  HandHeart,
   Sparkles,
+  // Generic fallback
   LucideIcon,
 } from "lucide-react";
 import { getCategory } from "@/lib/categories";
 
 const ICONS: Record<string, LucideIcon> = {
-  scale: Scale,
-  dumbbell: Dumbbell,
-  book: BookOpen,
-  repeat: Repeat,
-  palette: Palette,
+  // GoFundMe-shaped
+  stethoscope: Stethoscope,
+  flame: Flame,
+  siren: Siren,
+  "heart-handshake": HeartHandshake,
+  "graduation-cap": GraduationCap,
+  "paw-print": PawPrint,
+  leaf: Leaf,
   briefcase: Briefcase,
+  users: Users,
+  trophy: Trophy,
+  palette: Palette,
+  calendar: Calendar,
+  church: Church,
+  "users-round": UsersRound,
+  dumbbell: Dumbbell,
+  plane: Plane,
+  "hand-heart": HandHeart,
   sparkles: Sparkles,
 };
 

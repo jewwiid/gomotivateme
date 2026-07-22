@@ -8,16 +8,24 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { buildSlug, computeProgress, newMilestoneTiers } from "./utils";
 
 const CATEGORIES = [
-  "weight",
-  "fitness",
-  "learning",
-  "habit",
-  "creative",
+  "medical",
+  "memorial",
+  "emergency",
+  "charity",
+  "education",
+  "animal",
+  "environment",
   "business",
-  "personal",
   "community",
-  "adventure",
-  "other",
+  "competition",
+  "creative",
+  "event",
+  "faith",
+  "family",
+  "sports",
+  "travel",
+  "volunteer",
+  "wishes",
 ] as const;
 
 const SUPPORT_TYPES = [

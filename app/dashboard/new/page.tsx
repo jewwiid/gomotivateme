@@ -69,7 +69,7 @@ function NewGoalContent() {
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [story, setStory] = useState("");
-  const [category, setCategory] = useState<CategoryId>("weight");
+  const [category, setCategory] = useState<CategoryId>("creative");
   const [progressType, setProgressType] = useState<"number" | "streak" | "milestones">("number");
   const [direction, setDirection] = useState<"increase" | "decrease">("decrease");
   const [unit, setUnit] = useState("kg");
