@@ -24,7 +24,7 @@ export function Header() {
       className="sticky top-0 z-40 border-b border-[var(--color-border)] glass"
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Logo href="/" markSize={32} />
+        <Logo href="/" height={32} />
 
         <nav className="flex items-center gap-1 sm:gap-3 text-sm">
           <Link

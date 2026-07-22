@@ -86,7 +86,7 @@ export default function HomePage() {
       {/* Top nav */}
       <header className="border-b border-zinc-200 bg-white/95 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3 text-sm">
-          <Logo href="/" markSize={28} />
+          <Logo href="/" height={28} />
           <nav className="flex items-center gap-3 text-sm">
             <Link href="/explore" className="hidden text-zinc-700 transition hover:text-zinc-900 sm:inline">
               Explore
@@ -490,7 +490,7 @@ export default function HomePage() {
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <div className="mb-2">
-                <Logo href="/" markSize={24} />
+                <Logo href="/" height={24} />
               </div>
               <p>Where personal goals gain momentum.</p>
             </div>
