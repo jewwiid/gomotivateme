@@ -51,6 +51,15 @@ export function translateAuthError(
     return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
   }
 
+  // @convex-dev/auth throws "InvalidAccountId" when no account exists
+  // for the supplied email. This is signIn-only — signup would have
+  // created the row. We use a soft nudge to the sign-up flow.
+  if (lc.includes("invalidaccountid") || lc.includes("invalid account id")) {
+    return mode === "signIn"
+      ? "No account with that email. Try creating one — it's free."
+      : "Couldn't create your account. Please try again.";
+  }
+
   // @convex-dev/auth throws "Invalid credentials" for both unknown
   // email and wrong password — we don't differentiate, on purpose.
   if (lc.includes("invalid credentials") || lc.includes("invalid sign")) {

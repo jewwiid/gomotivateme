@@ -93,28 +93,29 @@ export default function SignupPage() {
         name,
         flow: "signUp",
       });
-      // Set the handle after auth so the session is established. If it
-      // fails (taken, invalid) the account still exists — they'll fix it
-      // in settings on next visit.
+      // Navigate IMMEDIATELY so the user lands on the dashboard. The
+      // auth token is still propagating client-side, and the inline
+      // `setHandle` mutation was racing it (Convex logs were full of
+      // "Not signed in" right after signIn). Defer the handle set to
+      // a microtask so the auth context has time to land. If the
+      // handle is missing on the user record, they can set it in
+      // settings on next visit — nothing breaks.
       if (handle.trim()) {
-        try {
-          await setHandle({ handle: handle.trim() });
-        } catch (handleError) {
-          // Surface a soft warning on the dashboard via localStorage so
-          // the next page can show "your handle couldn't be saved".
-          if (typeof window !== "undefined") {
+        const desiredHandle = handle.trim();
+        queueMicrotask(() => {
+          setHandle({ handle: desiredHandle }).catch(() => {
+            // Soft-fail: queue the warning for the dashboard, never
+            // block the signup flow.
             try {
               sessionStorage.setItem(
                 "signup-handle-warning",
-                handleError instanceof Error
-                  ? handleError.message
-                  : "Could not save handle"
+                "We saved your account but couldn't set the handle — pick one in settings."
               );
             } catch {
-              // sessionStorage might be unavailable; safe to ignore.
+              // sessionStorage might be unavailable
             }
-          }
-        }
+          });
+        });
       }
       router.push("/dashboard");
     } catch (e) {
