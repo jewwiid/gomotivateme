@@ -4,6 +4,40 @@ Two parts: **Convex** (database + auth + file storage) and **Vercel** (the web a
 
 ---
 
+## 0. `@convex-dev/auth` — generate and set the JWT keys
+
+`@convex-dev/auth` signs session tokens with an RS256 keypair. You have to set `JWT_PRIVATE_KEY` and `JWKS` on the Convex deployment before any signIn/signUp will work — without them every auth call throws `Missing environment variable JWT_PRIVATE_KEY`, which the client surfaces as the opaque `The string did not match the expected pattern`.
+
+The CLI does this for you:
+
+```bash
+npx @convex-dev/auth --prod        # interactive — confirms overwrite
+```
+
+If you want to do it manually (or to seed a fresh project that doesn't have the CLI's prompts available), generate the keys with `jose`:
+
+```bash
+node -e "
+const jose = require('jose');
+const fs = require('fs');
+(async () => {
+  const { publicKey, privateKey } = await jose.generateKeyPair('RS256', { extractable: true });
+  const priv = (await jose.exportPKCS8(privateKey)).trimEnd().replace(/\n/g, ' ');
+  fs.writeFileSync('/tmp/jwt_priv.txt', priv);
+  const jwks = JSON.stringify({ keys: [{ use: 'sig', ...await jose.exportJWK(publicKey) }] });
+  fs.writeFileSync('/tmp/jwks.json', jwks);
+})();
+"
+cat /tmp/jwt_priv.txt | npx convex env set JWT_PRIVATE_KEY
+cat /tmp/jwks.json   | npx convex env set JWKS
+```
+
+Repeat for the prod deployment (append `--prod` or use `npx convex env set --prod`).
+
+**Note:** `npx convex env set NAME "value"` breaks if the value starts with `--` (PEM keys do). Pipe via stdin (`cat file | npx convex env set NAME`) or use `--from-file`.
+
+---
+
 ## 1. Set up Convex
 
 ```bash
