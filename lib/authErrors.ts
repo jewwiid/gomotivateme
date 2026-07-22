@@ -31,18 +31,35 @@ export function validatePasswordClient(
  * a user can act on. The Convex HTTP client often wraps the real message
  * as "[CONVEX M(auth:store)] [ERROR] …" or strips it down to "Server Error";
  * we pattern-match on the substrings that survive.
+ *
+ * For ConvexError instances we also peek at `err.data` — sometimes the
+ * original string is in `data` while `.message` is the wrapped form.
  */
 export function translateAuthError(
   err: unknown,
   mode: "signIn" | "signUp"
 ): string {
-  const raw =
+  // Pull text from BOTH `.message` and `.data` so we catch the case
+  // where the Convex HTTP client swallowed the original message into
+  // a generic "Server Error" but kept the real string in `data`.
+  const message =
     err instanceof Error
       ? err.message
       : typeof err === "string"
         ? err
         : "";
-  const lc = raw.toLowerCase();
+  // ConvexError stores the original payload in `.data`. If it's a
+  // string, it's usually the same as the message; if it's an object,
+  // the message field might be the only useful string. Concat so our
+  // substring patterns have the most signal.
+  const dataStr =
+    err && typeof err === "object" && "data" in err
+      ? typeof (err as { data: unknown }).data === "string"
+        ? ((err as { data: string }).data ?? "")
+        : JSON.stringify((err as { data: unknown }).data ?? "")
+      : "";
+  const combined = `${message}\n${dataStr}`;
+  const lc = combined.toLowerCase();
 
   // The Password provider's default validator throws "Invalid password"
   // when the length is < 8. The Convex HTTP client usually keeps the
@@ -73,8 +90,16 @@ export function translateAuthError(
   }
 
   // Already-exists during signUp. The createAccount helper throws
-  // `Account ${account.id} already exists`.
-  if (lc.includes("already exists") || lc.includes("already been registered")) {
+  // `Account ${account.id} already exists` from the @convex-dev/auth
+  // Password provider. We match on the message itself, the
+  // `createaccount` function name (in case the message got redacted
+  // by Convex's error wrapper), and the data field for the same
+  // reason. Either way: tell the user to sign in instead.
+  if (
+    lc.includes("already exists") ||
+    lc.includes("already been registered") ||
+    (lc.includes("createaccount") && lc.includes("exists"))
+  ) {
     if (mode === "signUp") {
       return "An account with that email already exists. Try signing in.";
     }
@@ -108,8 +133,8 @@ export function translateAuthError(
   // Last resort: show the raw message if it looks user-friendly,
   // otherwise a generic fallback. The Convex client usually returns
   // a "Server Error" string in this case.
-  if (raw && raw.length < 200 && !raw.startsWith("[")) {
-    return raw;
+  if (message && message.length < 200 && !message.startsWith("[")) {
+    return message;
   }
   return mode === "signIn"
     ? "Couldn't sign you in. Please try again."

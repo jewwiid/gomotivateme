@@ -119,6 +119,12 @@ export default function SignupPage() {
       }
       router.push("/dashboard");
     } catch (e) {
+      // Log the raw error in the console so we can debug future
+      // translation gaps. The Convex HTTP client occasionally hides
+      // the real message behind a "Server Error" wrapper, so knowing
+      // the actual `.message` / `.data` shape is gold.
+      // eslint-disable-next-line no-console
+      console.warn("[signup] auth error:", e);
       setErr(translateAuthError(e, "signUp"));
     } finally {
       setBusy(false);

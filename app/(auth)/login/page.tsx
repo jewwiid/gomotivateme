@@ -52,6 +52,8 @@ export default function LoginPage() {
       await signIn("password", { email, password, flow: "signIn" });
       router.push("/dashboard");
     } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn("[login] auth error:", e);
       setErr(translateAuthError(e, "signIn"));
     } finally {
       setBusy(false);
