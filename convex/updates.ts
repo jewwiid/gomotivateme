@@ -198,6 +198,12 @@ export const add = mutation({
       throw new Error("Use the dedicated media update flow");
     }
 
+    // Validate milestoneId belongs to this goal if provided.
+    if (args.milestoneId && goal.milestones) {
+      const exists = goal.milestones.some((m: any) => m.id === args.milestoneId);
+      if (!exists) throw new Error("Milestone not found on this goal");
+    }
+
     const updateId = await ctx.db.insert("updates", {
       goalId: args.goalId,
       ownerId: userId,

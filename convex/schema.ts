@@ -238,6 +238,7 @@ export default defineSchema({
     .index("by_goal", ["goalId"])
     .index("by_goal_created", ["goalId", "createdAt"])
     .index("by_goal_visible_created", ["goalId", "publicVisible", "createdAt"])
+    .index("by_goal_milestone_created", ["goalId", "milestoneId", "createdAt"])
     .index("by_moderation_status_created", ["moderationStatus", "createdAt"]),
 
   /** One-use, owner-bound tokens for direct media uploads. */

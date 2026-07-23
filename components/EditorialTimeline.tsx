@@ -19,6 +19,7 @@ interface UpdateDoc {
   media?: UpdateMediaItem[];
   linkUrl?: string;
   linkTitle?: string;
+  milestoneId?: string;
   createdAt: number;
 }
 
@@ -144,6 +145,14 @@ export function EditorialTimeline({
               {/* Content */}
               <div className="border-l border-zinc-200 pl-4 sm:pl-6">
                 <EntryHeader u={u} />
+                {u.milestoneId && u.type !== "milestone" && (() => {
+                  const ms = milestones?.find((m) => m.id === u.milestoneId);
+                  return ms ? (
+                    <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-primary)]">
+                      {ms.title}
+                    </span>
+                  ) : null;
+                })()}
                 <EntryBody u={u} unit={unit} imageUrlOf={imageUrlOf} />
                 {u.note && (
                   <p className="mt-2 text-sm leading-relaxed text-zinc-700">
