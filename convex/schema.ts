@@ -474,6 +474,8 @@ export default defineSchema({
     isCoreMotivator: v.boolean(),
     acceptedAt: v.number(),
     lastCheckInAt: v.optional(v.number()),
+    /** Last time the check-in-due reminder email fired (prevents daily spam). */
+    lastReminderAt: v.optional(v.number()),
   })
     .index("by_goal", ["goalId"])
     .index("by_goal_status", ["goalId", "status"])
@@ -563,7 +565,9 @@ export default defineSchema({
     /** Master opt-out — suppresses ALL lifecycle email. Transactional still sends. */
     unsubscribedAll: v.boolean(),
     updatedAt: v.number(),
-  }).index("by_user", ["userId"]),
+  })
+    .index("by_user", ["userId"])
+    .index("by_weekly_digest", ["weeklyDigest"]),
 
   /**
    * Email send queue + audit log.

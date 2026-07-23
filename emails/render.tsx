@@ -9,6 +9,8 @@ import { NewUpdateEmail, NewUpdateEmailProps } from "./newUpdate";
 import { TargetHitEmail, TargetHitEmailProps } from "./targetHit";
 import { EmailVerificationEmail, EmailVerificationEmailProps } from "./emailVerification";
 import { PasswordResetEmail, PasswordResetEmailProps } from "./passwordReset";
+import { WeeklyDigestEmail, WeeklyDigestEmailProps } from "./weeklyDigest";
+import { CheckInDueEmail, CheckInDueEmailProps } from "./checkInDue";
 
 /**
  * Map a templateId + payload to a { subject, component } pair.
@@ -102,6 +104,22 @@ export function renderTemplate(
       return {
         subject: "Reset your password",
         component: <PasswordResetEmail {...p} />,
+      };
+    }
+
+    case "weeklyDigest": {
+      const p = payload as WeeklyDigestEmailProps;
+      return {
+        subject: "Your week on gomotivateme",
+        component: <WeeklyDigestEmail {...p} />,
+      };
+    }
+
+    case "checkInDue": {
+      const p = payload as CheckInDueEmailProps;
+      return {
+        subject: `${p.ownerName}'s check-in is due`,
+        component: <CheckInDueEmail {...p} />,
       };
     }
 

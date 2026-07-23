@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -9,13 +10,16 @@ import {
   Check,
   Heart,
   Lightbulb,
+  MessageSquare,
   Sparkles,
   Target,
   Users,
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { RequireAuth } from "@/components/RequireAuth";
+import { CheckInComposer } from "@/components/CheckInComposer";
 
 const ROLE_META: Record<string, { label: string; icon: typeof Heart; color: string }> = {
   encourager: { label: "Encourager", icon: Heart, color: "text-rose-500" },
@@ -76,33 +80,14 @@ function MotivateContent() {
             <EmptyState />
           ) : (
             <div className="mt-10 divide-y divide-[#deddd6] border-y border-[#deddd6]">
-              {pledges.map((pledge, index) => {
-                const meta = ROLE_META[pledge.role] ?? ROLE_META.encourager;
-                const Icon = meta.icon;
-                return (
-                  <Link
-                    key={pledge._id}
-                    href={`/o/${pledge.goalId}`}
-                    className="group grid gap-4 py-5 transition sm:grid-cols-[11rem_minmax(0,1fr)_9rem_1.4rem] sm:items-center sm:gap-7"
-                  >
-                    <div className="aspect-[1.7/1] overflow-hidden rounded-xl bg-[#e8edf9]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={ROW_MEDIA[index % ROW_MEDIA.length]} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
-                    </div>
-                    <div className="min-w-0">
-                      <h2 className="truncate font-display text-2xl font-bold tracking-[-0.04em]">{goalTitleById.get(pledge.goalId) ?? "A goal in your circle"}</h2>
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#686963]">
-                        <span className={`inline-flex items-center gap-1.5 font-semibold ${meta.color}`}><Icon size={15} /> {meta.label}</span>
-                        <span className="h-4 w-px bg-[#deddd6]" />
-                        <span>{FREQ_LABEL[pledge.checkInFrequency] ?? pledge.checkInFrequency}</span>
-                      </div>
-                      {pledge.pledgeText && <p className="mt-2 line-clamp-1 text-sm italic text-[#777872]">“{pledge.pledgeText}”</p>}
-                    </div>
-                    <div className="text-sm text-[#686963] sm:text-right">{pledge.isCoreMotivator ? "Core circle" : "Community circle"}</div>
-                    <ArrowRight size={20} className="hidden text-[#555650] transition group-hover:translate-x-1 group-hover:text-[var(--color-primary)] sm:block" />
-                  </Link>
-                );
-              })}
+              {pledges.map((pledge, index) => (
+                <MotivateRow
+                  key={pledge._id}
+                  pledge={pledge}
+                  index={index}
+                  goalTitle={goalTitleById.get(pledge.goalId)}
+                />
+              ))}
             </div>
           )}
         </section>
@@ -119,6 +104,98 @@ function MotivateContent() {
       </main>
     </div>
   );
+}
+
+function MotivateRow({
+  pledge,
+  index,
+  goalTitle,
+}: {
+  pledge: {
+    _id: Id<"motivatorPledges">;
+    goalId: string;
+    role: string;
+    checkInFrequency: string;
+    pledgeText: string | null;
+    status: string;
+    isCoreMotivator: boolean;
+    lastCheckInAt: number | null;
+  };
+  index: number;
+  goalTitle?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const meta = ROLE_META[pledge.role] ?? ROLE_META.encourager;
+  const Icon = meta.icon;
+
+  const lastCheckInLabel = pledge.lastCheckInAt
+    ? `Last check-in ${timeAgoShort(pledge.lastCheckInAt)}`
+    : "No check-ins yet";
+
+  return (
+    <div className="py-5">
+      <div className="grid gap-4 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:items-center sm:gap-7">
+        <Link
+          href={`/o/${pledge.goalId}`}
+          className="group aspect-[1.7/1] overflow-hidden rounded-xl bg-[#e8edf9]"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={ROW_MEDIA[index % ROW_MEDIA.length]} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
+        </Link>
+        <div className="min-w-0">
+          <Link href={`/o/${pledge.goalId}`} className="group">
+            <h2 className="truncate font-display text-2xl font-bold tracking-[-0.04em] transition group-hover:text-[var(--color-primary)]">
+              {goalTitle ?? "A goal in your circle"}
+            </h2>
+          </Link>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#686963]">
+            <span className={`inline-flex items-center gap-1.5 font-semibold ${meta.color}`}><Icon size={15} /> {meta.label}</span>
+            <span className="h-4 w-px bg-[#deddd6]" />
+            <span>{FREQ_LABEL[pledge.checkInFrequency] ?? pledge.checkInFrequency}</span>
+            <span className="h-4 w-px bg-[#deddd6]" />
+            <span className="text-[#888983]">{lastCheckInLabel}</span>
+          </div>
+          {pledge.pledgeText && <p className="mt-2 line-clamp-1 text-sm italic text-[#777872]">“{pledge.pledgeText}”</p>}
+        </div>
+        <div className="flex items-center gap-3 sm:justify-end">
+          <span className="hidden text-sm text-[#686963] sm:inline">{pledge.isCoreMotivator ? "Core" : "Community"}</span>
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
+              expanded
+                ? "bg-[#f0efe9] text-[#292929]"
+                : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
+            }`}
+          >
+            <MessageSquare size={13} />
+            Check in
+          </button>
+        </div>
+      </div>
+      {expanded && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          transition={{ duration: 0.2 }}
+          className="mt-4 overflow-hidden pl-0 sm:pl-[calc(11rem+1.75rem)]"
+        >
+          <CheckInComposer pledgeId={pledge._id} onDone={() => setExpanded(false)} />
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+function timeAgoShort(ms: number): string {
+  const diff = Date.now() - ms;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return "just now";
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks}w ago`;
 }
 
 function EmptyState() {

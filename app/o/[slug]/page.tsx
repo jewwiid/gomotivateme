@@ -29,6 +29,7 @@ import { MomentumStats } from "@/components/MomentumStats";
 import { MobileActionBar } from "@/components/MobileActionBar";
 import { ReportButton } from "@/components/ReportButton";
 import { MotivationCircleWidget } from "@/components/MotivationCircleWidget";
+import { CheckInList } from "@/components/CheckInList";
 import { Header } from "@/components/Header";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 
@@ -271,6 +272,9 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
             </section>
 
             <RecentActivity goalId={goalId} />
+
+            {/* Owner-only: check-ins from motivators */}
+            {isOwner && <CheckInList goalId={goalId} />}
 
             <SupporterWall goalId={goalId} />
 

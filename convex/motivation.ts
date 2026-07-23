@@ -729,3 +729,159 @@ export const myApplicationForGoal = query({
     return apps.find((a) => a.goalId === goalId) ?? null;
   },
 });
+
+// =====================================================================
+// Check-ins — the committed-tier follow-through
+// =====================================================================
+
+const CHECK_IN_TYPES = [
+  "encouragement",
+  "accountability",
+  "advice",
+  "reflection",
+  "milestone",
+] as const;
+
+/**
+ * Motivator: create a check-in on a goal they've pledged to. Stamps
+ * lastCheckInAt on the pledge (the field that was previously never written).
+ * Notifies the goal owner via email.
+ */
+export const createCheckIn = mutation({
+  args: {
+    pledgeId: v.id("motivatorPledges"),
+    type: v.string(),
+    body: v.string(),
+    updateId: v.optional(v.id("updates")),
+  },
+  handler: async (ctx, { pledgeId, type, body, updateId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+
+    const pledge = await ctx.db.get(pledgeId);
+    if (!pledge) throw new Error("Pledge not found");
+    if (pledge.userId !== userId) throw new Error("Not your pledge");
+    if (pledge.status !== "active") throw new Error("This pledge isn't active");
+
+    if (!CHECK_IN_TYPES.includes(type as (typeof CHECK_IN_TYPES)[number])) {
+      throw new Error("Invalid check-in type");
+    }
+    const trimmed = body.trim();
+    if (trimmed.length === 0) throw new Error("Check-in message is empty");
+    if (trimmed.length > 1000) throw new Error("Check-in is too long (1000 max)");
+
+    const goal = await ctx.db.get(pledge.goalId);
+    if (!goal) throw new Error("Goal not found");
+
+    const now = Date.now();
+    await ctx.db.insert("checkIns", {
+      goalId: pledge.goalId,
+      motivatorId: userId,
+      creatorId: goal.ownerId,
+      type: type as any,
+      body: trimmed,
+      updateId,
+      createdAt: now,
+    });
+    await ctx.db.patch(pledgeId, { lastCheckInAt: now });
+
+    // Email B6-style — notify the goal owner that a motivator checked in.
+    if (goal.ownerId !== userId) {
+      const owner = await ctx.db.get(goal.ownerId);
+      if (owner?.email) {
+        const motivator = await ctx.db.get(userId);
+        await ctx.runMutation(internal.emails.enqueue, {
+          userId: goal.ownerId,
+          toEmail: owner.email,
+          templateId: "supportMessageReceived",
+          category: "transactional",
+          payload: JSON.stringify({
+            ownerName: owner.name ?? owner.handle ?? "there",
+            authorName: motivator?.name ?? motivator?.handle ?? "Someone",
+            goalTitle: goal.title,
+            goalSlug: goal.slug,
+            messageExcerpt: trimmed.slice(0, 160),
+            supportTypeLabel: `a ${type} check-in`,
+          }),
+        });
+      }
+    }
+
+    return { ok: true as const };
+  },
+});
+
+/**
+ * List check-ins for a goal. Visible to the goal owner and to active
+ * motivators on that goal. Returns hydrated check-ins (motivator profile
+ * joined). Newest first.
+ */
+export const listCheckInsForGoal = query({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const goal = await ctx.db.get(goalId);
+    if (!goal) return [];
+
+    const isOwner = goal.ownerId === userId;
+    let isMotivator = false;
+    if (!isOwner) {
+      const pledge = await ctx.db
+        .query("motivatorPledges")
+        .withIndex("by_goal_status", (q) =>
+          q.eq("goalId", goalId).eq("status", "active")
+        )
+        .filter((q) => q.eq(q.field("userId"), userId))
+        .first();
+      isMotivator = !!pledge;
+    }
+    if (!isOwner && !isMotivator) return [];
+
+    const checkIns = await ctx.db
+      .query("checkIns")
+      .withIndex("by_goal_created", (q) => q.eq("goalId", goalId))
+      .order("desc")
+      .take(50);
+
+    // Hydrate motivator profiles in parallel.
+    const motivatorIds = [...new Set(checkIns.map((c) => c.motivatorId))];
+    const profiles = await Promise.all(
+      motivatorIds.map(async (id) => {
+        const u = await ctx.db.get(id);
+        return {
+          id,
+          name: (u as any)?.name ?? (u as any)?.handle ?? "Someone",
+          image: (u as any)?.image ?? null,
+          handle: (u as any)?.handle ?? null,
+        };
+      })
+    );
+    const profileMap = new Map(profiles.map((p) => [p.id, p]));
+
+    return checkIns.map((c) => ({
+      _id: c._id,
+      type: c.type,
+      body: c.body,
+      createdAt: c.createdAt,
+      acknowledgedAt: c.acknowledgedAt ?? null,
+      motivator: profileMap.get(c.motivatorId)!,
+    }));
+  },
+});
+
+/** Owner: mark a check-in as acknowledged (read). */
+export const acknowledgeCheckIn = mutation({
+  args: { checkInId: v.id("checkIns") },
+  handler: async (ctx, { checkInId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const checkIn = await ctx.db.get(checkInId);
+    if (!checkIn) throw new Error("Check-in not found");
+    const goal = await ctx.db.get(checkIn.goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not the goal owner");
+    if (checkIn.acknowledgedAt) return { ok: true }; // already acknowledged
+    await ctx.db.patch(checkInId, { acknowledgedAt: Date.now() });
+    return { ok: true as const };
+  },
+});

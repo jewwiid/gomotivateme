@@ -16,6 +16,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { computeProgress } from "./utils";
 
 // =====================================================================
 // Enqueue — write a notification row from a trigger mutation.
@@ -150,5 +151,175 @@ export const purgeOld = internalMutation({
       if (deleted >= cap) break;
     }
     return { deleted };
+  },
+});
+
+// =====================================================================
+// Weekly digest support — queries called by the Node-action worker.
+// =====================================================================
+
+/**
+ * List all users opted into the weekly digest (and not unsubscribedAll).
+ * Called by the sendWeeklyDigests cron action. Returns { userId, email }[].
+ */
+export const listDigestSubscribers = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const prefs = await ctx.db
+      .query("notificationPrefs")
+      .withIndex("by_weekly_digest", (q) => q.eq("weeklyDigest", true))
+      .collect();
+    return prefs
+      .filter((p) => !p.unsubscribedAll && p.email)
+      .map((p) => ({ userId: p.userId, email: p.email! }));
+  },
+});
+
+/**
+ * Gather everything the weekly digest needs for one user: their active
+ * goals + per-goal weekly activity counts (last 7 days). Returns null if
+ * the user has no active goals or no activity this week (skip the digest).
+ */
+export const getDigestData = internalQuery({
+  args: { userId: v.id("users"), sinceMs: v.optional(v.number()) },
+  handler: async (ctx, { userId, sinceMs }) => {
+    const since = sinceMs ?? Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const user = await ctx.db.get(userId);
+    const firstName = (user as any)?.name?.split(" ")[0] ?? null;
+
+    // Active + paused + completed goals (exclude draft + closed).
+    const allGoals = await ctx.db
+      .query("goals")
+      .withIndex("by_owner_created", (q) => q.eq("ownerId", userId))
+      .collect();
+    const goals = allGoals.filter(
+      (g) => g.status === "active" || g.status === "paused" || g.status === "completed"
+    );
+
+    let totalActivity = 0;
+    const goalData = [];
+    for (const goal of goals) {
+      const [updates, messages, checkIns, supporters] = await Promise.all([
+        ctx.db
+          .query("updates")
+          .withIndex("by_goal_created", (q) =>
+            q.eq("goalId", goal._id).gte("createdAt", since)
+          )
+          .collect(),
+        ctx.db
+          .query("supportMessages")
+          .withIndex("by_goal_created", (q) =>
+            q.eq("goalId", goal._id).gte("createdAt", since)
+          )
+          .collect(),
+        ctx.db
+          .query("checkIns")
+          .withIndex("by_goal_created", (q) =>
+            q.eq("goalId", goal._id).gte("createdAt", since)
+          )
+          .collect(),
+        // No time index on supporters — scan by_goal and filter in JS.
+        ctx.db
+          .query("supporters")
+          .withIndex("by_goal", (q) => q.eq("goalId", goal._id))
+          .collect(),
+      ]);
+
+      const newSupporters = supporters.filter((s) => s.createdAt >= since).length;
+      const activity = updates.length + messages.length + checkIns.length + newSupporters;
+      totalActivity += activity;
+
+      const progressPct = computeProgress(
+        goal.startValue ?? 0,
+        goal.currentValue ?? 0,
+        goal.targetValue ?? 0,
+        goal.direction ?? "increase"
+      );
+
+      goalData.push({
+        title: goal.title,
+        slug: goal.slug,
+        unit: goal.unit,
+        currentValue: goal.currentValue ?? 0,
+        targetValue: goal.targetValue ?? 0,
+        progressPct,
+        progressType: goal.progressType,
+        updates: updates.length,
+        messages: messages.length,
+        checkIns: checkIns.length,
+        newSupporters,
+      });
+    }
+
+    // Skip the digest if there's nothing to report.
+    if (goalData.length === 0 || totalActivity === 0) return null;
+
+    return { firstName, email: (user as any)?.email ?? null, goals: goalData };
+  },
+});
+
+/**
+ * Internal: find active pledges whose check-in cadence has elapsed and
+ * haven't been reminded in this overdue cycle. Returns pledge data +
+ * hydrated motivator/goal info for the reminder email.
+ * Called by the daily sendCheckInReminders cron action.
+ */
+export const listDueCheckIns = internalQuery({
+  args: { nowMs: v.optional(v.number()) },
+  handler: async (ctx, { nowMs }) => {
+    const now = nowMs ?? Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+
+    // Scan all active pledges. This is a table scan but the pledges table
+    // stays small (one row per motivator commitment). Acceptable at scale.
+    const pledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_goal_status", (q) => q.eq("status", "active"))
+      .collect();
+
+    const due = [];
+    for (const pledge of pledges) {
+      // Only weekly + monthly have time-based cadences.
+      if (pledge.checkInFrequency !== "weekly" && pledge.checkInFrequency !== "monthly") {
+        continue;
+      }
+      const cadenceDays = pledge.checkInFrequency === "weekly" ? 7 : 30;
+      const lastActivity = pledge.lastCheckInAt ?? pledge.acceptedAt;
+      const elapsed = now - lastActivity;
+      const cadenceMs = cadenceDays * DAY;
+
+      // Only remind if overdue AND we haven't already reminded for this cycle.
+      // lastReminderAt is set when we send; a new check-in resets lastCheckInAt
+      // so the next overdue window starts fresh.
+      if (elapsed < cadenceMs) continue;
+      if (pledge.lastReminderAt && pledge.lastReminderAt > lastActivity) {
+        // Already reminded for this overdue cycle — skip until they check in.
+        continue;
+      }
+
+      const motivator = await ctx.db.get(pledge.userId);
+      const goal = await ctx.db.get(pledge.goalId);
+      if (!motivator?.email || !goal) continue;
+
+      due.push({
+        pledgeId: pledge._id,
+        motivatorName: motivator.name ?? motivator.handle ?? "there",
+        motivatorEmail: motivator.email,
+        motivatorId: pledge.userId,
+        ownerName: goal.ownerName ?? "Someone",
+        goalTitle: goal.title,
+        goalSlug: goal.slug,
+        daysSinceLastCheckin: Math.floor(elapsed / DAY),
+      });
+    }
+    return due;
+  },
+});
+
+/** Internal: stamp lastReminderAt on a pledge (prevents daily reminder spam). */
+export const markPledgeReminded = internalMutation({
+  args: { pledgeId: v.id("motivatorPledges") },
+  handler: async (ctx, { pledgeId }) => {
+    await ctx.db.patch(pledgeId, { lastReminderAt: Date.now() });
   },
 });
