@@ -64,7 +64,7 @@ const FREQ_META: Record<string, { label: string; description: string }> = {
   afterUpdate: { label: "After each update", description: "React to each milestone" },
   weekly: { label: "Weekly", description: "A regular weekly check-in" },
   monthly: { label: "Monthly", description: "A monthly milestone review" },
-  onRequest: { label: "On request", description: "Stand by — they'll reach out" },
+  onRequest: { label: "On request", description: "Stand by. They'll reach out." },
 };
 
 function ApplyShell({ children }: { children: ReactNode }) {
@@ -259,7 +259,7 @@ export default function ApplyPage() {
             Your application was declined
           </h1>
           <p className="mt-3 text-sm text-zinc-600">
-            The goal owner decided not to add you. That's fine — there are
+            The goal owner decided not to add you. That's fine. There are
             plenty of other goals to support.
           </p>
           <Link
@@ -529,7 +529,7 @@ export default function ApplyPage() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder={
                 isAuto
-                  ? "e.g. I've done a 5K training plan twice — happy to share what worked."
+                  ? "e.g. I've done a 5K training plan twice, happy to share what worked."
                   : "e.g. I've completed a similar goal last year. I'd love to review your monthly milestones."
               }
               required

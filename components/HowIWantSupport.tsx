@@ -29,7 +29,7 @@ const SUPPORT_META: Record<
   },
   join: {
     label: "Join me",
-    description: "Do this together — set your own version",
+    description: "Do this together: set your own version",
     icon: Users,
   },
 };

@@ -104,7 +104,7 @@ export function StructuredSupportComposer({
       <div className="rounded-2xl border-2 border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)] p-6 text-center">
         <h3 className="text-base font-semibold">Sign in to support this goal</h3>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Supporters make a real commitment — that's why we ask you to sign in.
+          Supporters make a real commitment. That's why we ask you to sign in.
         </p>
         <Link
           href={`/login?redirect=${encodeURIComponent(redirectPath)}`}

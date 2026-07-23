@@ -75,7 +75,7 @@ const FREQUENCY_META: Record<
   },
   onRequest: {
     label: "Only when I ask for help",
-    description: "Stand by — they'll reach out when they need you",
+    description: "Stand by. They'll reach out when they need you.",
   },
 };
 

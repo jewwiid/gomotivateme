@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — GoMotivateMe",
+  title: "Privacy Policy: GoMotivateMe",
   description:
     "What gomotivateme.com collects, why, and what you can do about it.",
 };
@@ -40,26 +40,26 @@ export default function PrivacyPage() {
           <SubSection title="Account information">
             <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
               <li>
-                <strong>Email address</strong> — used for sign-in and
+                <strong>Email address</strong>: used for sign-in and
                 important service notifications (password reset, security
                 alerts, account changes). Never used for marketing without
                 explicit opt-in.
               </li>
               <li>
-                <strong>Display name</strong> — what other users see.
+                <strong>Display name</strong>: what other users see.
               </li>
               <li>
-                <strong>Handle</strong> — your public profile URL (e.g.
+                <strong>Handle</strong>: your public profile URL (e.g.
                 gomotivateme.com/u/your-handle). Optional.
               </li>
               <li>
-                <strong>Profile photo and cover image</strong> — optional.
+                <strong>Profile photo and cover image</strong>: optional.
                 Stored on our file storage and served via our CDN.
               </li>
               <li>
-                <strong>Password</strong> — stored only as a one-way hash
+                <strong>Password</strong>: stored only as a one-way hash
                 (scrypt). We can't see your password and we can't recover
-                it — we can only reset it.
+                it: we can only reset it.
               </li>
             </ul>
           </SubSection>
@@ -81,18 +81,18 @@ export default function PrivacyPage() {
           <SubSection title="Usage data">
             <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
               <li>
-                <strong>Authentication logs</strong> — sign-in times, IP
+                <strong>Authentication logs</strong>: sign-in times, IP
                 addresses, user agent strings. Used for security and abuse
                 detection, retained for 90 days.
               </li>
               <li>
-                <strong>Email events</strong> — delivery, open, click
+                <strong>Email events</strong>: delivery, open, click
                 tracking for any emails we send you (only if you've opted
                 into the relevant category). We use Resend as our email
                 provider; they store the same metadata.
               </li>
               <li>
-                <strong>Aggregated analytics</strong> — page views, feature
+                <strong>Aggregated analytics</strong>: page views, feature
                 usage, errors. Stored in aggregate form, not tied to your
                 account unless we explicitly need to debug your account.
               </li>
@@ -165,23 +165,23 @@ export default function PrivacyPage() {
           <SubSection title="Service providers (data processors)">
             <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
               <li>
-                <strong>Convex</strong> — our database and authentication
+                <strong>Convex</strong>: our database and authentication
                 provider. They store your account data, your content, and
                 session tokens. (Data processing agreement in place.)
               </li>
               <li>
-                <strong>Resend</strong> — our transactional and lifecycle
+                <strong>Resend</strong>: our transactional and lifecycle
                 email provider. They see your email address and the emails
                 we send you.
               </li>
               <li>
-                <strong>Vercel</strong> — our web host. They see HTTP
+                <strong>Vercel</strong>: our web host. They see HTTP
                 requests to gomotivateme.com, including your IP address.
                 They do not see authenticated content (the app talks to
                 Convex directly from your browser).
               </li>
               <li>
-                <strong>Cloudflare</strong> — DNS and (for our custom
+                <strong>Cloudflare</strong>: DNS and (for our custom
                 domain) edge proxy. They see request metadata, not your
                 content.
               </li>
@@ -275,37 +275,37 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
             <li>
-              <strong>Access</strong> — request a copy of your data (we'll
+              <strong>Access</strong>: request a copy of your data (we'll
               email you a JSON + CSV export within 7 days).
             </li>
             <li>
-              <strong>Correct</strong> — update your email, name, handle,
+              <strong>Correct</strong>: update your email, name, handle,
               bio, or any other profile field.
             </li>
             <li>
-              <strong>Delete</strong> — delete your account. Your data is
+              <strong>Delete</strong>: delete your account. Your data is
               removed per Section 6.
             </li>
             <li>
-              <strong>Restrict processing</strong> — ask us to stop using
+              <strong>Restrict processing</strong>: ask us to stop using
               your data for a specific purpose (e.g. disable analytics on
               your account).
             </li>
             <li>
-              <strong>Object</strong> — if we ever use your data in a way
+              <strong>Object</strong>: if we ever use your data in a way
               you disagree with, you can object and we'll review.
             </li>
             <li>
-              <strong>Port</strong> — export all your data in a
+              <strong>Port</strong>: export all your data in a
               machine-readable format.
             </li>
             <li>
-              <strong>Withdraw consent</strong> — for any optional
+              <strong>Withdraw consent</strong>: for any optional
               processing, like marketing emails. Unsubscribe links are in
               every email, or use the in-app toggle.
             </li>
             <li>
-              <strong>Complain</strong> — if you're in the EU, you can
+              <strong>Complain</strong>: if you're in the EU, you can
               also lodge a complaint with your local data protection
               authority. We'd prefer you email us first so we can try to
               fix it.

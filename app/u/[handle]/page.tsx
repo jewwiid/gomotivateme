@@ -259,7 +259,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="text-[11px] text-zinc-600">
                     <span className="font-mono tabular-nums">{setupDone}/3</span>{" "}
-                    complete — {3 - setupDone} more to go
+                    complete · {3 - setupDone} more to go
                   </div>
                 </div>
               </div>

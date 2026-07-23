@@ -80,7 +80,7 @@ export function EditorialTimeline({
   if (status === "LoadingFirstPage") {
     return (
       <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-zinc-900">The journey</h2>
+        <h2 className="text-base font-semibold text-zinc-900">Timeline</h2>
         <div className="mt-4 space-y-4">
           {[0, 1, 2].map((i) => (
             <div key={i} className="h-20 animate-pulse rounded-xl bg-zinc-100" />
@@ -103,8 +103,8 @@ export function EditorialTimeline({
       <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
         <h2 className="text-base font-semibold text-zinc-900">
           {nextMilestone
-            ? "Your journey starts with the first step"
-            : "The journey hasn't started yet"}
+            ? "Start with the first step"
+            : "No updates yet"}
         </h2>
         <p className="mt-1 text-sm text-zinc-500">
           {nextMilestone
@@ -117,7 +117,7 @@ export function EditorialTimeline({
 
   return (
     <section className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
-      <h2 className="text-base font-semibold text-zinc-900">The journey</h2>
+      <h2 className="text-base font-semibold text-zinc-900">Timeline</h2>
 
       <ol className="mt-6 space-y-6">
         {updates.map((u: any, i: number) => {

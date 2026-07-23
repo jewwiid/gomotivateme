@@ -55,7 +55,7 @@ export function MomentumStats({
       label: "Supporters",
       value: String(supporterCount),
       sub: supporterTarget
-        ? `${supporterTarget - supporterCount > 0 ? `${supporterTarget - supporterCount} to go` : "Target reached 🎉"}`
+        ? `${supporterTarget - supporterCount > 0 ? `${supporterTarget - supporterCount} to go` : "Target reached"}`
         : "Standing with them",
       icon: Users,
       color: "text-[var(--color-primary)]",

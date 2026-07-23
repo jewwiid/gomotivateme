@@ -46,7 +46,7 @@ export function ReportButton({
         reason,
         details: details || undefined,
       });
-      setMessage(result.submitted ? "Thanks — your report has been sent for review." : "You have already reported this item.");
+      setMessage(result.submitted ? "Thanks. Your report has been sent for review." : "You have already reported this item.");
     } catch {
       setMessage("We could not send that report. Please try again.");
     } finally {

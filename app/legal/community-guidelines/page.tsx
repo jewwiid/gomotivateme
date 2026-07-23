@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Community Guidelines — GoMotivateMe",
+  title: "Community Guidelines: GoMotivateMe",
   description:
-    "How we keep gomotivateme.com a place for real encouragement — what to do, what not to do, and what happens when lines get crossed.",
+    "How we keep gomotivateme.com a place for real encouragement: what to do, what not to do, and what happens when lines get crossed.",
 };
 
 const LAST_UPDATED = "July 22, 2026";
@@ -61,7 +61,7 @@ export default function CommunityGuidelinesPage() {
             </li>
             <li>
               <strong>Honor the goal.</strong> If someone is trying to lose
-              weight, the goal is the goal — don't push a different
+              weight, the goal is the goal: don't push a different
               agenda. If they're recovering, same thing. The goal owner
               decides.
             </li>
@@ -127,19 +127,19 @@ export default function CommunityGuidelinesPage() {
           </p>
           <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
             <li>
-              <strong>Weight and body image</strong> — encouragement should
+              <strong>Weight and body image</strong>: encouragement should
               support the person's actual goal, not push an eating disorder
               or body-shaming culture in either direction.
             </li>
             <li>
-              <strong>Mental health</strong> — GoMotivateMe is peer
+              <strong>Mental health</strong>: GoMotivateMe is peer
               encouragement, not therapy. If someone's struggling with
               clinical depression, suicidal thoughts, or other mental health
               crises, encourage them to seek professional help. The
               platform is not equipped for that.
             </li>
             <li>
-              <strong>Recovery</strong> — sobriety, grief, illness
+              <strong>Recovery</strong>: sobriety, grief, illness
               recovery, leaving a high-control group. These are real. Be
               careful with platitudes, be honest about your own limits,
               and don't try to "fix" anyone.
@@ -165,20 +165,20 @@ export default function CommunityGuidelinesPage() {
 
         <Section title="6. How we respond to violations">
           <p>
-            Our approach is graduated — first time mistakes get a warning,
+            Our approach is graduated: first time mistakes get a warning,
             patterns get removed:
           </p>
           <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
             <li>
-              <strong>First violation</strong> — content removed, you get a
+              <strong>First violation</strong>: content removed, you get a
               written warning with what was wrong and why.
             </li>
             <li>
-              <strong>Repeated violations</strong> — temporary account
+              <strong>Repeated violations</strong>: temporary account
               restriction (24h, then 7d, then 30d).
             </li>
             <li>
-              <strong>Serious violations</strong> — immediate permanent
+              <strong>Serious violations</strong>: immediate permanent
               removal. This is reserved for: doxxing, threats of violence,
               non-consensual intimate imagery, sexual content involving
               minors, or coordinated harassment.

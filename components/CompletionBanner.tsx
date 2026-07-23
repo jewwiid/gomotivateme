@@ -23,11 +23,11 @@ export function CompletionBanner({ goalTitle }: { goalTitle: string }) {
           <Trophy size={28} />
         </motion.div>
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          They did it! 🎉
+          They did it!
         </h2>
         <p className="mt-2 max-w-md text-sm text-[var(--color-text-muted)]">
           <span className="font-semibold text-[var(--color-text)]">{goalTitle}</span> hit 100%.
-          The full journey is below — leave a final note to celebrate.
+          Leave a final note to celebrate.
         </p>
         <PartyPopper size={18} className="mt-3 text-[var(--color-accent)]" />
       </div>

@@ -117,7 +117,7 @@ function DashboardContent() {
               <h2 className="font-display text-xl font-bold tracking-[-0.035em]">A quick reminder</h2>
             </div>
             <p className="mt-3 text-sm leading-6 text-[#686963]">
-              The smallest update can give someone a clear way to encourage you today.
+              Even a quick update gives your supporters something to rally around.
             </p>
             {user?.handle && (
               <Link

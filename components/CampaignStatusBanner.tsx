@@ -30,7 +30,7 @@ export function CampaignStatusBanner({
       title: "Completed!",
       body: completedAt
         ? `Finished on ${formatDate(completedAt)}.`
-        : "They did it. Take a look at the full journey below.",
+        : "They did it. Take a look at the full timeline below.",
     },
     closed: {
       bg: "bg-zinc-500/10",

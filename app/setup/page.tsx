@@ -121,9 +121,8 @@ function SetupHandleForm() {
             Claim your handle
           </h1>
           <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
-            This is your identity on gomotivateme — how people find and tag
-            you. Choose carefully: you can change it once after this, then
-            it&apos;s locked.
+            This is your identity on gomotivateme. It&apos;s how people find and tag
+            you. You can change it once after this, then it&apos;s locked.
           </p>
 
           <form onSubmit={onSubmit} className="space-y-3" noValidate>

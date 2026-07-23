@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Cookie Policy — gomotivateme",
+  title: "Cookie Policy: gomotivateme",
   description: "What cookies gomotivateme sets, why, and how to manage them.",
 };
 
@@ -64,7 +64,7 @@ export default function CookiePolicyPage() {
         <p className="mt-3 text-xs text-[var(--color-text-dim)]">
           All auth cookies are <code className="rounded bg-[#f0efe9] px-1">httpOnly</code>,
           <code className="rounded bg-[#f0efe9] px-1">secure</code>, and
-          <code className="rounded bg-[#f0efe9] px-1">sameSite=lax</code> — they can&apos;t
+          <code className="rounded bg-[#f0efe9] px-1">sameSite=lax</code>: they can&apos;t
           be read by JavaScript or sent cross-site.
         </p>
       </section>
@@ -85,7 +85,7 @@ export default function CookiePolicyPage() {
           Goal owners may post links to YouTube, TikTok, or Instagram videos as part of
           their updates. When you play one of these embedded videos, the platform
           (YouTube, TikTok, or Instagram) may set their own cookies. We don&apos;t
-          control those — check their respective cookie policies for details.
+          control those: check their respective cookie policies for details.
         </p>
       </section>
 
@@ -113,7 +113,7 @@ export default function CookiePolicyPage() {
           </li>
         </ul>
         <p className="mt-3 text-sm text-[var(--color-text-dim)]">
-          Note: clearing the auth cookies will sign you out — you&apos;ll need to log back in.
+          Note: clearing the auth cookies will sign you out. You&apos;ll need to log back in.
         </p>
       </section>
 

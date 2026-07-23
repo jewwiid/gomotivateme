@@ -50,7 +50,7 @@ export function GoogleSignInButton({ mode, redirectTo = "/dashboard" }: { mode: 
       const msg = e instanceof Error ? e.message : String(e);
       setErr(
         msg.toLowerCase().includes("popup")
-          ? "Popup blocked — allow popups for this site and try again."
+          ? "Popup blocked. Allow popups for this site and try again."
           : "Couldn't sign you in with Google. Please try again."
       );
       setBusy(false);

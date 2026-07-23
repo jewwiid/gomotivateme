@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — GoMotivateMe",
+  title: "Terms of Service: GoMotivateMe",
   description:
-    "The rules for using gomotivateme.com — your account, your content, what's allowed, and what's not.",
+    "The rules for using gomotivateme.com: your account, your content, what's allowed, and what's not.",
 };
 
 const LAST_UPDATED = "July 22, 2026";
@@ -35,7 +35,7 @@ export default function TermsPage() {
           </p>
           <p>
             If you don't agree, please don't use the Service. The Service is
-            free — no payments, no subscriptions — but using it means
+            free: no payments, no subscriptions: but using it means
             accepting these rules.
           </p>
         </Section>
@@ -90,7 +90,7 @@ export default function TermsPage() {
             </li>
             <li>
               Post content about weight, body image, eating, or recovery that
-              could be harmful — even with good intentions. We have specific
+              could be harmful: even with good intentions. We have specific
               guidance for these categories.
             </li>
           </ul>
@@ -130,8 +130,8 @@ export default function TermsPage() {
 
         <Section title="6. Our content">
           <p>
-            The Service itself — the code, design, copy, illustrations, and
-            brand — is owned by GoMotivateMe. You can use the Service and
+            The Service itself: the code, design, copy, illustrations, and
+            brand: is owned by GoMotivateMe. You can use the Service and
             link to it freely, but don't scrape, copy, or repackage our
             content without permission.
           </p>
@@ -140,7 +140,7 @@ export default function TermsPage() {
         <Section title="7. Sensitive categories">
           <p>
             Some categories on the Service deal with topics where casual
-            encouragement can be actively harmful — for example, weight
+            encouragement can be actively harmful: for example, weight
             loss, eating, recovery, and mental health. We display a more
             careful prompt before you create these goals, and we ask that
             you read the in-app guidance before you post.
@@ -214,7 +214,7 @@ export default function TermsPage() {
             to conflict-of-laws principles.
           </p>
           <p>
-            We'll try to resolve any dispute informally first — email us at{" "}
+            We'll try to resolve any dispute informally first: email us at{" "}
             <a href="mailto:hello@gomotivateme.com">hello@gomotivateme.com</a>{" "}
             and we'll do our best to work it out within 30 days. If we can't,
             disputes will be resolved in the courts of Ireland.

@@ -93,7 +93,7 @@ export function DualProgress({
           supporterPct === null
             ? "No target set"
             : supporterPct >= 100
-            ? "🎉 Target reached"
+            ? "Target reached"
             : `${supporterTarget! - supporterCount} to go`
         }
         pctRef={supLabelRef}

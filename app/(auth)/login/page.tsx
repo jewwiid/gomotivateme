@@ -99,10 +99,10 @@ function LoginForm() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <p className="brand-kicker">Keep your momentum</p>
-      <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">Welcome back</h1>
+      <p className="brand-kicker">Welcome back</p>
+      <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">Sign in</h1>
       <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
-        Sign in to keep your momentum going.
+        Pick up where you left off.
       </p>
 
       <GoogleSignInButton mode="signIn" redirectTo={redirect || "/dashboard"} />

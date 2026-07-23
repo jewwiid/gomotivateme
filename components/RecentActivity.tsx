@@ -103,7 +103,7 @@ export function RecentActivity({
       <section className="rounded-2xl border border-zinc-200 bg-white p-6">
         <h2 className="text-base font-semibold text-zinc-900">Recent activity</h2>
         <p className="mt-3 text-sm text-zinc-500">
-          Nothing yet — be the first to show up.
+          Nothing yet. Be the first to show up.
         </p>
       </section>
     );

@@ -127,7 +127,7 @@ export function WelcomeModal() {
               </h2>
               <p className="mx-auto mt-3 max-w-sm text-sm text-zinc-600">
                 Set a real goal, share the journey, and let a circle of
-                people keep you moving. No payments. No performative likes —
+                people keep you moving. No payments. No performative likes.
                 just honest momentum.
               </p>
 

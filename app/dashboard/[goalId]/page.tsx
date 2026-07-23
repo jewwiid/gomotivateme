@@ -543,7 +543,7 @@ function StatusModal({
             <input
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason (optional) — e.g. 'Need a week to reset'"
+              placeholder="Reason (optional), e.g. 'Need a week to reset'"
               className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
             />
             <button
@@ -849,7 +849,7 @@ function MediaForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void
         value={embedUrls}
         onChange={(e) => setEmbedUrls(e.target.value)}
         rows={2}
-        placeholder="Paste public YouTube, TikTok, or Instagram links — one per line"
+        placeholder="Paste public YouTube, TikTok, or Instagram links, one per line"
         className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
       />
       <p className="text-xs leading-relaxed text-[var(--color-text-dim)]">

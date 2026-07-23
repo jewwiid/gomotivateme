@@ -145,7 +145,7 @@ export default function HomePage() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6e981b]">How it works</p>
               <h2 className="mt-4 max-w-xl text-balance font-display text-4xl font-bold leading-[0.98] tracking-[-0.05em] text-[#252525] sm:text-6xl">Support makes progress stick.</h2>
-              <p className="mt-5 max-w-xl text-base leading-7 text-[#646560] sm:text-lg">GoMotivateMe helps you turn a meaningful goal into lasting change—with encouragement from people who want to see you win.</p>
+              <p className="mt-5 max-w-xl text-base leading-7 text-[#646560] sm:text-lg">GoMotivateMe helps you turn a meaningful goal into lasting change, with encouragement from people who want to see you win.</p>
               <ol className="mt-9 divide-y divide-[#d3d5ce] border-y border-[#d3d5ce]">
                 {[
                   ["01", "Set a goal", "Choose something meaningful, then decide what progress looks like."],
@@ -204,7 +204,7 @@ export default function HomePage() {
           <div className="pointer-events-none absolute inset-x-[-10%] -top-12 h-20 rounded-[50%] bg-[#fffdf8]" />
           <div className="pointer-events-none absolute inset-x-[-10%] -bottom-12 h-20 rounded-[50%] bg-[#fffdf8]" />
           <div className="relative mx-auto max-w-4xl">
-            <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#63572d]"><Heart size={17} className="text-[#b48900]" fill="currentColor" /> A little support changes the whole journey</p>
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#63572d]"><Heart size={17} className="text-[#b48900]" fill="currentColor" /> A little support changes everything</p>
             <h2 className="mt-5 text-balance font-display text-4xl font-bold leading-[0.96] tracking-[-0.055em] text-[#2b2a24] sm:text-6xl">Your next step deserves a team.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#5f583d] sm:text-lg">Share your goal, rally your people, and move forward with confidence.</p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"><Link href={startGoalHref} className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 py-3.5 text-base font-bold text-white transition hover:bg-[var(--color-primary-dark)]">Start a goal <ArrowRight size={17} /></Link><a href="#explore" className="inline-flex items-center gap-2 px-3 py-3 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">Explore goals <ArrowRight size={16} /></a></div>

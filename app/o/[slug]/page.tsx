@@ -201,8 +201,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
           >
             {isPaused && (
               <>
-                <strong className="text-zinc-900">Paused.</strong> {goal.pausedReason ?? "Taking a break."}{" "}
-                The creator is still on the team.
+                <strong className="text-zinc-900">Paused.</strong> {goal.pausedReason ?? "Taking a break."}
               </>
             )}
             {isCompleted && (
@@ -348,9 +347,9 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
           )}
           {isCompleted && (
             <div className="rounded-2xl border border-[var(--color-success)]/30 bg-[var(--color-success-soft)] p-6 text-center text-sm">
-              <p className="font-semibold text-zinc-900">This goal is complete 🎉</p>
+              <p className="font-semibold text-zinc-900">This goal is complete</p>
               <p className="mt-1 text-zinc-700">
-                They did it. Leave a final note if you'd like.
+                They did it. Leave a final note to celebrate.
               </p>
             </div>
           )}
@@ -395,7 +394,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
           />
           <TrustItem
             title="Meaningful"
-            body="Structured support — encouragement, accountability, advice, check-ins, joining in."
+            body="Structured support: encouragement, accountability, advice, check-ins, joining in."
           />
           <TrustItem
             title="Private"
@@ -536,7 +535,7 @@ function RightSupportCard({
 
       {isCompleted && (
         <p className="mt-4 rounded-lg bg-[var(--color-success-soft)] p-3 text-center text-xs font-medium text-zinc-700">
-          🎉 They did it. Goal complete.
+          They did it. Goal complete.
         </p>
       )}
     </div>

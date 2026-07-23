@@ -29,7 +29,7 @@ import { Logo } from "@/components/Logo";
 
 const WIZARD_COPY = [
   {
-    title: "Let’s begin your goal journey",
+    title: "Let's set up your goal",
     detail: "We’ll guide you through the essentials, then help you invite the right people in.",
   },
   {
@@ -38,7 +38,7 @@ const WIZARD_COPY = [
   },
   {
     title: "Choose your progress style",
-    detail: "Pick a way of measuring that will make momentum feel visible.",
+    detail: "Pick a way of measuring that makes progress visible.",
   },
   {
     title: "Set a target that matters",
@@ -72,7 +72,7 @@ const PROGRESS_TEMPLATES = [
   {
     id: "number" as const,
     label: "Number target",
-    description: "Hit a specific number — kg, books, miles, days, dollars.",
+    description: "Hit a specific number: kg, books, miles, days, dollars.",
     icon: "📊",
   },
   {
@@ -84,7 +84,7 @@ const PROGRESS_TEMPLATES = [
   {
     id: "milestones" as const,
     label: "Milestone checklist",
-    description: "Tick off a series of named steps — research, draft, publish, etc.",
+    description: "Tick off a series of named steps: research, draft, publish, etc.",
     icon: "✅",
   },
 ];

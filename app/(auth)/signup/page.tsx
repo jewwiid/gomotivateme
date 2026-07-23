@@ -79,7 +79,7 @@ function SignupForm() {
           try {
             sessionStorage.setItem(
               "signup-handle-warning",
-              "We saved your account but couldn't set the handle — pick one in settings."
+              "We saved your account but couldn't set the handle. Pick one in settings."
             );
           } catch {
             // sessionStorage might be unavailable
@@ -189,7 +189,7 @@ function SignupForm() {
     >
       <p className="brand-kicker">A goal is better with company</p>
       <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">
-        Start your momentum
+        Set your first goal
       </h1>
       <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
         Set up an account in 30 seconds.
