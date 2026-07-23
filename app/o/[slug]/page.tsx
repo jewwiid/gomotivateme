@@ -559,12 +559,6 @@ function OrganiserMini({ ownerName, ownerImage }: { ownerName: string; ownerImag
           <div className="truncate text-sm font-medium text-zinc-900">{ownerName}</div>
           <div className="truncate text-[11px] text-zinc-500">Goal creator</div>
         </div>
-        <a
-          href="#"
-          className="rounded-full border border-zinc-300 px-3 py-1 text-[11px] font-medium text-zinc-700 transition hover:border-zinc-400"
-        >
-          Message
-        </a>
       </div>
     </div>
   );
