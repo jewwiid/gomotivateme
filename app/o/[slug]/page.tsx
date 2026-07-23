@@ -253,23 +253,25 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
               <MilestonesList
                 goalId={goalId}
                 milestones={goal.milestones}
-                isOwner={false}
-                currentValue={goal.currentValue}
-                targetValue={goal.targetValue}
+                isOwner={isOwner}
+                currentValue={goal.currentValue ?? 0}
+                targetValue={goal.targetValue ?? 0}
                 unit={goal.unit}
               />
             )}
 
-            {/* Reaction bar (cheer) */}
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <h2 className="text-base font-semibold text-zinc-900">Cheer them on</h2>
-              <p className="mt-1 text-xs text-zinc-500">
-                Quick, anonymous reactions to show you noticed.
-              </p>
-              <div className="mt-3">
-                <ReactionBar goalId={goalId} />
-              </div>
-            </section>
+            {/* Reaction bar (cheer) — visitors only */}
+            {!isOwner && (
+              <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+                <h2 className="text-base font-semibold text-zinc-900">Cheer them on</h2>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Quick, anonymous reactions to show you noticed.
+                </p>
+                <div className="mt-3">
+                  <ReactionBar goalId={goalId} />
+                </div>
+              </section>
+            )}
 
             <RecentActivity goalId={goalId} />
 
@@ -311,6 +313,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
                 badges={badges as any}
                 isInactive={isInactive}
                 isCompleted={isCompleted}
+                isOwner={isOwner}
                 allowedTypes={(goal.supportTypes ?? []) as any}
                 onShare={onShare}
                 copied={copied}
@@ -328,8 +331,10 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
 
         {/* Full-width support section below (also the #support anchor for mobile sticky) */}
         <section ref={supportSectionRef} id="support" className="mt-10 pb-24 md:pb-10">
-          <h2 className="mb-3 text-base font-semibold text-zinc-900">Send support</h2>
-          {!isInactive && (
+          {!isOwner && (
+            <h2 className="mb-3 text-base font-semibold text-zinc-900">Send support</h2>
+          )}
+          {!isInactive && !isOwner && (
             <StructuredSupportComposer
               goalId={goalId}
               allowedTypes={(goal.supportTypes ?? []) as any}
@@ -399,7 +404,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
       </section>
 
       {/* Mobile 3-action sticky bar */}
-      <MobileActionBar onSupport={scrollToSupport} onEncourage={scrollToSupport} />
+      <MobileActionBar onSupport={scrollToSupport} onEncourage={scrollToSupport} isOwner={isOwner} />
     </div>
   );
 }
@@ -416,6 +421,7 @@ function RightSupportCard({
   badges,
   isInactive,
   isCompleted,
+  isOwner,
   allowedTypes,
   onShare,
   copied,
@@ -483,9 +489,9 @@ function RightSupportCard({
         </div>
       )}
 
-      {/* Primary CTA */}
+      {/* Primary CTA — visitor-only; owner sees a different message */}
       <div className="mt-5 space-y-2">
-        {!isInactive && (
+        {!isInactive && !isOwner && (
           <a
             href="#support"
             className="block w-full rounded-xl bg-[var(--color-primary)] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
@@ -493,13 +499,21 @@ function RightSupportCard({
             Support this goal
           </a>
         )}
-        {!isInactive && (
+        {!isInactive && !isOwner && (
           <a
             href="#support"
             className="block w-full rounded-xl border border-[var(--color-primary)] bg-white px-5 py-3 text-center text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
           >
             Send encouragement
           </a>
+        )}
+        {isOwner && !isInactive && (
+          <Link
+            href="/dashboard"
+            className="block w-full rounded-xl bg-[var(--color-primary)] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+          >
+            Go to dashboard
+          </Link>
         )}
         <button
           onClick={onShare}

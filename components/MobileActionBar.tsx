@@ -11,9 +11,11 @@ import { Check, Copy, Heart, Share2, MessageCircle, X } from "lucide-react";
 export function MobileActionBar({
   onSupport,
   onEncourage,
+  isOwner = false,
 }: {
   onSupport: () => void;
   onEncourage: () => void;
+  isOwner?: boolean;
 }) {
   const [showShareToast, setShowShareToast] = useState(false);
 
@@ -46,23 +48,29 @@ export function MobileActionBar({
         className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/95 px-3 py-2.5 backdrop-blur md:hidden"
       >
         <div className="mx-auto flex max-w-2xl items-center gap-2">
-          <button
-            onClick={onSupport}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[var(--color-primary)] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-          >
-            <Heart size={14} />
-            Support
-          </button>
-          <button
-            onClick={onEncourage}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[var(--color-primary)] bg-white px-3 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
-          >
-            <MessageCircle size={14} />
-            Encourage
-          </button>
+          {!isOwner && (
+            <button
+              onClick={onSupport}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[var(--color-primary)] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+            >
+              <Heart size={14} />
+              Support
+            </button>
+          )}
+          {!isOwner && (
+            <button
+              onClick={onEncourage}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[var(--color-primary)] bg-white px-3 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
+            >
+              <MessageCircle size={14} />
+              Encourage
+            </button>
+          )}
           <button
             onClick={onShare}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-zinc-300 bg-white px-3 py-2.5 text-sm font-semibold text-zinc-900 transition hover:border-zinc-400"
+            className={`flex items-center justify-center gap-1.5 rounded-full border border-zinc-300 bg-white px-3 py-2.5 text-sm font-semibold text-zinc-900 transition hover:border-zinc-400 ${
+              isOwner ? "flex-1" : ""
+            }`}
           >
             <Share2 size={14} />
             Share
