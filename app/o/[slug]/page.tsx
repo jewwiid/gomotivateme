@@ -225,6 +225,11 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
         <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-14">
           {/* Left column: main story + sections */}
           <div className="min-w-0 space-y-6">
+            <StorySection story={goal.story} />
+
+            <HowIWantSupport supportTypes={goal.supportTypes ?? []} ownerName={ownerName} />
+
+            {/* Progress stats — after context, not before */}
             <MomentumStats
               goalId={goalId}
               progressPct={goalPct}
@@ -238,10 +243,6 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
               targetValue={goal.targetValue}
             />
 
-            <HowIWantSupport supportTypes={goal.supportTypes ?? []} ownerName={ownerName} />
-
-            <StorySection story={goal.story} />
-
             {/* Milestones */}
             {goal.progressType === "milestones" && goal.milestones && goal.milestones.length > 0 && (
               <MilestonesList
@@ -253,6 +254,14 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
                 unit={goal.unit}
               />
             )}
+
+            {/* Editorial timeline */}
+            <EditorialTimeline
+              goalId={goalId}
+              unit={goal.unit}
+              milestones={goal.milestones ?? undefined}
+              isOwner={isOwner}
+            />
 
             {/* Reaction bar (cheer) — visitors only */}
             {!isOwner && (
@@ -267,20 +276,12 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
               </section>
             )}
 
+            <SupporterWall goalId={goalId} />
+
             <RecentActivity goalId={goalId} />
 
             {/* Owner-only: check-ins from motivators */}
             {isOwner && <CheckInList goalId={goalId} />}
-
-            <SupporterWall goalId={goalId} />
-
-            {/* Editorial timeline */}
-            <EditorialTimeline
-              goalId={goalId}
-              unit={goal.unit}
-              milestones={goal.milestones ?? undefined}
-              isOwner={isOwner}
-            />
 
             {/* Share preview */}
             <SharePreview

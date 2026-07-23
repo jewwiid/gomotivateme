@@ -48,8 +48,6 @@ export function MomentumStats({
       value: `${Math.round(progressPct)}%`,
       sub: progressLabel,
       icon: TrendingUp,
-      color: "text-[var(--color-primary)]",
-      bg: "bg-[var(--color-primary-soft)]",
     },
     {
       label: "Supporters",
@@ -58,32 +56,24 @@ export function MomentumStats({
         ? `${supporterTarget - supporterCount > 0 ? `${supporterTarget - supporterCount} to go` : "Target reached"}`
         : "Standing with them",
       icon: Users,
-      color: "text-[var(--color-primary)]",
-      bg: "bg-[var(--color-primary-soft)]",
     },
     {
       label: "Cheers",
       value: String(cheerTotal),
       sub: cheerTotal > 0 ? "People rooting for them" : "Be the first",
       icon: Heart,
-      color: "text-rose-500",
-      bg: "bg-rose-50",
     },
     {
       label: "Accountability",
       value: String(accountabilityCount),
       sub: accountabilityCount > 0 ? "Regular check-ins" : "None yet",
       icon: Calendar,
-      color: "text-[var(--color-success)]",
-      bg: "bg-[var(--color-success-soft)]",
     },
     {
       label: "Updates",
       value: String(updatesCount),
       sub: updatesCount > 0 ? "Shared so far" : "First one soon",
       icon: MessageCircle,
-      color: "text-[var(--color-primary)]",
-      bg: "bg-[var(--color-primary-soft)]",
     },
     ...(progressType === "streak"
       ? [
@@ -92,8 +82,6 @@ export function MomentumStats({
             value: `${currentValue}d`,
             sub: `Target: ${targetValue}d`,
             icon: Sparkles,
-            color: "text-[var(--color-warning)]",
-            bg: "bg-[var(--color-warning-soft)]",
           },
         ]
       : []),
@@ -101,7 +89,7 @@ export function MomentumStats({
 
   return (
     <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-      <h2 className="text-base font-semibold text-zinc-900">Momentum</h2>
+      <h2 className="text-base font-semibold text-zinc-900">Progress</h2>
       <p className="mt-1 text-xs text-zinc-500">
         The real human actions behind this goal.
       </p>
@@ -118,7 +106,7 @@ export function MomentumStats({
               transition={{ duration: 0.3, delay: i * 0.05 }}
               className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"
             >
-              <div className={`mb-2 inline-flex h-7 w-7 items-center justify-center rounded-lg ${it.bg} ${it.color}`}>
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
                 <Icon size={13} />
               </div>
               <div className="text-xl font-bold tabular-nums text-zinc-900">
