@@ -26,6 +26,12 @@ export interface Category {
   defaultMilestones?: string[];
   /** Optional one-line description shown under the label in pickers. */
   hint?: string;
+  /** Category-aware placeholder for the title input. */
+  titlePlaceholder?: string;
+  /** Category-aware placeholder for the summary input. */
+  summaryPlaceholder?: string;
+  /** Category-aware prompt for the story textarea. */
+  storyPrompt?: string;
 }
 
 export const CATEGORIES: Category[] = [
@@ -38,6 +44,9 @@ export const CATEGORIES: Category[] = [
     defaultDirection: "decrease",
     sensitive: true,
     defaultMilestones: ["Set a baseline", "First milestone", "Halfway there", "Goal reached"],
+    titlePlaceholder: "e.g. Lose 10kg and keep it off",
+    summaryPlaceholder: "e.g. Getting back to a weight I feel good at",
+    storyPrompt: "What's driving this? What have you tried before? What would support look like for you?",
   },
   {
     id: "learning",
@@ -47,6 +56,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Start", "Quarter way", "Halfway", "Nearly there", "Complete"],
+    titlePlaceholder: "e.g. Read 12 books this year",
+    summaryPlaceholder: "e.g. One book a month, no excuses",
+    storyPrompt: "Why does this matter to you? What do you want to do with what you learn?",
   },
   {
     id: "career",
@@ -56,6 +68,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Set goal", "First wins", "Build momentum", "Hit target"],
+    titlePlaceholder: "e.g. Land a senior developer role",
+    summaryPlaceholder: "e.g. 5 applications a week until I get an offer",
+    storyPrompt: "Where are you now, and where do you want to be? What's been holding you back?",
   },
   {
     id: "launch",
@@ -65,6 +80,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "milestones",
     defaultDirection: "increase",
     defaultMilestones: ["Research", "Build MVP", "Beta test", "Launch", "Iterate"],
+    titlePlaceholder: "e.g. Launch my app to 100 users",
+    summaryPlaceholder: "e.g. From idea to first 100 signups",
+    storyPrompt: "What are you building? What does success look like for the first version?",
   },
   {
     id: "creative",
@@ -74,6 +92,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Outline", "First draft", "Revise", "Finish", "Publish"],
+    titlePlaceholder: "e.g. Write my first novel",
+    summaryPlaceholder: "e.g. 300 pages, first draft done by summer",
+    storyPrompt: "What's the story or project you've been carrying? What would help you finally ship it?",
   },
   {
     id: "habit",
@@ -83,6 +104,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "streak",
     defaultDirection: "increase",
     defaultMilestones: ["7 days", "30 days", "60 days", "100 days"],
+    titlePlaceholder: "e.g. Meditate every day for 30 days",
+    summaryPlaceholder: "e.g. Building a daily meditation habit",
+    storyPrompt: "What habit are you building? What's tripped you up before?",
   },
   {
     id: "sports",
@@ -92,6 +116,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Start training", "First milestone", "Peak", "Event day"],
+    titlePlaceholder: "e.g. Run a half marathon",
+    summaryPlaceholder: "e.g. From couch to 21km in 16 weeks",
+    storyPrompt: "What's the event or target? What's your training situation right now?",
   },
   {
     id: "community",
@@ -101,6 +128,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Plan", "Launch", "Grow", "Goal reached"],
+    titlePlaceholder: "e.g. Raise $5,000 for my local food bank",
+    summaryPlaceholder: "e.g. 100 donors, $50 average",
+    storyPrompt: "Who or what are you raising for? Why this cause?",
   },
   {
     id: "personal",
@@ -110,6 +140,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "milestones",
     defaultDirection: "increase",
     defaultMilestones: ["Start", "Halfway", "Nearly there", "Complete"],
+    titlePlaceholder: "e.g. Plan my wedding",
+    summaryPlaceholder: "e.g. Breaking a big life event into steps",
+    storyPrompt: "What's the milestone? What makes it feel big right now?",
   },
   {
     id: "travel",
@@ -119,6 +152,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Plan", "First stop", "Halfway", "Complete"],
+    titlePlaceholder: "e.g. Visit 5 new countries",
+    summaryPlaceholder: "e.g. One trip every two months",
+    storyPrompt: "Where do you want to go? What's been keeping you from going?",
   },
   {
     id: "family",
@@ -128,6 +164,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Start", "Halfway", "Nearly there", "Complete"],
+    titlePlaceholder: "e.g. 20 dedicated family days this year",
+    summaryPlaceholder: "e.g. Quality time, planned and tracked",
+    storyPrompt: "What do you want to build with your family? What does a good outing look like?",
   },
   {
     id: "faith",
@@ -137,6 +176,9 @@ export const CATEGORIES: Category[] = [
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Begin", "First milestone", "Deepen", "Complete"],
+    titlePlaceholder: "e.g. Read through the Bible in a year",
+    summaryPlaceholder: "e.g. A chapter a day, with reflection",
+    storyPrompt: "What are you working toward in your faith? What would help you stay consistent?",
   },
   {
     id: "other",
@@ -147,6 +189,9 @@ export const CATEGORIES: Category[] = [
     defaultDirection: "increase",
     hint: "Anything that doesn't fit the other categories",
     defaultMilestones: ["Start", "Halfway", "Nearly there", "Complete"],
+    titlePlaceholder: "e.g. Declutter my entire apartment",
+    summaryPlaceholder: "e.g. Room by room over 3 months",
+    storyPrompt: "What's the goal? What does done look like for you?",
   },
 ];
 

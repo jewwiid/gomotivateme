@@ -29,12 +29,12 @@ import { Logo } from "@/components/Logo";
 
 const WIZARD_COPY = [
   {
-    title: "Let's set up your goal",
-    detail: "We’ll guide you through the essentials, then help you invite the right people in.",
+    title: "What's your goal about?",
+    detail: "A clear category helps people understand what you're working toward.",
   },
   {
-    title: "What’s your goal about?",
-    detail: "A clear category helps people understand what you’re working toward.",
+    title: "Let's set up your goal",
+    detail: "We'll guide you through the essentials, then help you invite the right people in.",
   },
   {
     title: "Choose your progress style",
@@ -116,8 +116,8 @@ function NewGoalContent() {
   const [story, setStory] = useState("");
   const [category, setCategory] = useState<CategoryId>("creative");
   const [progressType, setProgressType] = useState<"number" | "streak" | "milestones">("number");
-  const [direction, setDirection] = useState<"increase" | "decrease">("decrease");
-  const [unit, setUnit] = useState("kg");
+  const [direction, setDirection] = useState<"increase" | "decrease">("increase");
+  const [unit, setUnit] = useState("pages");
   const [startValue, setStartValue] = useState("");
   const [targetValue, setTargetValue] = useState("");
   const [targetDate, setTargetDate] = useState(() => {
@@ -126,7 +126,7 @@ function NewGoalContent() {
     return d.toISOString().slice(0, 10);
   });
   const [milestones, setMilestones] = useState<Array<{ id: string; title: string }>>(() =>
-    getDefaultMilestones("personal")
+    getDefaultMilestones("creative")
   );
   const [supporterTarget, setSupporterTarget] = useState("");
   const [supportTypes, setSupportTypes] = useState<string[]>(["encourage", "checkin"]);
@@ -151,8 +151,8 @@ function NewGoalContent() {
   };
 
   const canAdvance = () => {
-    if (step === 0) return title.trim().length > 0;
-    if (step === 1) return true; // category has a default
+    if (step === 0) return true; // category has a default
+    if (step === 1) return title.trim().length > 0;
     if (step === 2) return true; // progress type has a default
     if (step === 3) {
       if (progressType === "number") {
@@ -182,7 +182,7 @@ function NewGoalContent() {
 
   /** Human-readable validation message for the current step (empty = OK). */
   const stepError = (): string | null => {
-    if (step === 0 && title.trim().length === 0) return "Enter a title to continue";
+    if (step === 1 && title.trim().length === 0) return "Enter a title to continue";
     if (step === 3) {
       if (progressType === "number") {
         const s = parseFloat(startValue);
@@ -292,26 +292,6 @@ function NewGoalContent() {
         <div className="flex-1 px-5 pb-10 pt-10 sm:px-12 sm:pt-16 lg:px-[10vw] lg:pt-28">
           <div className="mx-auto w-full max-w-[42rem]">
           {step === 0 && (
-            <Step title="What are you trying to achieve?">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Write my first novel"
-                autoFocus
-                className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
-              />
-              <input
-                type="text"
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder="One-line pitch (optional)"
-                className="mt-3 w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
-              />
-            </Step>
-          )}
-
-          {step === 1 && (
             <Step title="Pick a category">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {CATEGORIES.map((c) => (
@@ -336,11 +316,31 @@ function NewGoalContent() {
                     />
                     <div>
                       <div className="text-sm font-medium">{c.label}</div>
-                      <div className="text-xs text-[var(--color-text-dim)]">{c.hint}</div>
+                      {c.hint && <div className="text-xs text-[var(--color-text-dim)]">{c.hint}</div>}
                     </div>
                   </button>
                 ))}
               </div>
+            </Step>
+          )}
+
+          {step === 1 && (
+            <Step title="What are you trying to achieve?">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={getCategory(category).titlePlaceholder ?? "e.g. Write my first novel"}
+                autoFocus
+                className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+              />
+              <input
+                type="text"
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                placeholder={getCategory(category).summaryPlaceholder ?? "One-line summary (optional)"}
+                className="mt-3 w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+              />
             </Step>
           )}
 
@@ -516,12 +516,12 @@ function NewGoalContent() {
           {step === 5 && (
             <Step title="Tell your story">
               <p className="mb-5 max-w-lg text-sm leading-6 text-[#686963]">
-                Share what this goal means to you and what a little support could change. You can refine it whenever you like.
+                {getCategory(category).storyPrompt ?? "Share what this goal means to you and what support could change."}
               </p>
               <textarea
                 value={story}
                 onChange={(e) => setStory(e.target.value)}
-                placeholder="Start with why this goal matters to you…"
+                placeholder="Write your story…"
                 rows={9}
                 className="w-full resize-none rounded-xl border border-[#c9c8c0] bg-white px-4 py-4 text-sm leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
@@ -657,8 +657,8 @@ function NewGoalContent() {
                 </span>
               </label>
               <div className="mt-8 divide-y divide-[#e4e2da] border-y border-[#deddd6]">
-                <ReviewItem label="Goal" value={title || "Untitled goal"} onEdit={() => setStep(0)} />
-                <ReviewItem label="Category" value={CATEGORIES.find((item) => item.id === category)?.label ?? category} onEdit={() => setStep(1)} />
+                <ReviewItem label="Goal" value={title || "Untitled goal"} onEdit={() => setStep(1)} />
+                <ReviewItem label="Category" value={CATEGORIES.find((item) => item.id === category)?.label ?? category} onEdit={() => setStep(0)} />
                 <ReviewItem label="Progress" value={PROGRESS_TEMPLATES.find((item) => item.id === progressType)?.label ?? progressType} onEdit={() => setStep(2)} />
                 <ReviewItem
                   label="Target"
