@@ -3,6 +3,12 @@ import { WelcomeEmail, WelcomeEmailProps } from "./welcome";
 import { NewApplicationEmail, NewApplicationEmailProps } from "./newApplication";
 import { InviteReceivedEmail, InviteReceivedEmailProps } from "./inviteReceived";
 import { GoalCreatedEmail, GoalCreatedEmailProps } from "./goalCreated";
+import { ApplicationDecisionEmail, ApplicationDecisionEmailProps } from "./applicationDecision";
+import { SupportMessageReceivedEmail, SupportMessageReceivedEmailProps } from "./supportMessageReceived";
+import { NewUpdateEmail, NewUpdateEmailProps } from "./newUpdate";
+import { TargetHitEmail, TargetHitEmailProps } from "./targetHit";
+import { EmailVerificationEmail, EmailVerificationEmailProps } from "./emailVerification";
+import { PasswordResetEmail, PasswordResetEmailProps } from "./passwordReset";
 
 /**
  * Map a templateId + payload to a { subject, component } pair.
@@ -45,6 +51,57 @@ export function renderTemplate(
       return {
         subject: "Your goal is live — let's build momentum",
         component: <GoalCreatedEmail {...p} />,
+      };
+    }
+
+    case "applicationDecision": {
+      const p = payload as ApplicationDecisionEmailProps;
+      return {
+        subject:
+          p.decision === "approved"
+            ? `You're approved for ${p.goalTitle}`
+            : `Update on your ${p.goalTitle} application`,
+        component: <ApplicationDecisionEmail {...p} />,
+      };
+    }
+
+    case "supportMessageReceived": {
+      const p = payload as SupportMessageReceivedEmailProps;
+      return {
+        subject: `${p.authorName} sent you ${p.supportTypeLabel}`,
+        component: <SupportMessageReceivedEmail {...p} />,
+      };
+    }
+
+    case "newUpdate": {
+      const p = payload as NewUpdateEmailProps;
+      return {
+        subject: `${p.ownerName} posted an update on ${p.goalTitle}`,
+        component: <NewUpdateEmail {...p} />,
+      };
+    }
+
+    case "targetHit": {
+      const p = payload as TargetHitEmailProps;
+      return {
+        subject: `You did it — ${p.goalTitle} is complete 🎉`,
+        component: <TargetHitEmail {...p} />,
+      };
+    }
+
+    case "emailVerification": {
+      const p = payload as EmailVerificationEmailProps;
+      return {
+        subject: "Verify your email",
+        component: <EmailVerificationEmail {...p} />,
+      };
+    }
+
+    case "passwordReset": {
+      const p = payload as PasswordResetEmailProps;
+      return {
+        subject: "Reset your password",
+        component: <PasswordResetEmail {...p} />,
       };
     }
 

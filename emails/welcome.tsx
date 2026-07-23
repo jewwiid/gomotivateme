@@ -5,13 +5,17 @@ import { EmailLayout, CTAButton } from "./components/Layout";
 export interface WelcomeEmailProps {
   firstName?: string;
   siteUrl?: string;
+  unsubscribeToken?: string;
 }
 
-export function WelcomeEmail({ firstName, siteUrl = "https://gomotivateme.com" }: WelcomeEmailProps) {
+export function WelcomeEmail({ firstName, siteUrl = "https://gomotivateme.com", unsubscribeToken }: WelcomeEmailProps) {
   const greeting = firstName ? `Hi ${firstName}` : "Hi there";
 
   return (
-    <EmailLayout preheader="2 minutes now, momentum later.">
+    <EmailLayout
+      preheader="2 minutes now, momentum later."
+      unsubscribeUrl={unsubscribeToken ? `${siteUrl}/email/unsubscribe?token=${unsubscribeToken}` : undefined}
+    >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         {greeting},
       </Text>

@@ -84,7 +84,10 @@ export function EmailLayout({
               </Text>
             )}
             <Text style={footerMuted}>
-              gomotivateme · Where personal goals gain momentum.
+              gomotivateme · 47A The Drive, Rush, Co. Dublin, K56 KP73, Ireland
+            </Text>
+            <Text style={footerMuted}>
+              Where personal goals gain momentum.
             </Text>
           </Section>
         </Container>

@@ -433,52 +433,89 @@ function AccountTab() {
 function DeactivateSection() {
   const { signOut } = useAuthActions();
   const router = useRouter();
+  const deleteAccount = useMutation(api.users.deleteAccount);
   const [confirming, setConfirming] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  const onDeactivate = async () => {
+  const canDelete = confirmText.trim().toUpperCase() === "DELETE";
+
+  const onDelete = async () => {
+    if (!canDelete) return;
     setBusy(true);
+    setErr(null);
     try {
-      // @convex-dev/auth doesn't expose a deactivate endpoint by default.
-      // For MVP, sign out + ask support. The data is preserved; the user
-      // just can't log back in without a password reset.
+      await deleteAccount({});
       await signOut();
       router.push("/");
-    } finally {
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't delete account");
       setBusy(false);
-      setConfirming(false);
     }
   };
 
   return (
-    <Section title="Deactivate account">
+    <Section title="Delete account">
       <p className="mb-3 text-xs text-zinc-600">
-        If you deactivate, you won't be able to log in anymore. Your goals
-        and messages will stay up unless you ask us to remove them.
+        Permanently deletes your account, all your goals, updates, messages,
+        and notifications. This cannot be undone.
       </p>
       {confirming ? (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onDeactivate}
-            disabled={busy}
-            className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100"
-          >
-            {busy ? "Deactivating..." : "Yes, deactivate"}
-          </button>
-          <button
-            onClick={() => setConfirming(false)}
-            disabled={busy}
-            className="text-xs text-zinc-500 transition hover:text-zinc-900"
-          >
-            Cancel
-          </button>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              Type DELETE to confirm
+            </label>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              autoComplete="off"
+              disabled={busy}
+              className="w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-red-500 focus:outline-none"
+              placeholder="DELETE"
+            />
+          </div>
+          {err && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              {err}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onDelete}
+              disabled={busy || !canDelete}
+              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+            >
+              {busy ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  Deleting account...
+                </>
+              ) : (
+                "Permanently delete"
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setConfirming(false);
+                setConfirmText("");
+                setErr(null);
+              }}
+              disabled={busy}
+              className="text-xs text-zinc-500 transition hover:text-zinc-900"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       ) : (
         <button
           onClick={() => setConfirming(true)}
           className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
         >
-          Deactivate
+          Delete account
         </button>
       )}
     </Section>

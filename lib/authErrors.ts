@@ -89,6 +89,21 @@ export function translateAuthError(
     return "Wrong email or password.";
   }
 
+  // Verification code errors — invalid, expired, or already used.
+  if (
+    lc.includes("invalid verification") ||
+    lc.includes("expired") ||
+    lc.includes("code") && (lc.includes("invalid") || lc.includes("used"))
+  ) {
+    return "That code is invalid or expired. Request a new one.";
+  }
+
+  // "Email verification is not enabled" — shouldn't happen once wired,
+  // but handle gracefully.
+  if (lc.includes("verification is not enabled")) {
+    return "Email verification isn't available right now. Please try again.";
+  }
+
   // Already-exists during signUp. The createAccount helper throws
   // `Account ${account.id} already exists` from the @convex-dev/auth
   // Password provider. We match on the message itself, the

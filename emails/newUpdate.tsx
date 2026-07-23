@@ -2,65 +2,68 @@ import * as React from "react";
 import { Text } from "@react-email/components";
 import { EmailLayout, CTAButton } from "./components/Layout";
 
-export interface NewApplicationEmailProps {
-  ownerName: string;
+export interface NewUpdateEmailProps {
   motivatorName: string;
+  ownerName: string;
   goalTitle: string;
   goalSlug: string;
-  roleLabel: string;
-  applicationMessage: string;
+  updateExcerpt?: string;
+  valueLabel?: string;
   siteUrl?: string;
   unsubscribeToken?: string;
 }
 
-export function NewApplicationEmail({
-  ownerName,
+export function NewUpdateEmail({
   motivatorName,
+  ownerName,
   goalTitle,
   goalSlug,
-  roleLabel,
-  applicationMessage,
+  updateExcerpt,
+  valueLabel,
   siteUrl = "https://gomotivateme.com",
   unsubscribeToken,
-}: NewApplicationEmailProps) {
-  const excerpt = applicationMessage.slice(0, 140);
-
+}: NewUpdateEmailProps) {
   return (
     <EmailLayout
-      preheader={`Application: ${roleLabel}. Accept or pass.`}
+      preheader={`${ownerName} posted an update on ${goalTitle}.`}
       unsubscribeUrl={unsubscribeToken ? `${siteUrl}/email/unsubscribe?token=${unsubscribeToken}` : undefined}
     >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-        Hi {ownerName},
+        Hi {motivatorName},
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-        <strong>{motivatorName}</strong> applied to be your <strong>{roleLabel}</strong> on{" "}
+        <strong>{ownerName}</strong> just posted an update on{" "}
         <strong>{goalTitle}</strong>.
       </Text>
 
-      {excerpt && (
+      {valueLabel && (
+        <Text style={{ fontSize: "15px", color: "#6c706f", margin: "0 0 8px" }}>
+          <strong>Progress:</strong> {valueLabel}
+        </Text>
+      )}
+      {updateExcerpt && (
         <Text
           style={{
             fontSize: "15px",
             lineHeight: "1.5",
             color: "#6c706f",
             fontStyle: "italic",
-            borderLeft: `3px solid #feb604`,
+            borderLeft: `3px solid #044dfc`,
             paddingLeft: "16px",
             margin: "0 0 24px",
           }}
         >
-          “{excerpt}”
+          &ldquo;{updateExcerpt}&rdquo;
         </Text>
       )}
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}/applicants`}>Review application</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Cheer them on</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
-        You can approve, decline, or just sit on it for a bit. No rush.
+        You&apos;re on their team — a few words from you can make the difference today.
       </Text>
     </EmailLayout>
   );
 }
 
-export default NewApplicationEmail;
+export default NewUpdateEmail;

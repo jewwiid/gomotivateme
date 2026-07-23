@@ -59,6 +59,36 @@ export const create = mutation({
       createdAt: Date.now(),
     });
     await ctx.scheduler.runAfter(0, internal.moderation.reviewSupportMessage, { messageId });
+
+    // Email B6 — "Support message received" → to the goal owner.
+    // Fires on create (pre-moderation): the owner sees it on their dashboard
+    // anyway; moderation gates public visibility, not owner notification.
+    const owner = await ctx.db.get(goal.ownerId);
+    if (owner?.email && goal.ownerId !== userId) {
+      const author = await ctx.db.get(userId);
+      const typeLabels: Record<string, string> = {
+        encourage: "encouragement",
+        experience: "a shared experience",
+        advice: "advice",
+        checkin: "a check-in",
+        join: "support",
+      };
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: goal.ownerId,
+        toEmail: owner.email,
+        templateId: "supportMessageReceived",
+        category: "transactional",
+        payload: JSON.stringify({
+          ownerName: owner.name ?? owner.handle ?? "there",
+          authorName: author?.name ?? author?.handle ?? "Someone",
+          goalTitle: goal.title,
+          goalSlug: goal.slug,
+          messageExcerpt: trimmed.slice(0, 160),
+          supportTypeLabel: typeLabels[supportType] ?? "support",
+        }),
+      });
+    }
+
     return messageId;
   },
 });

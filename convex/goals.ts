@@ -491,6 +491,30 @@ export const toggleMilestone = mutation({
         awardedAt: Date.now(),
       });
     }
+
+    // Email B11 — "Target hit" — when all milestones are checked off and
+    // the goal wasn't already completed.
+    const allDone = done && completedCount === goal.milestones.length;
+    if (allDone && goal.status !== "completed") {
+      await ctx.db.patch(goalId, { status: "completed" as any, updatedAt: Date.now() });
+      const owner = await ctx.db.get(userId);
+      if (owner?.email) {
+        await ctx.runMutation(internal.emails.enqueue, {
+          userId,
+          toEmail: owner.email,
+          templateId: "targetHit",
+          category: "transactional",
+          payload: JSON.stringify({
+            ownerName: owner.name ?? owner.handle ?? "there",
+            goalTitle: goal.title,
+            goalSlug: goal.slug,
+            unit: goal.unit,
+            targetValue: goal.targetValue,
+          }),
+        });
+      }
+    }
+
     return { progress: pct, newBadges: newTiers };
   },
 });
@@ -589,6 +613,86 @@ export const recordValue = mutation({
         awardedAt: now,
       });
     }
+
+    // Email B11 — "Target hit" — fires once, when the value first reaches
+    // the target and the goal wasn't already completed.
+    const targetHit =
+      goal.status !== "completed" &&
+      (goal.direction === "increase"
+        ? value >= goal.targetValue
+        : value <= goal.targetValue);
+    if (targetHit) {
+      await ctx.db.patch(goalId, { status: "completed" as any, updatedAt: now });
+      const owner = await ctx.db.get(userId);
+      if (owner?.email) {
+        await ctx.runMutation(internal.emails.enqueue, {
+          userId,
+          toEmail: owner.email,
+          templateId: "targetHit",
+          category: "transactional",
+          payload: JSON.stringify({
+            ownerName: owner.name ?? owner.handle ?? "there",
+            goalTitle: goal.title,
+            goalSlug: goal.slug,
+            unit: goal.unit,
+            targetValue: goal.targetValue,
+          }),
+        });
+      }
+    }
+
+    // Email C4 — "New update" → fan out to active motivators. Only for
+    // auto-approved updates (no text note); text updates gate on moderation.
+    if (!note?.trim()) {
+      await notifyMotivatorsOfUpdate(ctx, goalId, userId, value, undefined);
+    }
+
     return { progress: pct, newBadges: newTiers };
   },
 });
+
+/**
+ * Email C4 helper — fan out a "new update" notification to a goal's active
+ * motivators. Queries active pledges, resolves each motivator's name/email,
+ * and enqueues one row per motivator. Skips the goal owner (they made the
+ * update). Used by recordValue for auto-approved (no-note) value updates.
+ */
+async function notifyMotivatorsOfUpdate(
+  ctx: any,
+  goalId: any,
+  ownerId: any,
+  value: number | undefined,
+  updateExcerpt: string | undefined
+) {
+  const goal = await ctx.db.get(goalId);
+  if (!goal) return;
+  const owner = await ctx.db.get(ownerId);
+  const ownerName = owner?.name ?? owner?.handle ?? "Someone";
+
+  const pledges = await ctx.db
+    .query("motivatorPledges")
+    .withIndex("by_goal_status", (q) => q.eq("goalId", goalId).eq("status", "active"))
+    .collect();
+
+  for (const pledge of pledges) {
+    if (pledge.userId === ownerId) continue; // don't notify the owner
+    const motivator = await ctx.db.get(pledge.userId);
+    if (!motivator?.email) continue;
+    const valueLabel =
+      value !== undefined ? `${value} / ${goal.targetValue} ${goal.unit}` : undefined;
+    await ctx.runMutation(internal.emails.enqueue, {
+      userId: pledge.userId,
+      toEmail: motivator.email,
+      templateId: "newUpdate",
+      category: "transactional",
+      payload: JSON.stringify({
+        motivatorName: motivator.name ?? motivator.handle ?? "there",
+        ownerName,
+        goalTitle: goal.title,
+        goalSlug: goal.slug,
+        updateExcerpt,
+        valueLabel,
+      }),
+    });
+  }
+}

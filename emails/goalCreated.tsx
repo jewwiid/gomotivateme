@@ -7,6 +7,7 @@ export interface GoalCreatedEmailProps {
   goalTitle: string;
   slug: string;
   siteUrl?: string;
+  unsubscribeToken?: string;
 }
 
 export function GoalCreatedEmail({
@@ -14,11 +15,15 @@ export function GoalCreatedEmail({
   goalTitle,
   slug,
   siteUrl = "https://gomotivateme.com",
+  unsubscribeToken,
 }: GoalCreatedEmailProps) {
   const greeting = firstName ? `Hi ${firstName}` : "Hi there";
 
   return (
-    <EmailLayout preheader="Your goal is live — here's what happens next.">
+    <EmailLayout
+      preheader="Your goal is live — here's what happens next."
+      unsubscribeUrl={unsubscribeToken ? `${siteUrl}/email/unsubscribe?token=${unsubscribeToken}` : undefined}
+    >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         {greeting},
       </Text>

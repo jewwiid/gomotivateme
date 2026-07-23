@@ -620,6 +620,25 @@ export const approveApplication = mutation({
       status: "accepted",
       pledgeId,
     });
+
+    // Email C2 — "Application decision" → to the applicant.
+    const applicant = await ctx.db.get(app.applicantId);
+    if (applicant?.email) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: app.applicantId,
+        toEmail: applicant.email,
+        templateId: "applicationDecision",
+        category: "transactional",
+        payload: JSON.stringify({
+          applicantName: applicant.name ?? applicant.handle ?? "there",
+          goalTitle: goal.title,
+          goalSlug: goal.slug,
+          decision: "approved",
+          roleLabel: args.role ?? app.requestedRole,
+        }),
+      });
+    }
+
     return { pledgeId };
   },
 });
@@ -638,6 +657,25 @@ export const declineApplication = mutation({
     const goal = await ctx.db.get(app.goalId);
     if (!goal || goal.ownerId !== userId) throw new Error("Not the goal owner");
     await ctx.db.patch(applicationId, { status: "declined" });
+
+    // Email C2 — "Application decision" → to the applicant.
+    const applicant = await ctx.db.get(app.applicantId);
+    if (applicant?.email) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: app.applicantId,
+        toEmail: applicant.email,
+        templateId: "applicationDecision",
+        category: "transactional",
+        payload: JSON.stringify({
+          applicantName: applicant.name ?? applicant.handle ?? "there",
+          goalTitle: goal.title,
+          goalSlug: goal.slug,
+          decision: "declined",
+          roleLabel: app.requestedRole,
+        }),
+      });
+    }
+
     return { declined: true };
   },
 });

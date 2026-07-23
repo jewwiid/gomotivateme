@@ -456,3 +456,240 @@ export const listFeaturedMotivators = query({
     return candidates.slice(0, take);
   },
 });
+
+/**
+ * Permanently delete the signed-in user's account and all associated data.
+ *
+ * GDPR Art. 17 (right to erasure). Purges the user across every table:
+ *  - Owned content: their goals (+ full cascade: updates, media, reactions,
+ *    supporters, messages, badges, motivator circle tables, checkIns)
+ *  - Dual-role rows: where they appear on OTHER people's goals (memberships,
+ *    messages, pledges, applications, received invites, check-ins)
+ *  - Notification prefs + email log (also scrubs rows by email address)
+ *  - Auth tables: sessions, accounts, refresh tokens, verification codes
+ *  - Storage files: cover photo
+ *  - The user row itself (last)
+ *
+ * Storage cleanup pattern reuses goals.remove (goals.ts:498).
+ */
+export const deleteAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("Not signed in");
+    const email = (user as { email?: string }).email;
+
+    // --- 1. The user's own goals (full cascade each) ---
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+    for (const goal of goals) {
+      await purgeGoal(ctx, goal._id);
+    }
+
+    // --- 2. Dual-role rows (user on OTHER people's goals) ---
+
+    // Supporters: their memberships on others' goals. Decrement the goal's
+    // supporterCount so public counts stay accurate.
+    const mySupporterships = await ctx.db
+      .query("supporters")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const s of mySupporterships) {
+      await ctx.db.delete(s._id);
+      const g = await ctx.db.get(s.goalId);
+      if (g && (g.supporterCount ?? 0) > 0) {
+        await ctx.db.patch(s.goalId, { supporterCount: g.supporterCount - 1 });
+      }
+    }
+
+    // Support messages they authored on others' goals.
+    const myMessages = await ctx.db
+      .query("supportMessages")
+      .withIndex("by_author", (q) => q.eq("authorId", userId))
+      .collect();
+    for (const m of myMessages) await ctx.db.delete(m._id);
+
+    // Motivator pledges they made on others' goals.
+    const myPledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const p of myPledges) await ctx.db.delete(p._id);
+
+    // Applications they submitted to others' goals.
+    const myApps = await ctx.db
+      .query("motivatorApplications")
+      .withIndex("by_applicant", (q) => q.eq("applicantId", userId))
+      .collect();
+    for (const a of myApps) await ctx.db.delete(a._id);
+
+    // Invites they received (invitedUserId). Safety net for invites they
+    // sent as creator is covered by the goal cascade above.
+    const receivedInvites = await ctx.db
+      .query("motivatorInvites")
+      .withIndex("by_invited_user", (q) => q.eq("invitedUserId", userId))
+      .collect();
+    for (const inv of receivedInvites) await ctx.db.delete(inv._id);
+
+    // Check-ins they sent as a motivator on others' goals.
+    const myCheckIns = await ctx.db
+      .query("checkIns")
+      .withIndex("by_motivator", (q) => q.eq("motivatorId", userId))
+      .collect();
+    for (const c of myCheckIns) await ctx.db.delete(c._id);
+
+    // Orphaned media upload intents.
+    const myIntents = await ctx.db
+      .query("mediaUploadIntents")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+    for (const i of myIntents) await ctx.db.delete(i._id);
+
+    // --- 3. Notification prefs + email log ---
+    const prefs = await ctx.db
+      .query("notificationPrefs")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+    if (prefs) await ctx.db.delete(prefs._id);
+
+    const notifs = await ctx.db
+      .query("notifications")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const n of notifs) await ctx.db.delete(n._id);
+
+    // Scrub any remaining notification rows carrying their plaintext email
+    // (pre-signup / visitor emails where userId is null).
+    if (email) {
+      const byEmail = await ctx.db
+        .query("notifications")
+        .filter((q) => q.eq(q.field("toEmail"), email))
+        .collect();
+      for (const n of byEmail) await ctx.db.delete(n._id);
+    }
+
+    // --- 4. Auth tables ---
+    const sessions = await ctx.db
+      .query("authSessions")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const s of sessions) {
+      // Cascade: refresh tokens + verifiers reference sessions.
+      const refreshTokens = await ctx.db
+        .query("authRefreshTokens")
+        .filter((q) => q.eq(q.field("sessionId"), s._id))
+        .collect();
+      for (const rt of refreshTokens) await ctx.db.delete(rt._id);
+      const verifiers = await ctx.db
+        .query("authVerifiers")
+        .filter((q) => q.eq(q.field("sessionId"), s._id))
+        .collect();
+      for (const v of verifiers) await ctx.db.delete(v._id);
+      await ctx.db.delete(s._id);
+    }
+
+    const accounts = await ctx.db
+      .query("authAccounts")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const a of accounts) {
+      const codes = await ctx.db
+        .query("authVerificationCodes")
+        .filter((q) => q.eq(q.field("accountId"), a._id))
+        .collect();
+      for (const c of codes) await ctx.db.delete(c._id);
+      await ctx.db.delete(a._id);
+    }
+
+    // --- 5. Storage files ---
+    const coverImageId = (user as { coverImageId?: string }).coverImageId;
+    if (coverImageId) {
+      try {
+        await ctx.storage.delete(coverImageId as any);
+      } catch {
+        // Already deleted or missing — not fatal.
+      }
+    }
+
+    // --- 6. The user row itself ---
+    await ctx.db.delete(userId);
+
+    return { ok: true as const };
+  },
+});
+
+/**
+ * Cascade-delete a single goal and all its child rows + storage files.
+ * Mirrors goals.remove (goals.ts:498) but callable without auth (the caller
+ * deleteAccount has already verified ownership).
+ */
+async function purgeGoal(ctx: any, goalId: any) {
+  const goal = await ctx.db.get(goalId);
+  if (!goal) return;
+
+  // Delete order respects back-references:
+  // checkIns → applications → invites → pledges → badges/supporters/messages/
+  // reactions/reports → updates(+storage) → mediaUploadIntents → goal.
+  for (const table of [
+    "checkIns",
+    "motivatorApplications",
+    "motivatorInvites",
+    "motivatorPledges",
+    "badges",
+    "supporters",
+    "supportMessages",
+    "reactions",
+    "reports",
+  ] as const) {
+    const rows = await ctx.db
+      .query(table)
+      .withIndex("by_goal", (q: any) => q.eq("goalId", goalId))
+      .collect();
+    for (const r of rows) await ctx.db.delete(r._id);
+  }
+
+  // Updates + their storage files.
+  const updates = await ctx.db
+    .query("updates")
+    .withIndex("by_goal", (q) => q.eq("goalId", goalId))
+    .collect();
+  for (const u of updates) {
+    const storageIds = new Set();
+    for (const item of (u as any).media ?? []) {
+      if (item.kind === "image") {
+        if (item.storageId) storageIds.add(item.storageId);
+        if (item.thumbnailId) storageIds.add(item.thumbnailId);
+      }
+    }
+    for (const sid of storageIds) {
+      try {
+        await ctx.storage.delete(sid);
+      } catch {
+        // missing file — skip
+      }
+    }
+    await ctx.db.delete(u._id);
+  }
+
+  // Media upload intents for this goal.
+  const intents = await ctx.db
+    .query("mediaUploadIntents")
+    .withIndex("by_goal", (q) => q.eq("goalId", goalId))
+    .collect();
+  for (const i of intents) await ctx.db.delete(i._id);
+
+  // Goal cover image.
+  if (goal.coverImageId) {
+    try {
+      await ctx.storage.delete(goal.coverImageId);
+    } catch {
+      // missing — skip
+    }
+  }
+
+  await ctx.db.delete(goalId);
+}

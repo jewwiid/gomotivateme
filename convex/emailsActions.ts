@@ -15,6 +15,10 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
+// Public site URL — used for the List-Unsubscribe header and footer links.
+// Matches the default in the email templates.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gomotivateme.com";
+
 export const drainQueue = internalAction({
   args: {},
   handler: async (ctx) => {
@@ -41,17 +45,25 @@ export const drainQueue = internalAction({
     let sent = 0;
     for (const notification of pending) {
       try {
-        const { subject, component } = renderTemplate(
-          notification.templateId,
-          JSON.parse(notification.payload)
-        );
+        const payload = JSON.parse(notification.payload);
+        const { subject, component } = renderTemplate(notification.templateId, payload);
         const html = await render(component);
+
+        // List-Unsubscribe headers (Gmail/Yahoo 2024 bulk-sender requirement).
+        // Only present for user-recipient emails where enqueue injected a token.
+        const headers: Record<string, string> = {};
+        if (payload.unsubscribeToken) {
+          const unsubUrl = `${SITE_URL}/email/unsubscribe?token=${payload.unsubscribeToken}`;
+          headers["List-Unsubscribe"] = `<${unsubUrl}>`;
+          headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+        }
 
         const result = await client.emails.send({
           from: fromAddress,
           to: notification.toEmail,
           subject,
           html,
+          headers,
         });
 
         if (result.error) {

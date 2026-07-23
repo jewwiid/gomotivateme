@@ -48,8 +48,36 @@ export const enqueue = internalMutation({
       }
     }
 
+    // Inject the recipient's unsubscribe token into the payload so templates
+    // can render a footer unsubscribe link. Minted lazily here (covers users
+    // who never went through updateProfile, e.g. Google OAuth sign-ins). Same
+    // mint pattern as users.ts:282. Non-user emails (userId absent, e.g.
+    // inviteReceived) get no token — they render the "service message" footer.
+    let payload = args.payload;
+    if (args.userId) {
+      const user = await ctx.db.get(args.userId);
+      const existing = (user as { unsubscribeToken?: string } | null)?.unsubscribeToken;
+      const token =
+        existing ??
+        (typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      if (!existing) {
+        await ctx.db.patch(args.userId, { unsubscribeToken: token });
+      }
+      try {
+        const parsed = JSON.parse(payload);
+        parsed.unsubscribeToken = token;
+        payload = JSON.stringify(parsed);
+      } catch {
+        // payload wasn't valid JSON — leave it as-is (template will render
+        // without a footer link rather than crash the enqueue).
+      }
+    }
+
     await ctx.db.insert("notifications", {
       ...args,
+      payload,
       status: "pending",
       attempts: 0,
       createdAt: now,
@@ -94,5 +122,33 @@ export const markFailed = internalMutation({
       // Keep retrying up to 3 attempts, then mark failed permanently.
       status: (doc.attempts ?? 0) + 1 >= 3 ? "failed" : "pending",
     });
+  },
+});
+
+/**
+ * Retention: delete terminal notifications (sent/failed/suppressed) older
+ * than 90 days. Never touches "pending" rows. Capped per run so it can't
+ * block. Runs daily via crons.ts. Satisfies GDPR Art. 5(1)(e) storage
+ * limitation — email content (names, titles, personal messages) isn't
+ * retained indefinitely.
+ */
+export const purgeOld = internalMutation({
+  args: { olderThanMs: v.optional(v.number()), limit: v.optional(v.number()) },
+  handler: async (ctx, { olderThanMs, limit }) => {
+    const cutoff = Date.now() - (olderThanMs ?? 90 * 24 * 60 * 60 * 1000);
+    const cap = limit ?? 200;
+    let deleted = 0;
+    for (const status of ["sent", "failed", "suppressed"] as const) {
+      const rows = await ctx.db
+        .query("notifications")
+        .withIndex("by_status_created", (q) =>
+          q.eq("status", status).lt("createdAt", cutoff)
+        )
+        .take(cap - deleted);
+      await Promise.all(rows.map((r) => ctx.db.delete(r._id)));
+      deleted += rows.length;
+      if (deleted >= cap) break;
+    }
+    return { deleted };
   },
 });

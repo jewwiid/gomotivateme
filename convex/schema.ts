@@ -363,6 +363,7 @@ export default defineSchema({
   })
     .index("by_goal", ["goalId"])
     .index("by_goal_created", ["goalId", "createdAt"])
+    .index("by_author", ["authorId"])
     .index("by_moderation_status_created", ["moderationStatus", "createdAt"]),
 
   badges: defineTable({
@@ -423,6 +424,7 @@ export default defineSchema({
     .index("by_goal", ["goalId"])
     .index("by_goal_status", ["goalId", "status"])
     .index("by_creator", ["creatorId"])
+    .index("by_invited_user", ["invitedUserId"])
     .index("by_token", ["token"])
     .index("by_email", ["email"]),
 

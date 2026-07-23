@@ -142,6 +142,14 @@ export default function LoginPage() {
               Looks good
             </div>
           )}
+          <div className="mt-1 text-right">
+            <Link
+              href="/reset"
+              className="text-[11px] text-[var(--color-text-dim)] transition hover:text-[var(--color-primary)]"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         {err && (
