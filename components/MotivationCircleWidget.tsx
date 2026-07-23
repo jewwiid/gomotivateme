@@ -195,7 +195,7 @@ export function MotivationCircleWidget({
       {!isOwner && !isLoggedIn && coreCount < 6 && (
         <div className="mt-5 border-t border-zinc-100 pt-4">
           <Link
-            href={`/signup?return_to=/o/${goalId}`}
+            href={`/signup?redirect=${encodeURIComponent(`/o/${goalId}`)}`}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 transition hover:border-zinc-300"
           >
             Join the support team

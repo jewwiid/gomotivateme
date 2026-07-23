@@ -530,7 +530,7 @@ function NotificationsTab() {
   const prefs = useQuery(api.notificationPrefs.get, {});
   const update = useMutation(api.notificationPrefs.update);
 
-  const toggle = (key: "yourMotivations" | "newMotivatorOnGoal" | "weeklyDigest" | "urgentCauses" | "productUpdates") => {
+  const toggle = (key: "yourMotivations" | "supportedGoalUpdates" | "newMotivatorOnGoal" | "weeklyDigest" | "urgentCauses" | "productUpdates") => {
     if (!prefs) return;
     void update({ [key]: !prefs[key] });
   };
@@ -554,6 +554,12 @@ function NotificationsTab() {
             description="Reactions, milestone posts, replies from the goal owner"
             on={prefs?.yourMotivations ?? true}
             onChange={() => toggle("yourMotivations")}
+          />
+          <Toggle
+            label="Updates on goals you support"
+            description="Progress posts from creators whose goals you've supported"
+            on={prefs?.supportedGoalUpdates ?? true}
+            onChange={() => toggle("supportedGoalUpdates")}
           />
           <Toggle
             label="A new motivator joins one of your goals"

@@ -17,7 +17,10 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) router.replace("/login");
+    if (!isLoading && !isAuthenticated) {
+      const path = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/dashboard";
+      router.replace(`/login?redirect=${encodeURIComponent(path)}`);
+    }
   }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {

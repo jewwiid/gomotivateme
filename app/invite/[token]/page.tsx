@@ -155,13 +155,13 @@ export default function InvitePage() {
         </p>
         <div className="mt-6 flex gap-3">
           <Link
-            href={`/login?return_to=/invite/${invite.token}`}
+            href={`/login?redirect=${encodeURIComponent(`/invite/${invite.token}`)}`}
             className="inline-flex items-center gap-2 rounded-xl border border-[#c9c8c0] bg-white px-4 py-2.5 text-sm font-semibold text-[#292929] transition hover:border-[var(--color-primary)]"
           >
             Sign in
           </Link>
           <Link
-            href={`/signup?return_to=/invite/${invite.token}`}
+            href={`/signup?redirect=${encodeURIComponent(`/invite/${invite.token}`)}`}
             className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
           >
             Create account

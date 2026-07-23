@@ -15,6 +15,7 @@ import { api } from "./_generated/api";
 /** Default prefs for a brand-new user. Lifecycle on, marketing off. */
 export const DEFAULT_PREFS = {
   yourMotivations: true,
+  supportedGoalUpdates: true,
   newMotivatorOnGoal: true,
   weeklyDigest: false,
   urgentCauses: true,
@@ -47,6 +48,7 @@ export const get = query({
 export const update = mutation({
   args: {
     yourMotivations: v.optional(v.boolean()),
+    supportedGoalUpdates: v.optional(v.boolean()),
     newMotivatorOnGoal: v.optional(v.boolean()),
     weeklyDigest: v.optional(v.boolean()),
     urgentCauses: v.optional(v.boolean()),

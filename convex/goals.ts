@@ -3,7 +3,7 @@
  * Goal CRUD + lifecycle.
  */
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { buildSlug, computeProgress, newMilestoneTiers } from "./utils";
@@ -641,10 +641,15 @@ export const recordValue = mutation({
       }
     }
 
-    // Email C4 — "New update" → fan out to active motivators. Only for
-    // auto-approved updates (no text note); text updates gate on moderation.
+    // Email C4 — "New update" → fan out to followers (motivators + supporters).
+    // Only for auto-approved updates (no text note); text updates gate on
+    // moderation and fan out from applyUpdateDecision when approved.
     if (!note?.trim()) {
-      await notifyMotivatorsOfUpdate(ctx, goalId, userId, value, undefined);
+      await ctx.scheduler.runAfter(0, internal.goals.notifyFollowersOfUpdate, {
+        goalId,
+        ownerId: userId,
+        updateId,
+      });
     }
 
     return { progress: pct, newBadges: newTiers };
@@ -652,47 +657,118 @@ export const recordValue = mutation({
 });
 
 /**
- * Email C4 helper — fan out a "new update" notification to a goal's active
- * motivators. Queries active pledges, resolves each motivator's name/email,
- * and enqueues one row per motivator. Skips the goal owner (they made the
- * update). Used by recordValue for auto-approved (no-note) value updates.
+ * Email C4 — fan out a "new update" notification to a goal's followers.
+ *
+ * Followers = active motivators (committed tier) + supporters (casual tier).
+ * Deduped by userId — if someone is both a motivator and a supporter, they
+ * get one email, not two. Each recipient's notification prefs are checked:
+ *   - motivators: gated by `yourMotivations` pref
+ *   - supporters: gated by `supportedGoalUpdates` pref
+ *   - both suppressed by `unsubscribedAll` (handled by emails.enqueue)
+ *
+ * Called via scheduler from:
+ *   - recordValue (auto-approved value-only updates)
+ *   - moderation.applyUpdateDecision (when note/image/media updates are approved)
  */
-async function notifyMotivatorsOfUpdate(
-  ctx: any,
-  goalId: any,
-  ownerId: any,
-  value: number | undefined,
-  updateExcerpt: string | undefined
-) {
-  const goal = await ctx.db.get(goalId);
-  if (!goal) return;
-  const owner = await ctx.db.get(ownerId);
-  const ownerName = owner?.name ?? owner?.handle ?? "Someone";
+export const notifyFollowersOfUpdate = internalMutation({
+  args: {
+    goalId: v.id("goals"),
+    ownerId: v.id("users"),
+    updateId: v.optional(v.id("updates")),
+  },
+  handler: async (ctx, { goalId, ownerId, updateId }) => {
+    const goal = await ctx.db.get(goalId);
+    if (!goal) return;
+    const owner = await ctx.db.get(ownerId);
+    const ownerName = owner?.name ?? owner?.handle ?? "Someone";
 
-  const pledges = await ctx.db
-    .query("motivatorPledges")
-    .withIndex("by_goal_status", (q) => q.eq("goalId", goalId).eq("status", "active"))
-    .collect();
+    // Resolve update excerpt + value label if we have an updateId.
+    let updateExcerpt: string | undefined;
+    let valueLabel: string | undefined;
+    if (updateId) {
+      const update = await ctx.db.get(updateId);
+      if (update?.note) {
+        updateExcerpt = update.note.slice(0, 200);
+      }
+      if (update?.value !== undefined) {
+        valueLabel = `${update.value} / ${goal.targetValue} ${goal.unit}`;
+      }
+    }
 
-  for (const pledge of pledges) {
-    if (pledge.userId === ownerId) continue; // don't notify the owner
-    const motivator = await ctx.db.get(pledge.userId);
-    if (!motivator?.email) continue;
-    const valueLabel =
-      value !== undefined ? `${value} / ${goal.targetValue} ${goal.unit}` : undefined;
-    await ctx.runMutation(internal.emails.enqueue, {
-      userId: pledge.userId,
-      toEmail: motivator.email,
-      templateId: "newUpdate",
-      category: "transactional",
-      payload: JSON.stringify({
-        motivatorName: motivator.name ?? motivator.handle ?? "there",
-        ownerName,
-        goalTitle: goal.title,
-        goalSlug: goal.slug,
-        updateExcerpt,
-        valueLabel,
-      }),
-    });
-  }
-}
+    // Collect all follower userIds with their tier for pref gating.
+    const followerMap = new Map<
+      string,
+      { userId: any; isMotivator: boolean; isSupporter: boolean }
+    >();
+
+    // Active motivator pledges.
+    const pledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_goal_status", (q) => q.eq("goalId", goalId).eq("status", "active"))
+      .collect();
+    for (const pledge of pledges) {
+      if (pledge.userId === ownerId) continue;
+      const entry = followerMap.get(pledge.userId);
+      if (entry) {
+        entry.isMotivator = true;
+      } else {
+        followerMap.set(pledge.userId, {
+          userId: pledge.userId,
+          isMotivator: true,
+          isSupporter: false,
+        });
+      }
+    }
+
+    // Supporters (casual tier).
+    const supporters = await ctx.db
+      .query("supporters")
+      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
+      .collect();
+    for (const supporter of supporters) {
+      if (supporter.userId === ownerId) continue;
+      const entry = followerMap.get(supporter.userId);
+      if (entry) {
+        entry.isSupporter = true;
+      } else {
+        followerMap.set(supporter.userId, {
+          userId: supporter.userId,
+          isMotivator: false,
+          isSupporter: true,
+        });
+      }
+    }
+
+    // Enqueue one email per follower, respecting prefs.
+    for (const [, { userId, isMotivator, isSupporter }] of followerMap) {
+      const follower = await ctx.db.get(userId);
+      if (!follower?.email) continue;
+
+      // Pref check: motivators need yourMotivations, supporters need supportedGoalUpdates.
+      // If someone is both, they get the email if either pref is on.
+      const prefs = await ctx.runMutation(internal.notificationPrefs.getForUser, {
+        userId,
+      });
+      if (prefs) {
+        const motivatorOk = isMotivator && (prefs.yourMotivations ?? true);
+        const supporterOk = isSupporter && (prefs.supportedGoalUpdates ?? true);
+        if (!motivatorOk && !supporterOk) continue;
+      }
+
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId,
+        toEmail: follower.email,
+        templateId: "newUpdate",
+        category: "lifecycle",
+        payload: JSON.stringify({
+          motivatorName: follower.name ?? follower.handle ?? "there",
+          ownerName,
+          goalTitle: goal.title,
+          goalSlug: goal.slug,
+          updateExcerpt,
+          valueLabel,
+        }),
+      });
+    }
+  },
+});

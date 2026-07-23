@@ -15,6 +15,7 @@ import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import Link from "next/link";
 
 type SupportType = "encourage" | "experience" | "advice" | "checkin" | "join";
 
@@ -98,18 +99,28 @@ export function StructuredSupportComposer({
   const typesToShow = allowedTypes.length > 0 ? allowedTypes : (Object.keys(SUPPORT_META) as SupportType[]);
 
   if (!isAuthenticated) {
+    const redirectPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
     return (
       <div className="rounded-2xl border-2 border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)] p-6 text-center">
         <h3 className="text-base font-semibold">Sign in to support this goal</h3>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
           Supporters make a real commitment — that's why we ask you to sign in.
         </p>
-        <a
-          href="/login"
+        <Link
+          href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
           className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)]"
         >
           Sign in
-        </a>
+        </Link>
+        <p className="mt-3 text-xs text-[var(--color-text-dim)]">
+          New here?{" "}
+          <Link
+            href={`/signup?redirect=${encodeURIComponent(redirectPath)}`}
+            className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+          >
+            Create an account
+          </Link>
+        </p>
       </div>
     );
   }

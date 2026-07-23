@@ -2,9 +2,9 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useMutation } from "convex/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Check, AtSign, X } from "lucide-react";
 import { api } from "@/convex/_generated/api";
@@ -21,9 +21,19 @@ import {
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
   const { signIn } = useAuthActions();
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const setHandle = useMutation(api.users.setHandle);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -76,14 +86,14 @@ export default function SignupPage() {
           }
         }
       }
-      if (active) router.replace("/dashboard");
+      if (active) router.replace(redirect || "/dashboard");
     };
 
     void finishSignup();
     return () => {
       active = false;
     };
-  }, [awaitingSession, handle, isAuthenticated, router, setHandle]);
+  }, [awaitingSession, handle, isAuthenticated, router, setHandle, redirect]);
 
   const onPasswordChange = (v: string) => {
     setPassword(v);
@@ -185,7 +195,7 @@ export default function SignupPage() {
         Set up an account in 30 seconds.
       </p>
 
-      <GoogleSignInButton mode="signUp" />
+      <GoogleSignInButton mode="signUp" redirectTo={redirect || "/dashboard"} />
 
       <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
         <span className="h-px flex-1 bg-[#deddd6]" />
@@ -337,7 +347,7 @@ export default function SignupPage() {
       <p className="mt-7 text-center text-sm text-[#686963]">
         Already have an account?{" "}
         <Link
-          href="/login"
+          href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"}
           className="font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
         >
           Sign in

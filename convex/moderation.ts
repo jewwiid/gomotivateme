@@ -90,6 +90,15 @@ export const applyUpdateDecision = internalMutation({
       moderatedAt: Date.now(),
       publicVisible: decision === "approved",
     });
+
+    // Fan out "new update" emails to followers when an update is approved.
+    if (decision === "approved") {
+      await ctx.scheduler.runAfter(0, internal.goals.notifyFollowersOfUpdate, {
+        goalId: update.goalId,
+        ownerId: update.ownerId,
+        updateId,
+      });
+    }
   },
 });
 
@@ -132,6 +141,15 @@ export const decideUpdate = internalMutation({
       moderatedAt: Date.now(),
       publicVisible: decision === "approved",
     });
+
+    // Fan out "new update" emails to followers when manually approved.
+    if (decision === "approved") {
+      await ctx.scheduler.runAfter(0, internal.goals.notifyFollowersOfUpdate, {
+        goalId: update.goalId,
+        ownerId: update.ownerId,
+        updateId,
+      });
+    }
   },
 });
 

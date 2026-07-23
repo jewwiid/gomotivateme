@@ -152,13 +152,13 @@ export default function ApplyPage() {
           </p>
           <div className="mt-6 flex gap-3">
             <Link
-              href={`/signup?return_to=/o/apply/${goalId}`}
+              href={`/signup?redirect=${encodeURIComponent(`/o/apply/${goalId}`)}`}
               className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
             >
               Create account
             </Link>
             <Link
-              href={`/login?return_to=/o/apply/${goalId}`}
+              href={`/login?redirect=${encodeURIComponent(`/o/apply/${goalId}`)}`}
               className="inline-flex items-center gap-2 rounded-xl border border-[#c9c8c0] bg-white px-5 py-3 text-sm font-semibold text-[#292929] transition hover:border-[var(--color-primary)]"
             >
               Sign in

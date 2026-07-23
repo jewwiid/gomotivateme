@@ -559,6 +559,8 @@ export default defineSchema({
     email: v.optional(v.string()),
     /** Updates on goals you motivate (reactions, replies, milestones). */
     yourMotivations: v.boolean(),
+    /** Updates on goals you support (progress posts from the creator). */
+    supportedGoalUpdates: v.optional(v.boolean()),
     /** A new motivator joins one of your goals. */
     newMotivatorOnGoal: v.boolean(),
     /** Monday-morning summary of activity across your goals. */

@@ -2,9 +2,9 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import {
@@ -15,9 +15,19 @@ import {
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const { signIn } = useAuthActions();
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,9 +50,9 @@ export default function LoginPage() {
   // state and send the user straight back here.
   useEffect(() => {
     if (awaitingSession && isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace(redirect || "/dashboard");
     }
-  }, [awaitingSession, isAuthenticated, router]);
+  }, [awaitingSession, isAuthenticated, router, redirect]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +105,7 @@ export default function LoginPage() {
         Sign in to keep your momentum going.
       </p>
 
-      <GoogleSignInButton mode="signIn" />
+      <GoogleSignInButton mode="signIn" redirectTo={redirect || "/dashboard"} />
 
       <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
         <span className="h-px flex-1 bg-[#deddd6]" />
@@ -170,7 +180,7 @@ export default function LoginPage() {
       <p className="mt-7 text-center text-sm text-[#686963]">
         New here?{" "}
         <Link
-          href="/signup"
+          href={redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup"}
           className="font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
         >
           Create an account

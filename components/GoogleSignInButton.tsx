@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
  * in login/page.tsx — without it, RequireAuth sees a transient
  * signed-out state and bounces back to /login).
  */
-export function GoogleSignInButton({ mode }: { mode: "signIn" | "signUp" }) {
+export function GoogleSignInButton({ mode, redirectTo = "/dashboard" }: { mode: "signIn" | "signUp"; redirectTo?: string }) {
   const { signIn } = useAuthActions();
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
@@ -27,15 +27,15 @@ export function GoogleSignInButton({ mode }: { mode: "signIn" | "signUp" }) {
 
   useEffect(() => {
     if (awaitingSession && isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace(redirectTo);
     }
-  }, [awaitingSession, isAuthenticated, router]);
+  }, [awaitingSession, isAuthenticated, router, redirectTo]);
 
   const onClick = async () => {
     setErr(null);
     setBusy(true);
     try {
-      const result = await signIn("google", { redirectTo: "/dashboard" });
+      const result = await signIn("google", { redirectTo });
       if (!result.redirect) {
         // No redirect happened (rare on web — usually the browser has
         // already navigated away by this point). Treat as "session
