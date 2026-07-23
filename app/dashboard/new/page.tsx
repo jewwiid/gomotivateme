@@ -50,7 +50,7 @@ const WIZARD_COPY = [
   },
   {
     title: "Tell people why it matters",
-    detail: "A few honest words help the people in your circle understand the heart behind the goal.",
+    detail: "A few words help your circle understand why this goal matters.",
   },
   {
     title: "Tell people how to help",

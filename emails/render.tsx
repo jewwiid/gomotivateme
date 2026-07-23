@@ -55,7 +55,7 @@ export function renderTemplate(
     case "goalCreated": {
       const p = payload as GoalCreatedEmailProps;
       return {
-        subject: "Your goal is live. Let's build momentum",
+        subject: "Your goal is live",
         component: <GoalCreatedEmail {...p} />,
       };
     }
@@ -90,7 +90,7 @@ export function renderTemplate(
     case "targetHit": {
       const p = payload as TargetHitEmailProps;
       return {
-        subject: `You did it. ${p.goalTitle} is complete 🎉`,
+        subject: `You did it. ${p.goalTitle} is complete`,
         component: <TargetHitEmail {...p} />,
       };
     }

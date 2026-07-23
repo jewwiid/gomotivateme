@@ -201,7 +201,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
             )}
             {isCompleted && (
               <>
-                <strong className="text-zinc-900">Completed!</strong> They hit their target.
+                <strong className="text-zinc-900">Completed.</strong> They hit their target.
                 Leave a final note to celebrate.
               </>
             )}

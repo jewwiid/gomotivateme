@@ -165,7 +165,7 @@ export function StructuredSupportComposer({
         <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-success)]/20 text-[var(--color-success)]">
           <Check size={20} />
         </div>
-        <h3 className="text-base font-semibold">You're on the team 🎉</h3>
+        <h3 className="text-base font-semibold">You're on the team</h3>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
           {user?.name ? `Thanks, ${user.name.split(" ")[0]}.` : "Thanks."} They'll see your support.
         </p>

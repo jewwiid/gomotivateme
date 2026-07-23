@@ -37,7 +37,7 @@ export function WeeklyDigestEmail({
 
   return (
     <EmailLayout
-      preheader={`Your week: ${totalActivity} moments of momentum.`}
+      preheader={`Your week: ${totalActivity} updates.`}
       unsubscribeUrl={unsubscribeToken ? `${siteUrl}/email/unsubscribe?token=${unsubscribeToken}` : undefined}
     >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>

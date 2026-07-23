@@ -186,7 +186,7 @@ export default function HomePage() {
               <div className="mt-12 grid place-items-center border-y border-[#e4e3dc] py-16 text-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/illustrations/empty-new-beginning-v3.webp" alt="A seedling ready to grow" className="h-28 w-28 object-contain" />
-                <p className="mt-4 max-w-sm text-base text-[#666762]">{recent === undefined ? "Finding goals worth cheering for…" : "No goals match that search yet. Be the first to share yours."}</p>
+                <p className="mt-4 max-w-sm text-base text-[#666762]">{recent === undefined ? "Loading…" : "No goals match that search yet. Be the first to share yours."}</p>
                 <Link href={startGoalHref} className="mt-5 text-sm font-bold text-[var(--color-primary)]">Start a goal <span aria-hidden>→</span></Link>
               </div>
             ) : (

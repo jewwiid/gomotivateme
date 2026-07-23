@@ -27,7 +27,7 @@ export function CampaignStatusBanner({
       bg: "bg-emerald-500/10",
       border: "border-emerald-500/30",
       icon: CheckCircle2,
-      title: "Completed!",
+      title: "Completed",
       body: completedAt
         ? `Finished on ${formatDate(completedAt)}.`
         : "They did it. Take a look at the full timeline below.",

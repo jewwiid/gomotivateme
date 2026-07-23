@@ -13,7 +13,7 @@ export function WelcomeEmail({ firstName, siteUrl = "https://gomotivateme.com", 
 
   return (
     <EmailLayout
-      preheader="2 minutes now, momentum later."
+      preheader="2 minutes now, progress later."
       unsubscribeUrl={unsubscribeToken ? `${siteUrl}/email/unsubscribe?token=${unsubscribeToken}` : undefined}
     >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>

@@ -39,10 +39,10 @@ function DashboardContent() {
             <div className="mt-3 flex flex-wrap items-end justify-between gap-6">
               <div>
                 <h1 className="font-display text-balance text-5xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl">
-                  Your goals, in motion.
+                  Your goals, your pace.
                 </h1>
                 <p className="mt-4 max-w-xl text-base leading-7 text-[#686963]">
-                  Keep the next meaningful step close, and let your people see how they can help.
+                  See what's next and let your people know how to help.
                 </p>
               </div>
               <Link
@@ -56,15 +56,15 @@ function DashboardContent() {
 
           <dl className="mt-12 grid divide-y divide-[#deddd6] border-y border-[#deddd6] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <DashboardStat value={goals?.length ?? 0} label="total goals" loading={goals === undefined} />
-            <DashboardStat value={activeGoals} label="in motion" loading={goals === undefined} />
+            <DashboardStat value={activeGoals} label="active" loading={goals === undefined} />
             <DashboardStat value={supporters} label="people cheering" loading={goals === undefined} />
           </dl>
 
           <section className="mt-12">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="brand-kicker">Keep moving</p>
-                <h2 className="mt-2 font-display text-3xl font-bold tracking-[-0.045em]">Your goals</h2>
+                <p className="brand-kicker">Your goals</p>
+                <h2 className="mt-2 font-display text-3xl font-bold tracking-[-0.045em]">All goals</h2>
               </div>
               {goals && goals.length > 3 && (
                 <span className="text-sm text-[#777872]">{goals.length} in total</span>

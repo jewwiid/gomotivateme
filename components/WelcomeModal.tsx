@@ -126,8 +126,8 @@ export function WelcomeModal() {
                 Welcome to GoMotivateMe
               </h2>
               <p className="mx-auto mt-3 max-w-sm text-sm text-zinc-600">
-                Set a real goal, share the journey, and let a circle of
-                people keep you moving. No payments. No performative likes.
+                Set a goal, share progress, and let a circle of
+                people keep you going. No payments. No performative likes.
                 just honest momentum.
               </p>
 
