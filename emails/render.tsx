@@ -11,6 +11,7 @@ import { EmailVerificationEmail, EmailVerificationEmailProps } from "./emailVeri
 import { PasswordResetEmail, PasswordResetEmailProps } from "./passwordReset";
 import { WeeklyDigestEmail, WeeklyDigestEmailProps } from "./weeklyDigest";
 import { CheckInDueEmail, CheckInDueEmailProps } from "./checkInDue";
+import { NewReactionEmail, NewReactionEmailProps } from "./newReaction";
 
 /**
  * Map a templateId + payload to a { subject, component } pair.
@@ -120,6 +121,14 @@ export function renderTemplate(
       return {
         subject: `${p.ownerName}'s check-in is due`,
         component: <CheckInDueEmail {...p} />,
+      };
+    }
+
+    case "newReaction": {
+      const p = payload as NewReactionEmailProps;
+      return {
+        subject: `Someone cheered your ${p.goalTitle} ${p.emojiLabel}`,
+        component: <NewReactionEmail {...p} />,
       };
     }
 

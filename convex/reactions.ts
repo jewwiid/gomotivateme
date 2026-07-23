@@ -6,10 +6,63 @@
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 const EMOJI_KINDS = ["thumbsup", "muscle", "heart", "fire"] as const;
 type EmojiKind = (typeof EMOJI_KINDS)[number];
+
+const EMOJI_LABELS: Record<EmojiKind, string> = {
+  thumbsup: "👍",
+  muscle: "💪",
+  heart: "❤️",
+  fire: "🔥",
+};
+
+/**
+ * Enqueue a "new reaction" email to the goal owner. Only fires on new
+ * reactions (not toggles/updates). Uses lifecycle category so it respects
+ * unsubscribedAll. Rate-limited via a simple count check: only email at
+ * 1, 5, 10, 25, 50, 100, 200, 500... to avoid spamming popular goals.
+ */
+async function maybeNotifyOwnerOfReaction(
+  ctx: any,
+  goalId: any,
+  emoji: EmojiKind,
+  targetType: "goal" | "update",
+) {
+  const goal = await ctx.db.get(goalId);
+  if (!goal) return;
+  const owner = await ctx.db.get(goal.ownerId);
+  if (!owner?.email) return;
+
+  // Count total emoji reactions on this goal (goal-level only, for rate limiting).
+  const allReactions = await ctx.db
+    .query("reactions")
+    .withIndex("by_goal_kind", (q) => q.eq("goalId", goalId).eq("kind", "emoji"))
+    .collect();
+  const total = allReactions.length;
+
+  // Rate limit: only send at milestone counts to avoid spamming.
+  const MILESTONES = new Set([1, 5, 10, 25, 50, 100, 200, 500, 1000]);
+  if (!MILESTONES.has(total)) return;
+
+  const ownerName = owner.name ?? owner.handle ?? "there";
+  await ctx.runMutation(internal.emails.enqueue, {
+    userId: goal.ownerId,
+    toEmail: owner.email,
+    templateId: "newReaction",
+    category: "lifecycle",
+    payload: JSON.stringify({
+      ownerName,
+      goalTitle: goal.title,
+      goalSlug: goal.slug,
+      emojiLabel: EMOJI_LABELS[emoji],
+      targetType,
+      totalReactions: total,
+    }),
+  });
+}
 
 /** Public stats for the cheer bar (goal-level only, excludes update reactions). */
 export const publicStats = query({
@@ -104,6 +157,7 @@ export const setEmoji = mutation({
       approved: true,
       createdAt: Date.now(),
     });
+    await maybeNotifyOwnerOfReaction(ctx, goalId, emoji, "goal");
     return { state: "added" as const, emoji };
   },
 });
@@ -224,6 +278,7 @@ export const setUpdateEmoji = mutation({
       approved: true,
       createdAt: Date.now(),
     });
+    await maybeNotifyOwnerOfReaction(ctx, goalId, emoji, "update");
     return { state: "added" as const, emoji };
   },
 });
