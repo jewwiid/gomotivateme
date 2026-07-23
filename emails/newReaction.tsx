@@ -41,7 +41,7 @@ export function NewReactionEmail({
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "0 0 24px" }}>
         {totalReactions === 1
-          ? "That's your first cheer — momentum starts here."
+          ? "That's your first cheer."
           : `That's ${totalReactions} cheers now. People are rooting for you.`}
       </Text>
 

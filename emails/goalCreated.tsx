@@ -21,7 +21,7 @@ export function GoalCreatedEmail({
 
   return (
     <EmailLayout
-      preheader="Your goal is live — here's what happens next."
+      preheader="Your goal is live. Here's what happens next."
       unsubscribeUrl={unsubscribeToken ? `${siteUrl}/email/unsubscribe?token=${unsubscribeToken}` : undefined}
     >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
@@ -29,7 +29,7 @@ export function GoalCreatedEmail({
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         <strong>{goalTitle}</strong> is live on gomotivateme. You've put a stake in the
-        ground — that's the hardest part.
+        ground. That's the hardest part.
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         Momentum comes from what you do next: post your first update, invite a few

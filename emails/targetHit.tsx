@@ -25,14 +25,14 @@ export function TargetHitEmail({
 
   return (
     <EmailLayout
-      preheader={`You did it — ${goalTitle} is complete.`}
+      preheader={`You did it. ${goalTitle} is complete.`}
       unsubscribeUrl={unsubscribeToken ? `${siteUrl}/email/unsubscribe?token=${unsubscribeToken}` : undefined}
     >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         Hi {firstName},
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-        You hit your target on <strong>{goalTitle}</strong> — {targetValue} {unit} reached.
+        You hit your target on <strong>{goalTitle}</strong>. {targetValue} {unit} reached.
         That&apos;s not a small thing. You set a goal, you showed up, and you got there.
       </Text>
 

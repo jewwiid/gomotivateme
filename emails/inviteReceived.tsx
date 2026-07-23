@@ -60,7 +60,7 @@ export function InviteReceivedEmail({
         >
           decline gracefully
         </a>{" "}
-        — no hard feelings.
+. No hard feelings.
       </Text>
     </EmailLayout>
   );

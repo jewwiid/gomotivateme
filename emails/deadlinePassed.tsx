@@ -48,17 +48,17 @@ export function DeadlinePassedEmail({
 
       {progressPct >= 90 ? (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-          You&apos;re almost there — just a bit more to go. Don&apos;t let the
+          You&apos;re almost there. Just a bit more to go. Don&apos;t let the
           deadline kill the momentum. Post a final update and close it out.
         </Text>
       ) : progressPct >= 50 ? (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
           You made real progress. The deadline passed, but the goal
-          doesn&apos;t have to. Post an update — your supporters are still here.
+          doesn&apos;t have to. Post an update. Your supporters are still here.
         </Text>
       ) : (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-          The deadline passed, but that doesn&apos;t mean the journey is over.
+          The deadline passed, but the goal doesn&apos;t have to end here.
           Lots of worthwhile goals take longer than expected. Post an update
           and let your supporters know what&apos;s next.
         </Text>

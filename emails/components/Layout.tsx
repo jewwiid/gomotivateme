@@ -80,7 +80,7 @@ export function EmailLayout({
               </Text>
             ) : (
               <Text style={footerText}>
-                This is a service message about your account — you can't opt out of it.
+                This is a service message about your account. You can't opt out of it.
               </Text>
             )}
             <Text style={footerMuted}>

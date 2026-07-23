@@ -22,7 +22,7 @@ export function WelcomeEmail({ firstName, siteUrl = "https://gomotivateme.com", 
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         You just joined gomotivateme. Here's the short version: pick a goal, set a
         target, invite a few people you trust, and let them keep you moving. No
-        payments, no performative likes — just real encouragement.
+        just real encouragement from people you actually trust.
       </Text>
 
       <CTAButton href={`${siteUrl}/dashboard/new`}>Start your first goal</CTAButton>

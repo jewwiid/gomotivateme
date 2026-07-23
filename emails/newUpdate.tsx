@@ -60,7 +60,7 @@ export function NewUpdateEmail({
       <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Cheer them on</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
-        You&apos;re on their team — a few words from you can make the difference today.
+        You&apos;re on their team. A few words from you can make the difference today.
       </Text>
     </EmailLayout>
   );

@@ -91,7 +91,7 @@ export function WeeklyDigestEmail({
       })}
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "24px 0 0", textAlign: "center" }}>
-        Keep showing up. The momentum compounds.
+        Keep going.
       </Text>
     </EmailLayout>
   );

@@ -38,7 +38,7 @@ export function CheckInDueEmail({
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         You don&apos;t have to write a novel. A single line like &ldquo;still going?&rdquo; is
-        enough — what matters is that you showed up.
+        enough.
       </Text>
 
       <CTAButton href={`${siteUrl}/motivate`}>Send a quick check-in</CTAButton>

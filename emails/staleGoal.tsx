@@ -48,19 +48,19 @@ export function StaleGoalEmail({
             : motivatorCount > 0
               ? `You have ${motivatorCount} motivator${motivatorCount === 1 ? "" : "s"}`
               : `You have ${supporterCount} supporter${supporterCount === 1 ? "" : "s"}`}
-          {" "}waiting to hear from you. They&apos;re rooting for you — don&apos;t leave them in the dark.
+          {" "}waiting to hear from you. They&apos;re rooting for you. Don&apos;t leave them in the dark.
         </Text>
       ) : (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
           Even a quick &ldquo;still going&rdquo; counts as an update. Progress
-          isn&apos;t always a big leap — sometimes it&apos;s just showing up.
+          isn&apos;t always a big leap.
         </Text>
       )}
 
       <CTAButton href={`${siteUrl}/dashboard`}>Post an update</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
-        It takes 30 seconds. A photo, a number, a sentence — whatever shows
+        It takes 30 seconds. A photo, a number, a sentence. Whatever shows
         you&apos;re still in the fight.
       </Text>
     </EmailLayout>

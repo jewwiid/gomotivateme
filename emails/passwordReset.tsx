@@ -27,7 +27,7 @@ export function PasswordResetEmail({
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
         If you didn&apos;t request a password reset, you can safely ignore this
-        email — your password hasn&apos;t been changed.
+        email. Your password hasn&apos;t been changed.
       </Text>
     </EmailLayout>
   );
