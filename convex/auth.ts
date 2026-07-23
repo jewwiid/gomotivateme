@@ -8,8 +8,7 @@ import { Email } from "@convex-dev/auth/providers/Email";
 // Required env vars: AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET (set on dev
 // and prod via `npx convex env set`).
 import Google from "@auth/core/providers/google";
-import { anyApi } from "convex/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { ActionCtx } from "./_generated/server";
 
 /**
@@ -55,7 +54,7 @@ async function sendVerificationRequest(
   // Look up the user by email to pass the userId (for unsubscribe token
   // injection). For signup verification the user may not exist yet, which
   // is fine — the email renders the "service message" footer.
-  const user = await ctx.runQuery(anyApi.users.getRawByEmail, { email: identifier });
+  const user = await ctx.runQuery(api.users.getRawByEmail, { email: identifier });
 
   await ctx.runMutation(internal.emails.enqueue, {
     userId: user?._id,

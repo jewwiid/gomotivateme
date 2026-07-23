@@ -8,6 +8,16 @@ import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { HANDLE_RE, MIN_HANDLE_LENGTH, MAX_HANDLE_LENGTH } from "../lib/handle";
 
+/** Server-side: raw user lookup by email (for auth email flows). */
+export const getRawByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) =>
+    ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first(),
+});
+
 /** Current user profile. */
 export const me = query({
   args: {},
