@@ -59,8 +59,7 @@ export function DeadlinePassedEmail({
       ) : (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
           The deadline passed, but the goal doesn&apos;t have to end here.
-          Lots of worthwhile goals take longer than expected. Post an update
-          and let your supporters know what&apos;s next.
+          Post an update and let your supporters know what&apos;s next.
         </Text>
       )}
 

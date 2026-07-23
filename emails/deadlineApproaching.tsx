@@ -49,13 +49,13 @@ export function DeadlineApproachingEmail({
 
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         {progressPct >= 75
-          ? "You're close. Post an update and finish strong."
+          ? "You're close. Post an update to finish it out."
           : progressPct >= 50
-            ? "You're past the halfway mark. A strong final stretch can close the gap."
-            : "There's still time to rally. Post an update today and let your supporters know you're pushing to the end."}
+            ? "Past the halfway mark. One more push can close the gap."
+            : "There's still time. Post an update today and let your supporters know you're going for it."}
       </Text>
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Post a final stretch update</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Post an update</CTAButton>
     </EmailLayout>
   );
 }

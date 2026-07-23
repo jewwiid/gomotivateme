@@ -33,13 +33,13 @@ export function TargetHitEmail({
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         You hit your target on <strong>{goalTitle}</strong>. {targetValue} {unit} reached.
-        That&apos;s not a small thing. You set a goal, you showed up, and you got there.
+        You set a goal, you showed up, and you got there.
       </Text>
 
       <CTAButton href={`${siteUrl}/o/${goalSlug}`}>See your goal</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
-        Take a moment. Then{" "}
+        Then{" "}
         <Link href={`${siteUrl}/dashboard/new`} style={{ color: "#044dfc" }}>
           start your next one
         </Link>{" "}

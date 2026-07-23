@@ -35,7 +35,7 @@ function DashboardContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <p className="brand-kicker">Your space</p>
+            <p className="brand-kicker">Dashboard</p>
             <div className="mt-3 flex flex-wrap items-end justify-between gap-6">
               <div>
                 <h1 className="font-display text-balance text-5xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl">
@@ -57,7 +57,7 @@ function DashboardContent() {
           <dl className="mt-12 grid divide-y divide-[#deddd6] border-y border-[#deddd6] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <DashboardStat value={goals?.length ?? 0} label="total goals" loading={goals === undefined} />
             <DashboardStat value={activeGoals} label="active" loading={goals === undefined} />
-            <DashboardStat value={supporters} label="people cheering" loading={goals === undefined} />
+            <DashboardStat value={supporters} label="supporters" loading={goals === undefined} />
           </dl>
 
           <section className="mt-12">
@@ -114,7 +114,7 @@ function DashboardContent() {
           <div className="mt-12 border-t border-[#deddd6] pt-8">
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-[#c68d00]" />
-              <h2 className="font-display text-xl font-bold tracking-[-0.035em]">A quick reminder</h2>
+              <h2 className="font-display text-xl font-bold tracking-[-0.035em]">Post an update</h2>
             </div>
             <p className="mt-3 text-sm leading-6 text-[#686963]">
               Even a quick update gives your supporters something to rally around.

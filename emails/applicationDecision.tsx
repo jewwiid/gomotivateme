@@ -35,8 +35,8 @@ export function ApplicationDecisionEmail({
       {approved ? (
         <>
           <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-            Great news. You&apos;ve been approved as a <strong>{roleLabel}</strong> on{" "}
-            <strong>{goalTitle}</strong>. They wanted you on their team, and now you&apos;re in.
+            You&apos;ve been approved as a <strong>{roleLabel}</strong> on{" "}
+            <strong>{goalTitle}</strong>. You&apos;re on the team.
           </Text>
           <CTAButton href={`${siteUrl}/o/${goalSlug}`}>See the goal</CTAButton>
         </>

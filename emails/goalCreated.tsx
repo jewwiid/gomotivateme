@@ -32,8 +32,8 @@ export function GoalCreatedEmail({
         ground. That's the hardest part.
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-        Momentum comes from what you do next: post your first update, invite a few
-        people who'll genuinely cheer you on, and let them keep you moving.
+        Now: post your first update, invite a few
+        people who'll cheer you on, and let them keep you going.
       </Text>
 
       <CTAButton href={`${siteUrl}/o/${slug}`}>View your goal</CTAButton>

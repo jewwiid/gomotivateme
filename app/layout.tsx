@@ -20,12 +20,12 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "gomotivateme: where personal goals gain momentum",
+  title: "gomotivateme: where personal goals get done",
   description:
-    "Set a goal, build a support team, and keep moving with encouragement from people who want to see you succeed.",
+    "Set a goal, build a support team, and keep going with encouragement from people who want to see you succeed.",
   openGraph: {
     title: "gomotivateme",
-    description: "Where personal goals gain momentum.",
+    description: "Where personal goals get done.",
     type: "website",
   },
 };

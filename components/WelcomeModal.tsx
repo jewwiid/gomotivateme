@@ -128,7 +128,7 @@ export function WelcomeModal() {
               <p className="mx-auto mt-3 max-w-sm text-sm text-zinc-600">
                 Set a goal, share progress, and let a circle of
                 people keep you going. No payments. No performative likes.
-                just honest momentum.
+                just honest progress.
               </p>
 
               <Link

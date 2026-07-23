@@ -48,7 +48,7 @@ export function StaleGoalEmail({
             : motivatorCount > 0
               ? `You have ${motivatorCount} motivator${motivatorCount === 1 ? "" : "s"}`
               : `You have ${supporterCount} supporter${supporterCount === 1 ? "" : "s"}`}
-          {" "}waiting to hear from you. They&apos;re rooting for you. Don&apos;t leave them in the dark.
+          {" "}waiting to hear from you.
         </Text>
       ) : (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
@@ -61,7 +61,7 @@ export function StaleGoalEmail({
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
         It takes 30 seconds. A photo, a number, a sentence. Whatever shows
-        you&apos;re still in the fight.
+        you&apos;re still working on it.
       </Text>
     </EmailLayout>
   );
