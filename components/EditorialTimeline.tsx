@@ -43,9 +43,11 @@ function formatDay(ts: number) {
 export function EditorialTimeline({
   goalId,
   unit = "units",
+  milestones,
 }: {
   goalId: Id<"goals">;
   unit?: string;
+  milestones?: Array<{ id: string; title: string; done: boolean }>;
 }) {
   const { results: updates, status, loadMore } = usePaginatedQuery(
     api.updates.listForGoalPaginated,
@@ -85,10 +87,26 @@ export function EditorialTimeline({
   }
 
   if (updates.length === 0) {
+    // Two flavours of empty state:
+    //  - If the goal has milestones planned, point at the first one so the
+    //    owner can tick it off (which now creates a journey entry).
+    //  - Otherwise, fall back to the generic "nothing here yet".
+    const nextMilestone =
+      milestones && milestones.length > 0
+        ? milestones.find((m) => !m.done)
+        : undefined;
     return (
       <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
-        <h2 className="text-base font-semibold text-zinc-900">The journey hasn't started yet</h2>
-        <p className="mt-1 text-sm text-zinc-500">Check back soon.</p>
+        <h2 className="text-base font-semibold text-zinc-900">
+          {nextMilestone
+            ? "Your journey starts with the first step"
+            : "The journey hasn't started yet"}
+        </h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          {nextMilestone
+            ? `Tick off “${nextMilestone.title}” to post your first update.`
+            : "Post your first update when you're ready to share progress."}
+        </p>
       </section>
     );
   }

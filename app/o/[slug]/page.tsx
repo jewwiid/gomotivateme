@@ -275,7 +275,11 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
             <SupporterWall goalId={goalId} />
 
             {/* Editorial timeline */}
-            <EditorialTimeline goalId={goalId} unit={goal.unit} />
+            <EditorialTimeline
+              goalId={goalId}
+              unit={goal.unit}
+              milestones={goal.milestones ?? undefined}
+            />
 
             {/* Share preview */}
             <SharePreview

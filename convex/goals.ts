@@ -408,6 +408,29 @@ export const toggleMilestone = mutation({
       updatedAt: Date.now(),
     });
 
+    // Mirror the completion into the `updates` table so the public
+    // journey timeline (EditorialTimeline) actually reflects the
+    // milestone tick. We only fire on `done === true` (not on un-toggles
+    // — those would be confusing "I un-finished X" entries), and we
+    // auto-publish because a milestone toggle is a low-risk, owner-
+    // initiated binary event. The moderation pipeline is designed for
+    // free-form text/images/links, not self-reported checklists.
+    if (done) {
+      const ms = goal.milestones.find((m) => m.id === milestoneId);
+      if (ms) {
+        await ctx.db.insert("updates", {
+          goalId,
+          ownerId: userId,
+          type: "milestone",
+          milestoneId,
+          note: ms.title,
+          moderationStatus: "approved",
+          publicVisible: true,
+          createdAt: Date.now(),
+        });
+      }
+    }
+
     // Award milestone badges
     const existingBadges = await ctx.db
       .query("badges")
