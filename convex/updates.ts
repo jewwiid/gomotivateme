@@ -120,6 +120,19 @@ export const listForGoal = query({
   },
 });
 
+/** Public: updates tied to a specific milestone (for expandable milestone rows). */
+export const listForMilestone = query({
+  args: { goalId: v.id("goals"), milestoneId: v.string() },
+  handler: async (ctx, { goalId, milestoneId }) =>
+    ctx.db
+      .query("updates")
+      .withIndex("by_goal_milestone_created", (q) =>
+        q.eq("goalId", goalId).eq("milestoneId", milestoneId)
+      )
+      .order("desc")
+      .collect(),
+});
+
 /** Public: a small activity slice without transferring an entire timeline. */
 export const listRecentForGoal = query({
   args: { goalId: v.id("goals"), limit: v.optional(v.number()) },

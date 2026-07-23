@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronDown, ChevronUp, Loader2, Send } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { anyApi } from "convex/server";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -156,7 +155,7 @@ function MilestoneFeed({
   milestoneId: string;
   isOwner: boolean;
 }) {
-  const updates = useQuery(anyApi.updates.listForMilestone, { goalId, milestoneId });
+  const updates = useQuery(api.updates.listForMilestone, { goalId, milestoneId });
 
   if (updates === undefined) {
     return (
