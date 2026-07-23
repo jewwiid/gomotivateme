@@ -125,13 +125,25 @@ export const setEmoji = mutation({
       v.literal("heart"),
       v.literal("fire")
     ),
+    displayName: v.optional(v.string()),
   },
-  handler: async (ctx, { goalId, visitorKey, emoji }) => {
+  handler: async (ctx, { goalId, visitorKey, emoji, displayName }) => {
     if (!visitorKey) throw new Error("Missing visitor key");
     if (!EMOJI_KINDS.includes(emoji)) throw new Error("Invalid emoji kind");
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
     if (goal.visibility !== "public") throw new Error("This goal isn't public");
+
+    // Auto-resolve displayName from auth if the visitor is signed in.
+    let resolvedName = displayName?.trim() || undefined;
+    if (!resolvedName) {
+      const userId = await getAuthUserId(ctx);
+      if (userId) {
+        const user = await ctx.db.get(userId);
+        if (user?.name) resolvedName = user.name;
+        else if (user?.handle) resolvedName = user.handle;
+      }
+    }
 
     const existing = await ctx.db
       .query("reactions")
@@ -145,7 +157,11 @@ export const setEmoji = mutation({
         await ctx.db.delete(existing._id);
         return { state: "removed" as const, emoji: null };
       }
-      await ctx.db.patch(existing._id, { emoji, createdAt: Date.now() });
+      await ctx.db.patch(existing._id, {
+        emoji,
+        createdAt: Date.now(),
+        ...(resolvedName !== undefined ? { displayName: resolvedName } : {}),
+      });
       return { state: "updated" as const, emoji };
     }
 
@@ -156,6 +172,7 @@ export const setEmoji = mutation({
       visitorKey,
       approved: true,
       createdAt: Date.now(),
+      ...(resolvedName !== undefined ? { displayName: resolvedName } : {}),
     });
     await maybeNotifyOwnerOfReaction(ctx, goalId, emoji, "goal");
     return { state: "added" as const, emoji };
@@ -241,13 +258,25 @@ export const setUpdateEmoji = mutation({
       v.literal("heart"),
       v.literal("fire")
     ),
+    displayName: v.optional(v.string()),
   },
-  handler: async (ctx, { updateId, goalId, visitorKey, emoji }) => {
+  handler: async (ctx, { updateId, goalId, visitorKey, emoji, displayName }) => {
     if (!visitorKey) throw new Error("Missing visitor key");
     if (!EMOJI_KINDS.includes(emoji)) throw new Error("Invalid emoji kind");
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
     if (goal.visibility !== "public") throw new Error("This goal isn't public");
+
+    // Auto-resolve displayName from auth if the visitor is signed in.
+    let resolvedName = displayName?.trim() || undefined;
+    if (!resolvedName) {
+      const userId = await getAuthUserId(ctx);
+      if (userId) {
+        const user = await ctx.db.get(userId);
+        if (user?.name) resolvedName = user.name;
+        else if (user?.handle) resolvedName = user.handle;
+      }
+    }
 
     // Validate the update belongs to this goal.
     const update = await ctx.db.get(updateId);
@@ -265,7 +294,11 @@ export const setUpdateEmoji = mutation({
         await ctx.db.delete(existing._id);
         return { state: "removed" as const, emoji: null };
       }
-      await ctx.db.patch(existing._id, { emoji, createdAt: Date.now() });
+      await ctx.db.patch(existing._id, {
+        emoji,
+        createdAt: Date.now(),
+        ...(resolvedName !== undefined ? { displayName: resolvedName } : {}),
+      });
       return { state: "updated" as const, emoji };
     }
 
@@ -277,6 +310,7 @@ export const setUpdateEmoji = mutation({
       visitorKey,
       approved: true,
       createdAt: Date.now(),
+      ...(resolvedName !== undefined ? { displayName: resolvedName } : {}),
     });
     await maybeNotifyOwnerOfReaction(ctx, goalId, emoji, "update");
     return { state: "added" as const, emoji };

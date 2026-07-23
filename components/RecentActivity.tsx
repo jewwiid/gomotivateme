@@ -27,7 +27,7 @@ const SUPPORT_LABEL: Record<string, string> = {
 type ActivityItem =
   | { kind: "supporter"; at: number; supportType: string; name: string | null; message?: string }
   | { kind: "message"; at: number; name: string | null; supportType: string; body: string }
-  | { kind: "cheer"; at: number; emoji: string }
+  | { kind: "cheer"; at: number; emoji: string; name: string | null }
   | { kind: "update"; at: number; type: "value" | "milestone" | "note" | "image" | "media" | "link"; body: string };
 
 /**
@@ -81,6 +81,7 @@ export function RecentActivity({
         kind: "cheer",
         at: r.createdAt,
         emoji: r.emoji ?? "thumbsup",
+        name: r.displayName ?? null,
       });
     }
     for (const u of (updates as any[]) ?? []) {
@@ -225,7 +226,7 @@ function ActivityBody({ item }: { item: ActivityItem }) {
   if (item.kind === "cheer") {
     return (
       <p className="text-zinc-700">
-        Someone cheered with{" "}
+        <span className="font-medium text-zinc-900">{item.name ?? "Someone"}</span> cheered with{" "}
         <span className="text-base">{EMOJI_GLYPH[item.emoji] ?? "👍"}</span>
       </p>
     );

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useVisitorKey } from "@/lib/useVisitorKey";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const EMOJIS: Array<{ key: "thumbsup" | "muscle" | "heart" | "fire"; glyph: string; label: string }> = [
   { key: "thumbsup", glyph: "👍", label: "Cheer" },
@@ -16,6 +17,7 @@ const EMOJIS: Array<{ key: "thumbsup" | "muscle" | "heart" | "fire"; glyph: stri
 
 export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
   const visitorKey = useVisitorKey();
+  const { isAuthenticated } = useCurrentUser();
   const stats = useQuery(api.reactions.publicStats, { goalId });
   const mine = useQuery(
     api.reactions.visitorEmoji,
@@ -23,12 +25,17 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
   );
   const setEmoji = useMutation(api.reactions.setEmoji);
   const [burst, setBurst] = useState<string | null>(null);
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [nameInput, setNameInput] = useState("");
 
   const onPick = async (emoji: typeof EMOJIS[number]["key"]) => {
     if (!visitorKey) return;
     setBurst(emoji);
+    // If signed in, the backend auto-resolves the name from auth.
+    // If not signed in, pass any name the visitor typed.
+    const displayName = !isAuthenticated && nameInput.trim() ? nameInput.trim() : undefined;
     try {
-      await setEmoji({ goalId, visitorKey, emoji });
+      await setEmoji({ goalId, visitorKey, emoji, displayName });
     } finally {
       setTimeout(() => setBurst(null), 700);
     }
@@ -101,6 +108,35 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
           );
         })}
       </div>
+      {!isAuthenticated && (
+        <div className="mt-2">
+          {showNameInput ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Your name (optional)"
+                maxLength={50}
+                className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-1.5 text-xs text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+              />
+              <button
+                onClick={() => setShowNameInput(false)}
+                className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowNameInput(true)}
+              className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+            >
+              Add your name
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
