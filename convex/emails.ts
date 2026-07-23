@@ -323,3 +323,253 @@ export const markPledgeReminded = internalMutation({
     await ctx.db.patch(pledgeId, { lastReminderAt: Date.now() });
   },
 });
+
+// =====================================================================
+// Accountability queries — stale goals, deadline approaching, deadline passed
+// =====================================================================
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Find active goals where the creator hasn't posted an update in 7+ days.
+ * Groups by owner so each creator gets one consolidated email (not one per goal).
+ * Skips goals already reminded in the last 7 days.
+ * Returns { ownerId, email, name, goals: [{title, slug, daysSinceLastUpdate, supporterCount, motivatorCount}] }[]
+ */
+export const listStaleGoals = internalQuery({
+  args: { nowMs: v.optional(v.number()) },
+  handler: async (ctx, { nowMs }) => {
+    const now = nowMs ?? Date.now();
+    const staleThreshold = 7 * DAY;
+    const reRemindThreshold = 7 * DAY;
+
+    // Scan active goals (table scan, but filtered to active only).
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_public_created", (q) =>
+        q.eq("visibility", "public").eq("status", "active")
+      )
+      .collect();
+
+    // Group by owner so we send one email per creator.
+    const byOwner = new Map<string, {
+      ownerId: any;
+      goals: Array<{
+        goalId: any;
+        title: string;
+        slug: string;
+        daysSinceLastUpdate: number;
+        supporterCount: number;
+        motivatorCount: number;
+      }>;
+    }>();
+
+    for (const goal of goals) {
+      // Skip if already reminded recently.
+      if (goal.lastStaleReminderAt && now - goal.lastStaleReminderAt < reRemindThreshold) continue;
+
+      // Find the most recent update for this goal.
+      const lastUpdate = await ctx.db
+        .query("updates")
+        .withIndex("by_goal_created", (q) => q.eq("goalId", goal._id))
+        .order("desc")
+        .first();
+
+      // Stale baseline: last update, or goal createdAt/launchedAt if no updates yet.
+      const lastActivity = lastUpdate?.createdAt ?? goal.launchedAt ?? goal.createdAt;
+      const elapsed = now - lastActivity;
+      if (elapsed < staleThreshold) continue;
+
+      // Count supporters + motivators for social proof.
+      const [supporters, motivators] = await Promise.all([
+        ctx.db
+          .query("supporters")
+          .withIndex("by_goal", (q) => q.eq("goalId", goal._id))
+          .collect(),
+        ctx.db
+          .query("motivatorPledges")
+          .withIndex("by_goal_status", (q) =>
+            q.eq("goalId", goal._id).eq("status", "active")
+          )
+          .collect(),
+      ]);
+
+      const entry = byOwner.get(goal.ownerId);
+      const goalData = {
+        goalId: goal._id,
+        title: goal.title,
+        slug: goal.slug,
+        daysSinceLastUpdate: Math.floor(elapsed / DAY),
+        supporterCount: supporters.length,
+        motivatorCount: motivators.length,
+      };
+      if (entry) {
+        entry.goals.push(goalData);
+      } else {
+        byOwner.set(goal.ownerId, {
+          ownerId: goal.ownerId,
+          goals: [goalData],
+        });
+      }
+    }
+
+    // Hydrate owner info.
+    const result = [];
+    for (const [ownerId, data] of byOwner) {
+      const owner = await ctx.db.get(ownerId);
+      if (!owner?.email) continue;
+      result.push({
+        ownerId,
+        email: owner.email,
+        name: owner.name ?? owner.handle ?? "there",
+        goals: data.goals,
+      });
+    }
+    return result;
+  },
+});
+
+/**
+ * Find active goals where the target date is 3 days away (or 1 day away).
+ * Returns goal data + owner info for the "deadline approaching" email.
+ */
+export const listDeadlineApproaching = internalQuery({
+  args: { nowMs: v.optional(v.number()) },
+  handler: async (ctx, { nowMs }) => {
+    const now = nowMs ?? Date.now();
+    const threeDays = 3 * DAY;
+    const oneDay = 1 * DAY;
+
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_public_created", (q) =>
+        q.eq("visibility", "public").eq("status", "active")
+      )
+      .collect();
+
+    const result = [];
+    for (const goal of goals) {
+      if (!goal.targetDate) continue;
+
+      const timeUntil = goal.targetDate - now;
+      // Fire at the 3-day and 1-day marks.
+      const isThreeDay = timeUntil <= threeDays && timeUntil > 2 * DAY;
+      const isOneDay = timeUntil <= oneDay && timeUntil > 0;
+      if (!isThreeDay && !isOneDay) continue;
+
+      // Skip if already warned for this window.
+      if (goal.lastDeadlineWarningAt) {
+        const since = now - goal.lastDeadlineWarningAt;
+        if (isThreeDay && since < 2 * DAY) continue; // don't double-fire before 1-day mark
+        if (isOneDay && since < DAY) continue;
+      }
+
+      const owner = await ctx.db.get(goal.ownerId);
+      if (!owner?.email) continue;
+
+      const progressPct = computeProgress(
+        goal.startValue ?? 0,
+        goal.currentValue ?? 0,
+        goal.targetValue ?? 0,
+        goal.direction ?? "increase"
+      );
+
+      result.push({
+        goalId: goal._id,
+        ownerId: goal.ownerId,
+        email: owner.email,
+        ownerName: owner.name ?? owner.handle ?? "there",
+        goalTitle: goal.title,
+        goalSlug: goal.slug,
+        daysRemaining: isThreeDay ? 3 : 1,
+        currentValue: goal.currentValue ?? 0,
+        targetValue: goal.targetValue,
+        unit: goal.unit,
+        progressPct,
+      });
+    }
+    return result;
+  },
+});
+
+/**
+ * Find active goals where the target date has passed but the goal isn't completed.
+ * Only fires once per goal (deadlinePassedNotified flag).
+ */
+export const listDeadlinePassed = internalQuery({
+  args: { nowMs: v.optional(v.number()) },
+  handler: async (ctx, { nowMs }) => {
+    const now = nowMs ?? Date.now();
+
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_public_created", (q) =>
+        q.eq("visibility", "public").eq("status", "active")
+      )
+      .collect();
+
+    const result = [];
+    for (const goal of goals) {
+      if (!goal.targetDate) continue;
+      if (goal.targetDate >= now) continue; // not past yet
+      if (goal.deadlinePassedNotified) continue; // already notified
+
+      const owner = await ctx.db.get(goal.ownerId);
+      if (!owner?.email) continue;
+
+      const progressPct = computeProgress(
+        goal.startValue ?? 0,
+        goal.currentValue ?? 0,
+        goal.targetValue ?? 0,
+        goal.direction ?? "increase"
+      );
+
+      result.push({
+        goalId: goal._id,
+        ownerId: goal.ownerId,
+        email: owner.email,
+        ownerName: owner.name ?? owner.handle ?? "there",
+        goalTitle: goal.title,
+        goalSlug: goal.slug,
+        daysOverdue: Math.floor((now - goal.targetDate) / DAY),
+        currentValue: goal.currentValue ?? 0,
+        targetValue: goal.targetValue,
+        unit: goal.unit,
+        progressPct,
+      });
+    }
+    return result;
+  },
+});
+
+/** Stamp a goal as stale-reminded. */
+export const markStaleReminded = internalMutation({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    await ctx.db.patch(goalId, { lastStaleReminderAt: Date.now() });
+  },
+});
+
+/** Stamp a goal as deadline-warned. */
+export const markDeadlineWarned = internalMutation({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    await ctx.db.patch(goalId, { lastDeadlineWarningAt: Date.now() });
+  },
+});
+
+/** Stamp a goal as deadline-passed-notified (permanent flag). */
+export const markDeadlinePassedNotified = internalMutation({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    await ctx.db.patch(goalId, { deadlinePassedNotified: true });
+  },
+});
+
+/** Reset stale reminder timestamp when owner posts an update. */
+export const resetStaleReminder = internalMutation({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    await ctx.db.patch(goalId, { lastStaleReminderAt: undefined });
+  },
+});

@@ -30,4 +30,19 @@ export default cronJobs({
     cron: "0 10 * * *",
     fn: internal.emailsActions.sendCheckInReminders,
   },
+  // Accountability — daily at 11:00 UTC
+  staleGoalReminders: {
+    cron: "0 11 * * *",
+    fn: internal.emailsActions.sendStaleGoalReminders,
+  },
+  // Accountability — daily at 12:00 UTC
+  deadlineApproaching: {
+    cron: "0 12 * * *",
+    fn: internal.emailsActions.sendDeadlineApproaching,
+  },
+  // Accountability — daily at 13:00 UTC
+  deadlinePassed: {
+    cron: "0 13 * * *",
+    fn: internal.emailsActions.sendDeadlinePassed,
+  },
 });

@@ -593,6 +593,8 @@ export const recordValue = mutation({
       publicVisible: !note?.trim(),
       createdAt: now,
     });
+    // Reset stale-goal reminder so the next staleness window starts fresh.
+    await ctx.db.patch(goalId, { lastStaleReminderAt: undefined });
     if (note?.trim()) {
       await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
     }

@@ -218,6 +218,8 @@ export const add = mutation({
       publicVisible: false,
       createdAt: Date.now(),
     });
+    // Reset stale-goal reminder so the next staleness window starts fresh.
+    await ctx.db.patch(args.goalId, { lastStaleReminderAt: undefined });
     await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
     return updateId;
   },
@@ -351,6 +353,8 @@ export const addMedia = mutation({
       publicVisible: false,
       createdAt: now,
     });
+    // Reset stale-goal reminder so the next staleness window starts fresh.
+    await ctx.db.patch(goalId, { lastStaleReminderAt: undefined });
     await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
     return updateId;
   },

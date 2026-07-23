@@ -161,6 +161,15 @@ export default defineSchema({
     preLaunchDeadline: v.optional(v.number()),
     /** When the goal was promoted from pre-launch / draft to active. */
     launchedAt: v.optional(v.number()),
+    /**
+     * Last time a "stale goal" reminder email was sent for this goal.
+     * Prevents daily re-nagging. Reset when the owner posts an update.
+     */
+    lastStaleReminderAt: v.optional(v.number()),
+    /** Last time a "deadline approaching" email was sent for this goal. */
+    lastDeadlineWarningAt: v.optional(v.number()),
+    /** True once the "deadline passed" email has been sent. */
+    deadlinePassedNotified: v.optional(v.boolean()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_created", ["ownerId", "createdAt"])

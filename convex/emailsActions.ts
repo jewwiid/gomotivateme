@@ -179,3 +179,139 @@ export const sendCheckInReminders = internalAction({
     return { enqueued };
   },
 });
+
+// =====================================================================
+// Accountability cron workers — stale goals, deadline approaching, passed
+// =====================================================================
+
+/**
+ * Daily stale-goal nudge. Finds active goals where the creator hasn't
+ * posted in 7+ days. Sends one email per stale goal (the template shows
+ * supporter/motivator counts for social proof). Stamps lastStaleReminderAt
+ * so the goal isn't nagged again for another 7 days.
+ */
+export const sendStaleGoalReminders = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.log("[stale] RESEND_API_KEY not set — skipping.");
+      return { enqueued: 0, skipped: "no_api_key" };
+    }
+
+    const stale = await ctx.runQuery(internal.emails.listStaleGoals, {});
+    if (stale.length === 0) return { enqueued: 0, skipped: "none_stale" };
+
+    let enqueued = 0;
+    for (const owner of stale) {
+      for (const goal of owner.goals) {
+        await ctx.runMutation(internal.emails.enqueue, {
+          userId: owner.ownerId,
+          toEmail: owner.email,
+          templateId: "staleGoal",
+          category: "lifecycle",
+          payload: JSON.stringify({
+            ownerName: owner.name,
+            goalTitle: goal.title,
+            goalSlug: goal.slug,
+            daysSinceLastUpdate: goal.daysSinceLastUpdate,
+            supporterCount: goal.supporterCount,
+            motivatorCount: goal.motivatorCount,
+          }),
+        });
+        await ctx.runMutation(internal.emails.markStaleReminded, {
+          goalId: goal.goalId,
+        });
+        enqueued++;
+      }
+    }
+    return { enqueued };
+  },
+});
+
+/**
+ * Daily deadline-approaching nudge. Fires at the 3-day and 1-day marks
+ * before a goal's target date. Sends progress % + encouraging message.
+ */
+export const sendDeadlineApproaching = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.log("[deadline] RESEND_API_KEY not set — skipping.");
+      return { enqueued: 0, skipped: "no_api_key" };
+    }
+
+    const approaching = await ctx.runQuery(internal.emails.listDeadlineApproaching, {});
+    if (approaching.length === 0) return { enqueued: 0, skipped: "none_approaching" };
+
+    let enqueued = 0;
+    for (const item of approaching) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: item.ownerId,
+        toEmail: item.email,
+        templateId: "deadlineApproaching",
+        category: "lifecycle",
+        payload: JSON.stringify({
+          ownerName: item.ownerName,
+          goalTitle: item.goalTitle,
+          goalSlug: item.goalSlug,
+          daysRemaining: item.daysRemaining,
+          currentValue: item.currentValue,
+          targetValue: item.targetValue,
+          unit: item.unit,
+          progressPct: item.progressPct,
+        }),
+      });
+      await ctx.runMutation(internal.emails.markDeadlineWarned, {
+        goalId: item.goalId,
+      });
+      enqueued++;
+    }
+    return { enqueued };
+  },
+});
+
+/**
+ * Daily deadline-passed alert. Fires once per goal when the target date
+ * has passed and the goal isn't completed. Sets deadlinePassedNotified
+ * so it never fires again for the same goal.
+ */
+export const sendDeadlinePassed = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.log("[deadline-passed] RESEND_API_KEY not set — skipping.");
+      return { enqueued: 0, skipped: "no_api_key" };
+    }
+
+    const passed = await ctx.runQuery(internal.emails.listDeadlinePassed, {});
+    if (passed.length === 0) return { enqueued: 0, skipped: "none_passed" };
+
+    let enqueued = 0;
+    for (const item of passed) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: item.ownerId,
+        toEmail: item.email,
+        templateId: "deadlinePassed",
+        category: "lifecycle",
+        payload: JSON.stringify({
+          ownerName: item.ownerName,
+          goalTitle: item.goalTitle,
+          goalSlug: item.goalSlug,
+          daysOverdue: item.daysOverdue,
+          currentValue: item.currentValue,
+          targetValue: item.targetValue,
+          unit: item.unit,
+          progressPct: item.progressPct,
+        }),
+      });
+      await ctx.runMutation(internal.emails.markDeadlinePassedNotified, {
+        goalId: item.goalId,
+      });
+      enqueued++;
+    }
+    return { enqueued };
+  },
+});

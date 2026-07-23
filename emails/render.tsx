@@ -12,6 +12,9 @@ import { PasswordResetEmail, PasswordResetEmailProps } from "./passwordReset";
 import { WeeklyDigestEmail, WeeklyDigestEmailProps } from "./weeklyDigest";
 import { CheckInDueEmail, CheckInDueEmailProps } from "./checkInDue";
 import { NewReactionEmail, NewReactionEmailProps } from "./newReaction";
+import { StaleGoalEmail, StaleGoalEmailProps } from "./staleGoal";
+import { DeadlineApproachingEmail, DeadlineApproachingEmailProps } from "./deadlineApproaching";
+import { DeadlinePassedEmail, DeadlinePassedEmailProps } from "./deadlinePassed";
 
 /**
  * Map a templateId + payload to a { subject, component } pair.
@@ -129,6 +132,30 @@ export function renderTemplate(
       return {
         subject: `Someone cheered your ${p.goalTitle} ${p.emojiLabel}`,
         component: <NewReactionEmail {...p} />,
+      };
+    }
+
+    case "staleGoal": {
+      const p = payload as StaleGoalEmailProps;
+      return {
+        subject: `${p.daysSinceLastUpdate} days since you updated ${p.goalTitle}`,
+        component: <StaleGoalEmail {...p} />,
+      };
+    }
+
+    case "deadlineApproaching": {
+      const p = payload as DeadlineApproachingEmailProps;
+      return {
+        subject: `${p.daysRemaining} day${p.daysRemaining === 1 ? "" : "s"} left on ${p.goalTitle}`,
+        component: <DeadlineApproachingEmail {...p} />,
+      };
+    }
+
+    case "deadlinePassed": {
+      const p = payload as DeadlinePassedEmailProps;
+      return {
+        subject: `Your ${p.goalTitle} deadline passed`,
+        component: <DeadlinePassedEmail {...p} />,
       };
     }
 
