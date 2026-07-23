@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
-import { TrendingUp, Users, Calendar, MessageCircle, Sparkles } from "lucide-react";
+import { TrendingUp, Users, Calendar, MessageCircle, Sparkles, Heart } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 
@@ -35,6 +35,8 @@ export function MomentumStats({
   targetValue: number;
 }) {
   const supporters = useQuery(api.supporters.listForGoal, { goalId, limit: 100 });
+  const cheerStats = useQuery(api.reactions.publicStats, { goalId });
+  const cheerTotal = cheerStats?.emojiTotal ?? 0;
   const accountabilityCount = useMemo(() => {
     if (!supporters) return 0;
     return (supporters as any[]).filter((s) => s.supportType === "checkin").length;
@@ -58,6 +60,14 @@ export function MomentumStats({
       icon: Users,
       color: "text-[var(--color-primary)]",
       bg: "bg-[var(--color-primary-soft)]",
+    },
+    {
+      label: "Cheers",
+      value: String(cheerTotal),
+      sub: cheerTotal > 0 ? "People rooting for them" : "Be the first",
+      icon: Heart,
+      color: "text-rose-500",
+      bg: "bg-rose-50",
     },
     {
       label: "Accountability",
@@ -96,7 +106,7 @@ export function MomentumStats({
         The real human actions behind this goal.
       </p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {items.map((it, i) => {
           const Icon = it.icon;
           return (

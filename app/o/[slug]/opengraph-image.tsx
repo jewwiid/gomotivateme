@@ -27,6 +27,7 @@ export default async function OpengraphImage({
 
   let goal: any = null;
   let coverUrl: string | null = null;
+  let cheerTotal = 0;
   try {
     goal = await client.query(api.public.getGoalBySlug, { slug });
     if (goal?.coverImageId) {
@@ -35,6 +36,9 @@ export default async function OpengraphImage({
       });
       coverUrl = urls[goal.coverImageId] ?? null;
     }
+    // Fetch the real cheer count (getGoalBySlug doesn't return it).
+    const stats = await client.query(api.reactions.publicStats, { goalId: goal._id });
+    cheerTotal = stats?.emojiTotal ?? 0;
   } catch {
     // network/auth errors are fine — render fallback
   }
@@ -43,7 +47,7 @@ export default async function OpengraphImage({
   }
 
   const pct = Math.round(goal.progress);
-  const total = goal.emojiTotal ?? 0;
+  const total = cheerTotal;
   const title = goal.title;
   const owner = goal.ownerName ?? "Someone";
   const sub = goal.story ? truncate(goal.story, 140) : `${goal.currentValue} of ${goal.targetValue} ${goal.unit} complete`;
