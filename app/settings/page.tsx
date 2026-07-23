@@ -22,6 +22,7 @@ import {
   MAX_HANDLE_LENGTH,
   validateHandleClient,
 } from "@/lib/handle";
+import { prepareAvatarImage } from "@/lib/media";
 
 type Tab = "account" | "notifications";
 
@@ -211,11 +212,16 @@ function AccountTab() {
     setBusy(true);
     setErr(null);
     try {
+      // Resize the photo in-browser before upload. A 12MP iPhone shot
+      // (~2MB) becomes a 256x256 JPEG (~30KB), which is what the header
+      // actually needs and means the avatar URL loads instantly on
+      // every page.
+      const prepared = await prepareAvatarImage(file);
       const url = await generateCoverUploadUrl();
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
+        headers: { "Content-Type": prepared.type },
+        body: prepared,
       });
       if (!res.ok) throw new Error("Upload failed");
       const { storageId } = await res.json();

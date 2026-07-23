@@ -97,3 +97,63 @@ function fileStem(name: string) {
   const stem = name.replace(/\.[^/.]+$/, "").trim() || "progress-photo";
   return stem.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "") || "progress-photo";
 }
+
+/**
+ * Avatar-sized image: downscales a camera photo to a square at most
+ * 256x256 and re-encodes as JPEG. A 12MP iPhone shot (~2MB) lands at
+ * ~30KB after this — perfect for a 24-48px avatar slot and 100x faster
+ * to load. JPEG over WebP for max browser compat (avatars show in
+ * every page header; don't gate on codec support).
+ */
+export async function prepareAvatarImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) throw new Error("Choose an image file");
+  if (file.type === "image/gif" || file.type === "image/svg+xml") return file;
+
+  try {
+    const image = await loadImage(file);
+    const longestEdge = Math.max(image.naturalWidth, image.naturalHeight);
+    const rendered = await renderAvatarJpeg(image, 256, 0.85, file.name);
+    if (!rendered) return file;
+    // If the original is already tiny, keep it as-is to avoid pointless
+    // re-encoding (e.g. an already-256x256 PNG).
+    return longestEdge <= 256 && file.size < rendered.size ? file : rendered;
+  } catch {
+    return file;
+  }
+}
+
+async function renderAvatarJpeg(
+  image: HTMLImageElement,
+  maxDimension: number,
+  quality: number,
+  originalName: string
+) {
+  const sourceWidth = image.naturalWidth;
+  const sourceHeight = image.naturalHeight;
+  if (!sourceWidth || !sourceHeight) return undefined;
+
+  // Square center-crop, then downscale.
+  const cropSide = Math.min(sourceWidth, sourceHeight);
+  const cropX = Math.floor((sourceWidth - cropSide) / 2);
+  const cropY = Math.floor((sourceHeight - cropSide) / 2);
+  const side = Math.min(maxDimension, cropSide);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = side;
+  canvas.height = side;
+  const context = canvas.getContext("2d");
+  if (!context) return undefined;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, cropX, cropY, cropSide, cropSide, 0, 0, side, side);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", quality)
+  );
+  if (!blob) return undefined;
+
+  return new File([blob], `${fileStem(originalName) || "avatar"}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+}

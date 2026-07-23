@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronDown, Search, User as UserIcon } from "lucide-react";
+import { useState } from "react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Logo } from "@/components/Logo";
 
@@ -73,14 +74,7 @@ export function Header() {
                 className="inline-flex items-center gap-1.5 transition hover:text-[var(--color-primary)]"
                 aria-label="Account settings"
               >
-                {user.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.image} alt="" className="h-6 w-6 rounded-full object-cover" />
-                ) : (
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#f0efe9] text-[#4d4e48]">
-                    <UserIcon size={13} aria-hidden />
-                  </span>
-                )}
+                <AvatarBubble image={user.image} name={user.name ?? user.handle ?? "?"} />
                 <span className="hidden sm:inline">{accountLabel}</span>
                 <ChevronDown size={13} strokeWidth={1.8} aria-hidden />
               </Link>
@@ -106,5 +100,45 @@ export function UserBadge() {
       <UserIcon size={12} />
       Owner
     </span>
+  );
+}
+
+/**
+ * Tiny avatar slot used in the header. Shows the user's image when
+ * available, with an onError fallback to the initials chip so a
+ * broken/expired Convex storage URL doesn't render a browser broken-
+ * image icon. `key` is included so a fresh URL (after re-upload) gets
+ * a fresh img element instead of a cached error.
+ */
+function AvatarBubble({ image, name }: { image: string | null; name: string }) {
+  const [errored, setErrored] = useState(false);
+  const showImage = image && !errored;
+
+  const initials = (name || "?")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "?";
+
+  if (!showImage) {
+    return (
+      <span className="grid h-6 w-6 place-items-center rounded-full bg-[#f0efe9] text-[10px] font-bold text-[#4d4e48]">
+        {initials}
+      </span>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      key={image}
+      src={image}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onError={() => setErrored(true)}
+      className="h-6 w-6 rounded-full object-cover"
+    />
   );
 }
