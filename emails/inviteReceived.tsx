@@ -24,7 +24,6 @@ export function InviteReceivedEmail({
   return (
     <EmailLayout
       preheader={`They picked you for ${goalTitle}.`}
-      unsubscribeUrl={`${siteUrl}/email/unsubscribe?token=${inviteToken}`}
     >
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
         <strong>{ownerName}</strong> is working on <strong>{goalTitle}</strong> and added you as a

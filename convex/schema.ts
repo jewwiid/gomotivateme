@@ -37,6 +37,12 @@ export default defineSchema({
     isAnonymous: v.optional(v.boolean()),
     // Profile extensions
     handle: v.optional(v.string()),
+    /**
+     * How many more times the user can change their handle after the initial
+     * signup set. Set to 1 on first handle set; decremented on each change.
+     * undefined / 0 = locked.
+     */
+    handleChangesRemaining: v.optional(v.number()),
     bio: v.optional(v.string()),
     coverImageId: v.optional(v.id("_storage")),
     /** Signed token for one-click email unsubscribe links. */
@@ -70,9 +76,9 @@ export default defineSchema({
       v.literal("milestones")
     ),
     unit: v.string(), // kg, lbs, books, days, etc.
-    startValue: v.number(),
+    startValue: v.optional(v.number()),
     targetValue: v.number(),
-    currentValue: v.number(),
+    currentValue: v.optional(v.number()),
     direction: v.union(v.literal("increase"), v.literal("decrease")),
     targetDate: v.optional(v.number()),
 

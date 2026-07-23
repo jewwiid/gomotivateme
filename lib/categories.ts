@@ -1,167 +1,179 @@
 /**
- * Goal categories — shared between the create form and the public page.
+ * Goal categories — shared between the create form, public pages, and
+ * the explore feed.
  *
- * Modelled on the GoFundMe category set: cause-oriented rather than
- * activity-oriented (the original "weight / fitness / learning" was
- * personal-progress; the new list is broader, covering personal
- * milestones as well as community, charity and family).
+ * Activity-oriented (not cause-oriented like GoFundMe): each represents
+ * a *type of thing you're working on*, with concrete unit suggestions and
+ * a sensible default progress type. This covers the real use cases:
+ * weight loss, reading, app launches, personal milestones, habits, etc.
  */
-export const CATEGORIES = [
+
+export type ProgressType = "number" | "streak" | "milestones";
+export type Direction = "increase" | "decrease";
+
+export interface Category {
+  id: string;
+  label: string;
+  icon: string;
+  /** Concrete unit options for the `<select>` — first is the default. */
+  unitOptions: string[];
+  /** Pre-select this progress type when the category is chosen. */
+  defaultProgressType: ProgressType;
+  defaultDirection: Direction;
+  /** If true, the body-topic soft warning shows on the public page. */
+  sensitive?: boolean;
+  /** Category-aware default milestones (used when progressType === "milestones"). */
+  defaultMilestones?: string[];
+  /** Optional one-line description shown under the label in pickers. */
+  hint?: string;
+}
+
+export const CATEGORIES: Category[] = [
   {
-    id: "medical",
-    label: "Medical",
-    icon: "stethoscope",
-    defaultDirection: "decrease" as const,
-    hint: "treatments, days",
+    id: "health",
+    label: "Health & fitness",
+    icon: "heart-pulse",
+    unitOptions: ["kg", "lbs", "km", "miles", "reps", "workouts"],
+    defaultProgressType: "number",
+    defaultDirection: "decrease",
+    sensitive: true,
+    defaultMilestones: ["Set a baseline", "First milestone", "Halfway there", "Goal reached"],
   },
   {
-    id: "memorial",
-    label: "Memorial",
-    icon: "flame",
-    defaultDirection: "increase" as const,
-    hint: "any unit",
-  },
-  {
-    id: "emergency",
-    label: "Emergency",
-    icon: "siren",
-    defaultDirection: "increase" as const,
-    hint: "any unit",
-  },
-  {
-    id: "charity",
-    label: "Charity",
-    icon: "heart-handshake",
-    defaultDirection: "increase" as const,
-    hint: "$ raised",
-  },
-  {
-    id: "education",
-    label: "Education",
+    id: "learning",
+    label: "Learning",
     icon: "graduation-cap",
-    defaultDirection: "increase" as const,
-    hint: "books, hours, courses",
+    unitOptions: ["books", "pages", "courses", "hours", "lessons"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Start", "Quarter way", "Halfway", "Nearly there", "Complete"],
   },
   {
-    id: "animal",
-    label: "Animal",
-    icon: "paw-print",
-    defaultDirection: "increase" as const,
-    hint: "rescues, miles",
-  },
-  {
-    id: "environment",
-    label: "Environment",
-    icon: "leaf",
-    defaultDirection: "increase" as const,
-    hint: "trees, lbs",
-  },
-  {
-    id: "business",
-    label: "Business",
+    id: "career",
+    label: "Career & money",
     icon: "briefcase",
-    defaultDirection: "increase" as const,
-    hint: "$ saved, customers",
+    unitOptions: ["$", "calls", "clients", "applications", "interviews"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Set goal", "First wins", "Build momentum", "Hit target"],
   },
   {
-    id: "community",
-    label: "Community",
-    icon: "users",
-    defaultDirection: "increase" as const,
-    hint: "people, events",
-  },
-  {
-    id: "competition",
-    label: "Competition",
-    icon: "trophy",
-    defaultDirection: "increase" as const,
-    hint: "rank, score, wins",
+    id: "launch",
+    label: "Product launch",
+    icon: "rocket",
+    unitOptions: ["users", "signups", "downloads", "milestones"],
+    defaultProgressType: "milestones",
+    defaultDirection: "increase",
+    defaultMilestones: ["Research", "Build MVP", "Beta test", "Launch", "Iterate"],
   },
   {
     id: "creative",
-    label: "Creative",
+    label: "Creative project",
     icon: "palette",
-    defaultDirection: "increase" as const,
-    hint: "pages, songs, projects",
+    unitOptions: ["pages", "songs", "episodes", "paintings", "chapters", "drafts"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Outline", "First draft", "Revise", "Finish", "Publish"],
   },
   {
-    id: "event",
-    label: "Event",
-    icon: "calendar",
-    defaultDirection: "increase" as const,
-    hint: "attendees, RSVPs",
-  },
-  {
-    id: "faith",
-    label: "Faith",
-    icon: "church",
-    defaultDirection: "increase" as const,
-    hint: "any unit",
-  },
-  {
-    id: "family",
-    label: "Family",
-    icon: "users-round",
-    defaultDirection: "increase" as const,
-    hint: "any unit",
+    id: "habit",
+    label: "Habit & streak",
+    icon: "flame",
+    unitOptions: ["days"],
+    defaultProgressType: "streak",
+    defaultDirection: "increase",
+    defaultMilestones: ["7 days", "30 days", "60 days", "100 days"],
   },
   {
     id: "sports",
-    label: "Sports",
+    label: "Sports & event",
     icon: "dumbbell",
-    defaultDirection: "increase" as const,
-    hint: "reps, miles, time",
+    unitOptions: ["km", "miles", "minutes", "reps", "matches", "races"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Start training", "First milestone", "Peak", "Event day"],
+  },
+  {
+    id: "community",
+    label: "Community & charity",
+    icon: "heart-handshake",
+    unitOptions: ["$", "people", "events", "volunteers"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Plan", "Launch", "Grow", "Goal reached"],
+  },
+  {
+    id: "personal",
+    label: "Personal milestone",
+    icon: "target",
+    unitOptions: ["milestones"],
+    defaultProgressType: "milestones",
+    defaultDirection: "increase",
+    defaultMilestones: ["Start", "Halfway", "Nearly there", "Complete"],
   },
   {
     id: "travel",
-    label: "Travel",
+    label: "Travel & adventure",
     icon: "plane",
-    defaultDirection: "increase" as const,
-    hint: "places, miles, days",
+    unitOptions: ["places", "miles", "days", "countries"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Plan", "First stop", "Halfway", "Complete"],
   },
   {
-    id: "volunteer",
-    label: "Volunteer",
-    icon: "hand-heart",
-    defaultDirection: "increase" as const,
-    hint: "hours",
+    id: "family",
+    label: "Family & kids",
+    icon: "users-round",
+    unitOptions: ["days", "sessions", "activities", "outings"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Start", "Halfway", "Nearly there", "Complete"],
   },
   {
-    id: "wishes",
-    label: "Wishes",
-    icon: "sparkles",
-    defaultDirection: "increase" as const,
-    hint: "any unit",
+    id: "faith",
+    label: "Faith & spiritual",
+    icon: "church",
+    unitOptions: ["days", "sessions", "chapters", "practices"],
+    defaultProgressType: "number",
+    defaultDirection: "increase",
+    defaultMilestones: ["Begin", "First milestone", "Deepen", "Complete"],
   },
-] as const;
+  {
+    id: "other",
+    label: "Other",
+    icon: "circle-ellipsis",
+    unitOptions: ["units", "items", "sessions", "tasks", "milestones"],
+    defaultProgressType: "milestones",
+    defaultDirection: "increase",
+    hint: "Anything that doesn't fit the other categories",
+    defaultMilestones: ["Start", "Halfway", "Nearly there", "Complete"],
+  },
+];
 
 /**
- * The subset surfaced as featured filter pills on the home page. The
- * full list lives in CATEGORIES; FEATURED is what visitors see when they
- * first hit the discover feed. Picking the broadly appealing + positive
- * ones; the heavier / more sensitive categories (Medical, Memorial,
- * Emergency) still work when selected from the create form but don't
- * lead the home page.
+ * Subset surfaced as featured filter pills on the home/explore page.
+ * Picks the broadly appealing, positive categories.
  */
 export const FEATURED_CATEGORIES = CATEGORIES.filter((c) =>
-  [
-    "charity",
-    "education",
-    "animal",
-    "environment",
-    "community",
-    "creative",
-  ].includes(c.id)
+  ["health", "learning", "launch", "creative", "habit", "personal"].includes(c.id)
 );
 
-export type CategoryId = (typeof CATEGORIES)[number]["id"];
+export type CategoryId = string;
 
-export function getCategory(id: string) {
-  return (
-    CATEGORIES.find((c) => c.id === id) ??
-    // Last-resort fallback. Should be unreachable because the server
-    // validator only accepts CATEGORIES ids, but display-side we still
-    // want a sane default for legacy rows.
-    CATEGORIES[CATEGORIES.length - 1]
-  );
+export function getCategory(id: string): Category {
+  const direct = CATEGORIES.find((c) => c.id === id);
+  if (direct) return direct;
+
+  // Unknown category → fall back to "Other" (no legacy mapping).
+  return CATEGORIES.find((c) => c.id === "other")!;
+}
+
+/**
+ * Category-aware default milestones. Falls back to the category's
+ * defaultMilestones, then to a generic 4-step list.
+ */
+export function getDefaultMilestones(categoryId: string): Array<{ id: string; title: string }> {
+  const cat = getCategory(categoryId);
+  const titles = cat.defaultMilestones ?? ["Step 1", "Step 2", "Step 3", "Done"];
+  return titles.map((title, i) => ({ id: `m${i + 1}`, title }));
 }

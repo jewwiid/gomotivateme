@@ -214,8 +214,8 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
           </div>
         )}
 
-        {/* Sensitive-goal soft warning */}
-        {goal.category === "weight" && (
+        {/* Sensitive-goal soft warning (health goals with weight units) */}
+        {goal.category === "health" && ["kg", "lbs"].includes(goal.unit) && (
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] p-3 text-xs text-zinc-800">
             <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[var(--color-warning)]" />
             <p>

@@ -202,7 +202,7 @@ function GoalDetailContent() {
                   ? `${goal.currentValue} of ${goal.targetValue} milestones`
                   : goal.progressType === "streak"
                   ? `${goal.currentValue} day streak`
-                  : `${formatNumber(goal.currentValue)} of ${formatNumber(goal.targetValue)} ${goal.unit}`
+                  : `${formatNumber(goal.currentValue ?? 0)} of ${formatNumber(goal.targetValue ?? 0)} ${goal.unit}`
               }
               unit={goal.unit}
             />
@@ -322,8 +322,8 @@ function GoalDetailContent() {
               goalId={goalId}
               milestones={goal.milestones}
               isOwner={true}
-              currentValue={goal.currentValue}
-              targetValue={goal.targetValue}
+              currentValue={goal.currentValue ?? 0}
+              targetValue={goal.targetValue ?? 0}
               unit={goal.unit}
             />
           </div>

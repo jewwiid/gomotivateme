@@ -22,7 +22,7 @@ import {
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { CATEGORIES, CategoryId } from "@/lib/categories";
+import { CATEGORIES, CategoryId, getCategory, getDefaultMilestones } from "@/lib/categories";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Logo } from "@/components/Logo";
@@ -125,12 +125,9 @@ function NewGoalContent() {
     d.setMonth(d.getMonth() + 3);
     return d.toISOString().slice(0, 10);
   });
-  const [milestones, setMilestones] = useState<Array<{ id: string; title: string }>>(() => [
-    { id: "m1", title: "Research" },
-    { id: "m2", title: "Plan" },
-    { id: "m3", title: "Execute" },
-    { id: "m4", title: "Complete" },
-  ]);
+  const [milestones, setMilestones] = useState<Array<{ id: string; title: string }>>(() =>
+    getDefaultMilestones("personal")
+  );
   const [supporterTarget, setSupporterTarget] = useState("");
   const [supportTypes, setSupportTypes] = useState<string[]>(["encourage", "checkin"]);
   const [visibility, setVisibility] = useState<"public" | "unlisted">("public");
@@ -142,7 +139,15 @@ function NewGoalContent() {
     setCategory(id);
     const c = CATEGORIES.find((x) => x.id === id)!;
     setDirection(c.defaultDirection);
-    setUnit(c.hint.split(" ")[0]);
+    setUnit(c.unitOptions[0] ?? "units");
+    // Pre-select the category's preferred progress type.
+    if (c.defaultProgressType !== progressType) {
+      setProgressType(c.defaultProgressType);
+      // Update milestone defaults when switching to milestones.
+      if (c.defaultProgressType === "milestones") {
+        setMilestones(getDefaultMilestones(id));
+      }
+    }
   };
 
   const canAdvance = () => {
@@ -175,6 +180,35 @@ function NewGoalContent() {
     return true;
   };
 
+  /** Human-readable validation message for the current step (empty = OK). */
+  const stepError = (): string | null => {
+    if (step === 0 && title.trim().length === 0) return "Enter a title to continue";
+    if (step === 3) {
+      if (progressType === "number") {
+        const s = parseFloat(startValue);
+        const t = parseFloat(targetValue);
+        if (!Number.isFinite(s)) return "Enter a starting value";
+        if (!Number.isFinite(t)) return "Enter a target value";
+        if (s === t) return "Target must be different from your starting value";
+        if (direction === "decrease" ? t >= s : t <= s)
+          return direction === "decrease"
+            ? "Target should be lower than your starting value"
+            : "Target should be higher than your starting value";
+      }
+      if (progressType === "streak") {
+        const t = parseInt(targetValue, 10);
+        if (!Number.isFinite(t) || t <= 0) return "Enter how many days you're aiming for";
+      }
+      if (progressType === "milestones") {
+        if (!milestones.some((m) => m.title.trim().length > 0))
+          return "Add at least one milestone";
+      }
+    }
+    if (step === 4 && new Date(targetDate).getTime() <= Date.now())
+      return "Pick a date in the future";
+    return null;
+  };
+
   const totalSteps = WIZARD_COPY.length;
   const stepCopy = WIZARD_COPY[step];
 
@@ -195,7 +229,9 @@ function NewGoalContent() {
         coverImageId = uploaded.storageId;
       }
       const start =
-        progressType === "streak" ? 0 : parseFloat(startValue);
+        progressType === "streak" || progressType === "milestones"
+          ? 0
+          : parseFloat(startValue);
       const target =
         progressType === "streak"
           ? parseInt(targetValue, 10)
@@ -369,13 +405,39 @@ function NewGoalContent() {
                     <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
                       Unit
                     </label>
-                    <input
-                      type="text"
-                      value={unit}
-                      onChange={(e) => setUnit(e.target.value)}
-                      placeholder="kg, lbs, miles, books..."
-                      className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
-                    />
+                    <select
+                      value={
+                        getCategory(category).unitOptions.includes(unit)
+                          ? unit
+                          : "__custom"
+                      }
+                      onChange={(e) => {
+                        if (e.target.value === "__custom") return;
+                        setUnit(e.target.value);
+                      }}
+                      className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                    >
+                      {getCategory(category).unitOptions.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                      {!getCategory(category).unitOptions.includes(unit) && (
+                        <option value="__custom">{unit} (custom)</option>
+                      )}
+                      <option value="__custom">Custom…</option>
+                    </select>
+                    {(!getCategory(category).unitOptions.includes(unit) ||
+                      // Show free text when "Custom…" is selected
+                      false) && (
+                      <input
+                        type="text"
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                        placeholder="Type your unit…"
+                        className="mt-2 w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                      />
+                    )}
                   </div>
                 </>
               )}
@@ -656,6 +718,9 @@ function NewGoalContent() {
             </button>
           )}
           </div>
+          {stepError() && (
+            <p className="mt-2 text-center text-xs text-[var(--color-danger)]">{stepError()}</p>
+          )}
         </footer>
         </section>
     </div>

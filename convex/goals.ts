@@ -9,24 +9,19 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { buildSlug, computeProgress, newMilestoneTiers } from "./utils";
 
 const CATEGORIES = [
-  "medical",
-  "memorial",
-  "emergency",
-  "charity",
-  "education",
-  "animal",
-  "environment",
-  "business",
-  "community",
-  "competition",
+  "health",
+  "learning",
+  "career",
+  "launch",
   "creative",
-  "event",
-  "faith",
-  "family",
+  "habit",
   "sports",
+  "community",
+  "personal",
   "travel",
-  "volunteer",
-  "wishes",
+  "family",
+  "faith",
+  "other",
 ] as const;
 
 const SUPPORT_TYPES = [
@@ -76,7 +71,7 @@ export const create = mutation({
       v.literal("streak"),
       v.literal("milestones")
     ),
-    startValue: v.number(),
+    startValue: v.optional(v.number()),
     targetValue: v.number(),
     direction: v.union(v.literal("increase"), v.literal("decrease")),
     targetDate: v.optional(v.number()),
@@ -128,19 +123,50 @@ export const create = mutation({
     if (!CATEGORIES.includes(args.category as (typeof CATEGORIES)[number])) {
       throw new Error("Invalid category");
     }
+    const category = args.category;
+
     if (args.title.trim().length === 0) throw new Error("Title is required");
-    if (args.startValue === args.targetValue) {
-      throw new Error("Start and target must differ");
-    }
-    if (
-      args.direction === "decrease"
-        ? args.targetValue >= args.startValue
-        : args.targetValue <= args.startValue
-    ) {
-      throw new Error("Target is on the wrong side of start for the chosen direction");
-    }
     if (args.targetDate && args.targetDate <= Date.now()) {
       throw new Error("Target date must be in the future");
+    }
+
+    // --- Server-side coercion based on progress type ---
+    // Prevents NaN, enforces sane defaults regardless of what the client sends.
+    let startValue: number;
+    let currentValue: number;
+    let targetValue: number;
+    let direction: "increase" | "decrease";
+    let unit: string;
+
+    if (args.progressType === "milestones") {
+      startValue = 0;
+      currentValue = 0;
+      targetValue = (args.milestones ?? []).length;
+      direction = "increase";
+      unit = "milestones";
+    } else if (args.progressType === "streak") {
+      startValue = 0;
+      currentValue = 0;
+      targetValue = args.targetValue;
+      direction = "increase";
+      unit = "days";
+    } else {
+      // "number" — validate client-supplied values
+      startValue = args.startValue ?? 0;
+      targetValue = args.targetValue;
+      currentValue = startValue;
+      direction = args.direction;
+      unit = args.unit;
+      if (startValue === targetValue) {
+        throw new Error("Start and target must differ");
+      }
+      if (
+        direction === "decrease"
+          ? targetValue >= startValue
+          : targetValue <= startValue
+      ) {
+        throw new Error("Target is on the wrong side of start for the chosen direction");
+      }
     }
 
     // Validate supportTypes
@@ -186,19 +212,18 @@ export const create = mutation({
       title: args.title.trim(),
       summary: args.summary?.trim() || undefined,
       story: args.story?.trim() || undefined,
-      category: args.category,
-      unit: args.unit,
+      category,
+      unit,
       progressType: args.progressType,
-      startValue: args.startValue,
-      targetValue: args.targetValue,
-      currentValue: args.startValue,
-      direction: args.direction,
+      startValue,
+      targetValue,
+      currentValue,
+      direction,
       targetDate: args.targetDate,
       milestones: milestones.length > 0 ? milestones : undefined,
       supporterTarget: args.supporterTarget,
       supporterCount: 0,
       supportTypes: validSupport as any,
-      // Pre-launch (status: "draft") if there are invites. Otherwise active.
       status: hasInvites ? "draft" : "active",
       visibility: args.visibility,
       slug,
@@ -241,6 +266,26 @@ export const create = mutation({
     }
 
     await ctx.scheduler.runAfter(0, internal.moderation.reviewGoal, { goalId });
+
+    // Email B8 — "Your goal is live" (transactional confirmation). Same
+    // pattern as the welcome email in users.ts. Transactional because it's
+    // a service message about an action the user just took, not marketing
+    // (CAN-SPAM exempts it, so unsubscribe prefs don't apply).
+    const ownerEmail = (user as { email?: string } | null)?.email;
+    if (ownerEmail) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId,
+        toEmail: ownerEmail,
+        templateId: "goalCreated",
+        category: "transactional",
+        payload: JSON.stringify({
+          firstName: ownerName?.split(" ")[0],
+          goalTitle: args.title.trim(),
+          slug,
+        }),
+      });
+    }
+
     return { goalId, slug };
   },
 });

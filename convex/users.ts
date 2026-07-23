@@ -22,6 +22,7 @@ export const me = query({
       email: (user as { email?: string }).email ?? null,
       image: (user as { image?: string }).image ?? null,
       handle: (user as { handle?: string }).handle ?? null,
+      handleChangesRemaining: (user as { handleChangesRemaining?: number }).handleChangesRemaining ?? null,
       bio: (user as { bio?: string }).bio ?? null,
       coverImageId: (user as { coverImageId?: string }).coverImageId ?? null,
       isAdmin: (user as { isAdmin?: boolean }).isAdmin ?? false,
@@ -302,7 +303,16 @@ export const updateProfile = mutation({
   },
 });
 
-/** Set or update the user's public handle. */
+/**
+ * Set or update the user's public handle.
+ *
+ * Policy:
+ *  - First set (user has no handle yet): always allowed. Grants
+ *    handleChangesRemaining = 1 for one future change. Signup path.
+ *  - Change (user already has a handle): allowed only while
+ *    handleChangesRemaining > 0; decrements on success. Existing users
+ *    with no counter are treated as locked (undefined -> 0).
+ */
 export const setHandle = mutation({
   args: { handle: v.string() },
   handler: async (ctx, { handle }) => {
@@ -314,6 +324,19 @@ export const setHandle = mutation({
         `Handle must be ${MIN_HANDLE_LENGTH}-${MAX_HANDLE_LENGTH} chars: lowercase letters, digits, _ or -`
       );
     }
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("Not signed in");
+
+    const isFirstSet = !(user as { handle?: string }).handle;
+
+    // Change branch: enforce the one-change limit.
+    if (!isFirstSet) {
+      const remaining = (user as { handleChangesRemaining?: number }).handleChangesRemaining ?? 0;
+      if (remaining <= 0) {
+        throw new Error("Your handle is locked. Contact support to request a change.");
+      }
+    }
+
     // Check for a clash against any OTHER user with the same handle.
     const clash = await ctx.db
       .query("users")
@@ -322,7 +345,16 @@ export const setHandle = mutation({
     if (clash && clash._id !== userId) {
       throw new Error("That handle is taken");
     }
-    await ctx.db.patch(userId, { handle: normalized });
+
+    if (isFirstSet) {
+      await ctx.db.patch(userId, { handle: normalized, handleChangesRemaining: 1 });
+    } else {
+      const remaining = (user as { handleChangesRemaining?: number }).handleChangesRemaining ?? 1;
+      await ctx.db.patch(userId, {
+        handle: normalized,
+        handleChangesRemaining: Math.max(0, remaining - 1),
+      });
+    }
     return { handle: normalized };
   },
 });

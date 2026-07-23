@@ -1,115 +1,99 @@
-# Email notification system — infra + first 3 emails
+# Goal creation overhaul — categories, metrics, form flow
 
-## Architecture (the key decision)
+## Problem
+The categories are GoFundMe cause-oriented (medical, memorial, emergency, charity…), not activity-oriented. A user who wants to "lose weight", "launch an app", or "read 50 pages" can't find a natural fit. The unit picker is brittle (`hint.split(" ")[0]` → "any"), milestone defaults are hardcoded regardless of category, the direction toggle is jargon, and `startValue`/`currentValue` are required even for milestone/streak goals (the NaN bug we already hit).
 
-Convex mutations run in an isolate runtime and **cannot** import `resend`/`react-email` directly. The standard pattern:
+## Scope of this pass
+**Everything needed to make the 4 example cases work cleanly**: app launch, reading, weight loss, personal milestones — plus backend hardening and schema fix. This is a focused overhaul, not a full AI-assist rewrite.
 
-1. **Mutations** (trigger points) enqueue a row in a new `notifications` table — fast, transactional, never blocks the user action.
-2. **A Convex action** (`internalAction` with `use node`) drains the queue: renders the React Email template to HTML, calls Resend's HTTP API, marks the row sent/failed.
-3. The action is invoked by a **cron** (every ~2 min) OR scheduled immediately via `ctx.scheduler.runAfter(0, ...)` for near-realtime transactional emails.
+---
 
-This keeps email sending out of the request path, gives us retry/failure visibility, and works with the "no API key yet" constraint — the action no-ops gracefully when `RESEND_API_KEY` is unset.
+## Step 1 — New category set (`lib/categories.ts`)
 
-## Dependencies to add
-- `resend` (Node SDK — Resend also has a plain fetch API, but the SDK is cleaner and we run it in a `use node` action)
-- `react-email` + `@react-email/components` (template authoring)
+Replace the 18 GoFundMe categories with 12 activity-oriented ones. Each gets `unitOptions` (actual array, not a hint string) and `defaultProgressType`:
 
-## New files
+| ID | Label | Units | Default type | Direction |
+|----|-------|-------|-------------|-----------|
+| `health` | Health & fitness | kg, lbs, km, miles, reps | number | decrease (weight) / increase (fitness) |
+| `learning` | Learning | books, pages, courses, hours | number | increase |
+| `career` | Career & money | $, calls, clients, applications | number | increase |
+| `launch` | Product launch | — (milestones) | milestones | increase |
+| `creative` | Creative project | songs, pages, episodes, paintings | number | increase |
+| `habit` | Habit & streak | days | streak | increase |
+| `sports` | Sports & fitness event | km, miles, minutes, reps | number | increase |
+| `community` | Community & charity | $, people, events | number | increase |
+| `personal` | Personal milestone | — (milestones or number) | milestones | increase |
+| `travel` | Travel & adventure | places, miles, days | number | increase |
+| `family` | Family & kids | any | number | increase |
+| `faith` | Faith & spiritual | days, sessions | number | increase |
 
-### Schema additions (`convex/schema.ts`)
-Two new tables:
+Each category object: `{ id, label, icon, unitOptions: string[], defaultProgressType, defaultDirection }`.
 
-**`notificationPrefs`** — per-user email preferences (CAN-SPAM/GDPR requirement).
-- `userId` (id users), `email` (string, denormalized snapshot)
-- `yourMotivations: boolean` (default true) — replaces the settings placeholder toggle
-- `newMotivatorOnGoal: boolean` (default true)
-- `weeklyDigest: boolean` (default false)
-- `urgentCauses: boolean` (default true)
-- `productUpdates: boolean` (default false)
-- `unsubscribedAll: boolean` (default false) — master opt-out for lifecycle email
-- index: `by_user`
-- Created lazily on first signup (defaults inserted via a mutation called from the auth flow / a backfill)
+**Remove** the legacy `"weight"` category reference (the public page has `goal.category === "weight"` soft-warning logic — replace with a `health` + `unit in [kg, lbs]` check, or a `sensitiveCategory` flag on the category object).
 
-**`notifications`** — the send queue / audit log.
-- `userId` (id users, nullable — visitor emails rare but possible), `toEmail` (string)
-- `templateId` (string — e.g. `"welcome"`, `"newApplication"`, `"inviteReceived"`)
-- `payload` (string — JSON blob with template variables)
-- `status` (`"pending" | "sent" | "failed" | "suppressed"`)
-- `category` (`"transactional" | "lifecycle"`) — drives suppression logic
-- `resendId` (string, optional — Resend message id for tracking)
-- `error` (string, optional — last failure message)
-- `attempts` (number, default 0)
-- `createdAt`, `sentAt?`
-- indexes: `by_status_created` (for the drain query), `by_user`
+**Backward compatibility**: existing goals have old categories (`medical`, `creative`, `business`, etc). Add a `legacyCategoryMap` that maps old → new (`medical` → `health`, `business` → `career`, `wishes` → `personal`, `education` → `learning`, etc). `getCategory()` falls back to the map so old goals still display correctly.
 
-### `convex/emails.ts` (new) — the sending layer
-- `enqueue(internalMutation)` — writes a notification row. Called from trigger points via `ctx.runMutation(internal.emails.enqueue, {...})`. Checks prefs here: if the category is `lifecycle` and the user has it disabled (or `unsubscribedAll`), writes status `"suppressed"` and returns — no send.
-- `drainQueue(internalAction, use node)` — queries pending notifications (batch of ~20), renders each template to HTML via React Email, calls Resend, updates rows to `sent`/`failed`. If `RESEND_API_KEY` is missing, logs and exits (no-op) — emails stay `pending` and will send the moment the key lands.
-- `renderTemplate(templateId, payload)` — maps template id → React Email component, returns `{ subject, html, text }`.
+## Step 2 — Backend hardening (`convex/goals.ts` + `convex/schema.ts`)
 
-### `convex/crons.ts` (new) — the scheduler
-```ts
-export default crons.cronJobs({
-  drainEmails: crons.interval("drain email queue", { seconds: 120 }, internal.emails.drainQueue),
-});
-```
-Convex auto-discovers this file.
+**`convex/goals.ts`**:
+- Update the duplicated `CATEGORIES` list to the new 12 ids
+- In the `create` handler: server-side coercion based on `progressType`:
+  - `milestones`: force `startValue = 0`, `currentValue = 0`, `targetValue = milestones.length`, `direction = "increase"`, `unit = "milestones"` — ignore client-sent values
+  - `streak`: force `startValue = 0`, `unit = "days"`, `direction = "increase"`
+  - `number`: keep client values but validate `targetValue !== startValue` and direction consistency
 
-### `emails/` (new directory, Next.js side) — React Email templates
-- `emails/components/Layout.tsx` — the shared brand shell: off-white bg, wordmark header, cobalt CTA button, footer with unsubscribe + physical address placeholder. All emails inherit this.
-- `emails/welcome.tsx` — A1 (Welcome) → fires on signup
-- `emails/newApplication.tsx` — B1 (new motivator application) → fires from `motivation.requestApplication`
-- `emails/inviteReceived.tsx` — C1 (you're invited to motivate) → fires from `motivation.addInvite`
+**`convex/schema.ts`** (lines 79-81):
+- `startValue: v.optional(v.number())` (was required → caused NaN)
+- `currentValue: v.optional(v.number())` (was required)
+- This is backwards-compatible: existing rows keep their values; new milestone/streak goals can omit them
 
-These use the brand tokens (cobalt `#044dfc`, gold `#feb604`, Plus Jakarta Sans) so emails match the app.
+## Step 3 — Form improvements (`app/dashboard/new/page.tsx`)
 
-## Trigger wiring (3 emails, end-to-end)
+**Category picker (step 1)**:
+- Replace `onCategoryChange` to set `unit` from `category.unitOptions[0]` (not `hint.split(" ")[0]`)
+- Set `progressType` from `category.defaultProgressType` automatically
 
-Each trigger point gets one added line — `await ctx.runMutation(internal.emails.enqueue, {...})`:
+**Progress type step (step 2)**:
+- When category has `defaultProgressType`, pre-select it (user can still override)
+- **Unit becomes a `<select>`** with `category.unitOptions` as options + "Custom…" free-text fallback (not a parsed hint string)
 
-1. **Welcome (A1)** → in the signup flow. Since Convex Auth creates the user row via `auth:store`, I'll add a scheduled action hook or enqueue from the existing `users.setHandle`/profile setup (first user write). *Or* cleaner: enqueue from a small `onUserCreated` internal mutation. I'll wire it to the first realistic touchpoint and document the exact spot.
-2. **New application (B1)** → `convex/motivation.ts:requestApplication` (line ~521, after the `motivatorApplications` insert). Payload: `{ goalTitle, goalSlug, motivatorName, roleLabel, applicationMessage, supportTypes }`. Recipient: `goal.ownerId`.
-3. **Invite received (C1)** → `convex/motivation.ts:addInvite` (line ~227, after the `motivatorInvites` insert). Payload: `{ ownerName, goalTitle, inviteMessage, roleLabel, supportTypes, inviteToken }`. Recipient: `invite.email` or `invite.invitedUserId`.
+**Direction toggle (step 3)**:
+- Remove the raw `↓ decrease / ↑ increase` toggle
+- Replace with human language: for `health` show "Lose weight" vs "Build fitness" radio; for other categories default to increase and hide the toggle entirely (only show if the user explicitly switches to a number type and the category supports both directions)
 
-## Unsubscribe system
-- On user creation, generate a random `unsubscribeToken` (stored on `users` — one new optional field).
-- Every lifecycle email footer includes `https://{SITE_URL}/email/unsubscribe?token={token}`.
-- New route `app/email/unsubscribe/page.tsx` → calls `users.unsubscribeByToken` mutation → sets `notificationPrefs.unsubscribedAll = true`.
-- Transactional emails (password reset, application notices) are exempt — they always send.
+**Milestone defaults**:
+- Replace hardcoded Research/Plan/Execute/Complete with category-aware defaults:
+  - `launch`: Research → Build MVP → Beta test → Launch
+  - `personal`: Start → Halfway → Nearly there → Complete
+  - `health` (if user picks milestones): Set baseline → First milestone → Second milestone → Goal
+  - Default fallback: Step 1 → Step 2 → Step 3 → Done
+- User can still edit all milestone titles inline
 
-## Settings UI wiring (`app/settings/page.tsx`)
-Replace the placeholder `NotificationsTab` local state with real Convex queries/mutations:
-- Query `api.notificationPrefs.get` for current prefs
-- Mutation `api.notificationPrefs.update` on toggle
-- Remove the "placeholder" disclaimer copy
+**Validation feedback**:
+- Show inline error text when `canAdvance()` is false (currently the button just silently disables):
+  - "Enter a title to continue"
+  - "Target must be different from starting value"
+  - "Pick a date in the future"
 
-## Env vars (added to `.env.local.example`, NOT set yet)
-- `RESEND_API_KEY` — the API key (you'll add when ready)
-- `RESEND_FROM_ADDRESS` — default `GoMotivateMe <hello@gomotivateme.com>`
-- `NEXT_PUBLIC_SITE_URL` — already exists, reused for unsubscribe links + email CTAs
+## Step 4 — Display fixes
 
-## Graceful no-op behavior (the "ENVs later" constraint)
-`drainQueue` checks for `RESEND_API_KEY` at the top:
-```ts
-if (!process.env.RESEND_API_KEY) {
-  console.log("[emails] RESEND_API_KEY not set — skipping drain, emails remain pending");
-  return;
-}
-```
-**Result**: all the code is real and wired. The moment you drop the key into Convex env vars (`npx convex env set RESEND_API_KEY`), queued emails start flowing with zero code changes.
+**`app/o/[slug]/page.tsx`** (public goal page):
+- Replace `goal.category === "weight"` with a `sensitiveCategories` check: `["health"].includes(goal.category) && ["kg", "lbs"].includes(goal.unit)` — keeps the body-topic soft warning for weight goals without a legacy `"weight"` id
 
-## Verification
-- `npm run typecheck` passes
-- `npm run build` passes
-- `npx convex dev` pushes schema + functions without error
-- Triggering `requestApplication` in dev enqueues a `notifications` row with status `pending` (visible in Convex dashboard)
-- The drain cron runs, sees no API key, logs the no-op — row stays `pending`
+**`components/GoalCard.tsx`**:
+- Already uses `getCategory()` for display — the backward-compat map in Step 1 handles this automatically
 
-## Not in scope (flagging)
-- The remaining 9 MVP emails (password reset, weekly digest, supporter emails, etc.) — same pattern, just more templates. I'll set up the system so adding each one is ~30 min of work.
-- Resend webhook for bounce/complaint handling — defer until sending at volume.
-- DNS setup (SPF/DKIM/DMARC) — that's in your DNS provider, not code. I'll document the records needed in DEPLOY.md.
+## Step 5 — Backfill existing prod data
+
+One-off mutation that:
+- Maps old category ids → new ids on all existing goals
+- Sets `startValue`/`currentValue` to `0` where they're `NaN` or `undefined`
+
+## What this does NOT include (flagging)
+- **AI title-to-suggestion** (typing "lose 10kg" auto-suggests health/kg/decrease) — valuable but a separate feature; the category picker with `unitOptions` already makes the manual flow much faster
+- **Collapsing 9 steps → 5** — the improvements above make each step clearer and faster, but the step count stays the same to avoid a risky UX rewrite in this pass
+- **Support types** (`encourage`, `checkin`, etc.) — untouched, they work fine
 
 ## Files touched
-**New:** `convex/emails.ts`, `convex/crons.ts`, `convex/notificationPrefs.ts`, `emails/components/Layout.tsx`, `emails/welcome.tsx`, `emails/newApplication.tsx`, `emails/inviteReceived.tsx`, `app/email/unsubscribe/page.tsx`
-**Edited:** `convex/schema.ts` (2 tables + 1 field), `convex/motivation.ts` (2 trigger lines), `app/settings/page.tsx` (real prefs), `.env.local.example`, `package.json` (2 deps)
+**Edited**: `lib/categories.ts`, `convex/goals.ts`, `convex/schema.ts`, `app/dashboard/new/page.tsx`, `app/o/[slug]/page.tsx`
+**No new files**

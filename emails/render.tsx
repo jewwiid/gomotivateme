@@ -2,6 +2,7 @@ import * as React from "react";
 import { WelcomeEmail, WelcomeEmailProps } from "./welcome";
 import { NewApplicationEmail, NewApplicationEmailProps } from "./newApplication";
 import { InviteReceivedEmail, InviteReceivedEmailProps } from "./inviteReceived";
+import { GoalCreatedEmail, GoalCreatedEmailProps } from "./goalCreated";
 
 /**
  * Map a templateId + payload to a { subject, component } pair.
@@ -36,6 +37,14 @@ export function renderTemplate(
       return {
         subject: `${p.ownerName} wants you on their team`,
         component: <InviteReceivedEmail {...p} />,
+      };
+    }
+
+    case "goalCreated": {
+      const p = payload as GoalCreatedEmailProps;
+      return {
+        subject: "Your goal is live — let's build momentum",
+        component: <GoalCreatedEmail {...p} />,
       };
     }
 
