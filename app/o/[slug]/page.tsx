@@ -181,11 +181,6 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
               </span>
             </>
           )}
-          <span>·</span>
-          <span className="inline-flex items-center gap-1 text-[var(--color-success)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
-            Privacy protected
-          </span>
         </div>
 
         {/* Status banner */}
