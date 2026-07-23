@@ -114,6 +114,7 @@ function MotivateRow({
   pledge: {
     _id: Id<"motivatorPledges">;
     goalId: string;
+    goalSlug?: string | null;
     role: string;
     checkInFrequency: string;
     pledgeText: string | null;
@@ -132,18 +133,20 @@ function MotivateRow({
     ? `Last check-in ${timeAgoShort(pledge.lastCheckInAt)}`
     : "No check-ins yet";
 
+  const goalHref = pledge.goalSlug ? `/o/${pledge.goalSlug}` : `/o/${pledge.goalId}`;
+
   return (
     <div className="py-5">
       <div className="grid gap-4 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:items-center sm:gap-7">
         <Link
-          href={`/o/${pledge.goalId}`}
+          href={goalHref}
           className="group aspect-[1.7/1] overflow-hidden rounded-xl bg-[#e8edf9]"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ROW_MEDIA[index % ROW_MEDIA.length]} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
         </Link>
         <div className="min-w-0">
-          <Link href={`/o/${pledge.goalId}`} className="group">
+          <Link href={goalHref} className="group">
             <h2 className="truncate font-display text-2xl font-bold tracking-[-0.04em] transition group-hover:text-[var(--color-primary)]">
               {goalTitle ?? "A goal in your circle"}
             </h2>
