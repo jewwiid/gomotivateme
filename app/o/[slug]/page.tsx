@@ -285,6 +285,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
               goalId={goalId}
               unit={goal.unit}
               milestones={goal.milestones ?? undefined}
+              isOwner={isOwner}
             />
 
             {/* Share preview */}

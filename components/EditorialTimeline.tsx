@@ -6,6 +6,7 @@ import { Calendar, CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon, M
 import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { UpdateMedia, UpdateMediaItem } from "./UpdateMedia";
+import { UpdateReactions } from "./UpdateReactions";
 import { useMemo } from "react";
 import { ReportButton } from "./ReportButton";
 
@@ -44,10 +45,12 @@ export function EditorialTimeline({
   goalId,
   unit = "units",
   milestones,
+  isOwner = false,
 }: {
   goalId: Id<"goals">;
   unit?: string;
   milestones?: Array<{ id: string; title: string; done: boolean }>;
+  isOwner?: boolean;
 }) {
   const { results: updates, status, loadMore } = usePaginatedQuery(
     api.updates.listForGoalPaginated,
@@ -148,6 +151,8 @@ export function EditorialTimeline({
                   </p>
                 )}
                 <ReportButton goalId={goalId} updateId={u._id} className="mt-3 inline-flex items-center gap-1 text-[11px] text-zinc-400 transition hover:text-zinc-700" />
+                {/* Per-update reactions — visitors only (owner doesn't cheer their own progress) */}
+                {!isOwner && <UpdateReactions updateId={u._id} goalId={goalId} />}
               </div>
             </motion.li>
           );

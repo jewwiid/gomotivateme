@@ -279,6 +279,8 @@ export default defineSchema({
   /** Anonymous emoji cheer (replaces the old thumbsUp). One per visitor. */
   reactions: defineTable({
     goalId: v.id("goals"),
+    /** Set when reacting to a specific update; undefined for goal-level cheers. */
+    updateId: v.optional(v.id("updates")),
     kind: v.union(v.literal("emoji"), v.literal("message")),
     emoji: v.optional(
       v.union(
@@ -296,7 +298,9 @@ export default defineSchema({
   })
     .index("by_goal", ["goalId"])
     .index("by_goal_kind", ["goalId", "kind"])
-    .index("by_goal_kind_visitor", ["goalId", "kind", "visitorKey"]),
+    .index("by_goal_kind_visitor", ["goalId", "kind", "visitorKey"])
+    .index("by_update", ["updateId"])
+    .index("by_update_kind_visitor", ["updateId", "kind", "visitorKey"]),
 
   /**
    * Structured support: a user joins a goal with a pledge.
