@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Manrope } from "next/font/google";
 import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 import { SiteFooter } from "@/components/SiteFooter";
+import { CookieConsent } from "@/components/CookieConsent";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -46,6 +47,7 @@ export default function RootLayout({
         <ConvexClientProvider>
           {children}
           <SiteFooter />
+          <CookieConsent />
         </ConvexClientProvider>
       </body>
     </html>

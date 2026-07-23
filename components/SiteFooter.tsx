@@ -102,6 +102,9 @@ export function SiteFooter() {
           <Link href="/legal/privacy" className="transition hover:text-[var(--color-primary)]">
             Privacy
           </Link>
+          <Link href="/legal/cookies" className="transition hover:text-[var(--color-primary)]">
+            Cookies
+          </Link>
           <Link href="/legal/terms" className="transition hover:text-[var(--color-primary)]">
             Terms
           </Link>
