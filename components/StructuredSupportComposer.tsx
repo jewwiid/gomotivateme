@@ -145,12 +145,16 @@ export function StructuredSupportComposer({
             "{amISupporting.pledge}"
           </p>
         )}
-        <button
-          onClick={() => setOpen(true)}
-          className="mt-3 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
-        >
-          Update your support
-        </button>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            onClick={() => setOpen(true)}
+            className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+          >
+            Update your support
+          </button>
+          <span className="text-[var(--color-border)]">·</span>
+          <LeaveSupportButton goalId={goalId} />
+        </div>
       </motion.div>
     );
   }
@@ -376,5 +380,48 @@ export function StructuredSupportComposer({
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+function LeaveSupportButton({ goalId }: { goalId: Id<"goals"> }) {
+  const leave = useMutation(api.supporters.leave);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (confirming) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <button
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await leave({ goalId });
+            } finally {
+              setBusy(false);
+              setConfirming(false);
+            }
+          }}
+          disabled={busy}
+          className="text-xs font-medium text-[var(--color-danger)] hover:opacity-70 disabled:opacity-50"
+        >
+          {busy ? "Leaving..." : "Confirm leave"}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+        >
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setConfirming(true)}
+      className="text-xs font-medium text-[var(--color-text-dim)] hover:text-[var(--color-danger)]"
+    >
+      Leave support
+    </button>
   );
 }

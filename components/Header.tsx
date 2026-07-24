@@ -62,6 +62,14 @@ export function Header() {
                 My goals
               </Link>
               <Link
+                href="/dashboard/supporting"
+                className={`hidden transition hover:text-[var(--color-primary)] lg:inline-flex ${
+                  pathname?.startsWith("/dashboard/supporting") ? "text-[var(--color-primary)]" : ""
+                }`}
+              >
+                Supporting
+              </Link>
+              <Link
                 href="/motivate"
                 className={`hidden transition hover:text-[var(--color-primary)] xl:inline-flex ${
                   isMotivate ? "text-[var(--color-primary)]" : ""

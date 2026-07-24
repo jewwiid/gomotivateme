@@ -158,6 +158,37 @@ export const acceptInvite = mutation({
       invitedUserId: userId,
       pledgeId,
     });
+
+    // Email — notify the goal owner that a motivator accepted their invite.
+    // Reuse the "applicationDecision" template with decision "approved"
+    // (semantic match: "someone is now on your team"). Gated by the owner's
+    // `newMotivatorOnGoal` pref via category "lifecycle".
+    if (invite.creatorId !== userId) {
+      const owner = await ctx.db.get(invite.creatorId);
+      const motivator = await ctx.db.get(userId);
+      if (owner?.email) {
+        const prefs = await ctx.runMutation(
+          internal.notificationPrefs.getForUser,
+          { userId: invite.creatorId }
+        );
+        if (!prefs || (prefs.newMotivatorOnGoal ?? true)) {
+          await ctx.runMutation(internal.emails.enqueue, {
+            userId: invite.creatorId,
+            toEmail: owner.email,
+            templateId: "applicationDecision",
+            category: "lifecycle",
+            payload: JSON.stringify({
+              applicantName: motivator?.name ?? motivator?.handle ?? "Someone",
+              goalTitle: invite.goalTitle,
+              goalSlug: (await ctx.db.get(invite.goalId))?.slug ?? "",
+              decision: "approved",
+              roleLabel: args.role ?? invite.proposedRole,
+            }),
+          });
+        }
+      }
+    }
+
     return { goalId: invite.goalId, pledgeId };
   },
 });

@@ -5,6 +5,7 @@
  */
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 const SUPPORT_TYPES = ["encourage", "experience", "advice", "checkin", "join"] as const;
@@ -65,6 +66,40 @@ export const join = mutation({
     });
     // Maintain the denormalized supporter count.
     await ctx.db.patch(goalId, { supporterCount: (goal.supporterCount ?? 0) + 1 });
+
+    // Email — notify the goal owner that someone joined as a supporter.
+    // Reuse the "supportMessageReceived" template (closest semantic match:
+    // "someone showed up for your goal"). Gated by the owner's
+    // `newMotivatorOnGoal` pref via category "lifecycle".
+    if (goal.ownerId !== userId) {
+      const owner = await ctx.db.get(goal.ownerId);
+      const supporter = await ctx.db.get(userId);
+      if (owner?.email) {
+        const prefs = await ctx.runMutation(
+          internal.notificationPrefs.getForUser,
+          { userId: goal.ownerId }
+        );
+        if (prefs && !(prefs.newMotivatorOnGoal ?? true)) {
+          // Owner opted out of "new motivator on goal" notifications.
+        } else {
+          await ctx.runMutation(internal.emails.enqueue, {
+            userId: goal.ownerId,
+            toEmail: owner.email,
+            templateId: "supportMessageReceived",
+            category: "lifecycle",
+            payload: JSON.stringify({
+              ownerName: owner.name ?? owner.handle ?? "there",
+              authorName: supporter?.name ?? supporter?.handle ?? "Someone",
+              goalTitle: goal.title,
+              goalSlug: goal.slug,
+              messageExcerpt: pledge?.trim()?.slice(0, 200) ?? "Joined your team.",
+              supportTypeLabel: supportType,
+            }),
+          });
+        }
+      }
+    }
+
     return { id, created: true };
   },
 });
@@ -137,5 +172,42 @@ export const listForOwner = query({
       .query("supporters")
       .withIndex("by_goal", (q) => q.eq("goalId", goalId))
       .collect();
+  },
+});
+
+/** List all goals the current user is supporting, with goal details. */
+export const listMySupports = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const supports = await ctx.db
+      .query("supporters")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    supports.sort((a, b) => b.createdAt - a.createdAt);
+    // Fetch goal details for each support.
+    const result = [];
+    for (const s of supports) {
+      const goal = await ctx.db.get(s.goalId);
+      if (!goal) continue;
+      result.push({
+        _id: s._id,
+        goalId: s.goalId,
+        supportType: s.supportType,
+        pledge: s.pledge,
+        createdAt: s.createdAt,
+        goalTitle: goal.title,
+        goalSlug: goal.slug,
+        goalStatus: goal.status,
+        goalCategory: goal.category,
+        ownerName: null as string | null,
+      });
+      const owner = await ctx.db.get(goal.ownerId);
+      if (owner) {
+        result[result.length - 1].ownerName = owner.name ?? owner.handle ?? null;
+      }
+    }
+    return result;
   },
 });

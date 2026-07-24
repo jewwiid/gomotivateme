@@ -161,6 +161,7 @@ function NewGoalContent() {
         if (!Number.isFinite(s) || !Number.isFinite(t)) return false;
         if (s === t) return false;
         if (direction === "decrease" ? t >= s : t <= s) return false;
+        if (!unit.trim()) return false;
       }
       if (progressType === "streak") {
         const t = parseInt(targetValue, 10);
@@ -412,8 +413,11 @@ function NewGoalContent() {
                           : "__custom"
                       }
                       onChange={(e) => {
-                        if (e.target.value === "__custom") return;
-                        setUnit(e.target.value);
+                        if (e.target.value === "__custom") {
+                          setUnit("");
+                        } else {
+                          setUnit(e.target.value);
+                        }
                       }}
                       className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                     >
@@ -422,19 +426,18 @@ function NewGoalContent() {
                           {u}
                         </option>
                       ))}
-                      {!getCategory(category).unitOptions.includes(unit) && (
+                      {!getCategory(category).unitOptions.includes(unit) && unit && (
                         <option value="__custom">{unit} (custom)</option>
                       )}
                       <option value="__custom">Custom…</option>
                     </select>
-                    {(!getCategory(category).unitOptions.includes(unit) ||
-                      // Show free text when "Custom…" is selected
-                      false) && (
+                    {!getCategory(category).unitOptions.includes(unit) && (
                       <input
                         type="text"
                         value={unit}
                         onChange={(e) => setUnit(e.target.value)}
                         placeholder="Type your unit…"
+                        autoFocus
                         className="mt-2 w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
                       />
                     )}

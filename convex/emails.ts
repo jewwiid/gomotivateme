@@ -474,6 +474,58 @@ export const listDeadlineApproaching = internalQuery({
         goal.direction ?? "increase"
       );
 
+      // Collect followers (motivators + supporters) so the cron action can
+      // fan out deadline-approaching emails to them too. Deduped by userId,
+      // excluding the owner. Each entry carries the tier for pref gating.
+      const followerMap = new Map<
+        string,
+        { userId: any; email: string; isMotivator: boolean; isSupporter: boolean }
+      >();
+
+      const pledges = await ctx.db
+        .query("motivatorPledges")
+        .withIndex("by_goal_status", (q) =>
+          q.eq("goalId", goal._id).eq("status", "active")
+        )
+        .collect();
+      for (const pledge of pledges) {
+        if (pledge.userId === goal.ownerId) continue;
+        const u = await ctx.db.get(pledge.userId);
+        if (!u?.email) continue;
+        const entry = followerMap.get(pledge.userId);
+        if (entry) {
+          entry.isMotivator = true;
+        } else {
+          followerMap.set(pledge.userId, {
+            userId: pledge.userId,
+            email: u.email,
+            isMotivator: true,
+            isSupporter: false,
+          });
+        }
+      }
+
+      const supporters = await ctx.db
+        .query("supporters")
+        .withIndex("by_goal", (q) => q.eq("goalId", goal._id))
+        .collect();
+      for (const supporter of supporters) {
+        if (supporter.userId === goal.ownerId) continue;
+        const u = await ctx.db.get(supporter.userId);
+        if (!u?.email) continue;
+        const entry = followerMap.get(supporter.userId);
+        if (entry) {
+          entry.isSupporter = true;
+        } else {
+          followerMap.set(supporter.userId, {
+            userId: supporter.userId,
+            email: u.email,
+            isMotivator: false,
+            isSupporter: true,
+          });
+        }
+      }
+
       result.push({
         goalId: goal._id,
         ownerId: goal.ownerId,
@@ -486,6 +538,7 @@ export const listDeadlineApproaching = internalQuery({
         targetValue: goal.targetValue,
         unit: goal.unit,
         progressPct,
+        followers: Array.from(followerMap.values()),
       });
     }
     return result;
@@ -524,6 +577,58 @@ export const listDeadlinePassed = internalQuery({
         goal.direction ?? "increase"
       );
 
+      // Collect followers (motivators + supporters) so the cron action can
+      // fan out deadline-passed emails to them too. Deduped by userId,
+      // excluding the owner. Each entry carries the tier for pref gating.
+      const followerMap = new Map<
+        string,
+        { userId: any; email: string; isMotivator: boolean; isSupporter: boolean }
+      >();
+
+      const pledges = await ctx.db
+        .query("motivatorPledges")
+        .withIndex("by_goal_status", (q) =>
+          q.eq("goalId", goal._id).eq("status", "active")
+        )
+        .collect();
+      for (const pledge of pledges) {
+        if (pledge.userId === goal.ownerId) continue;
+        const u = await ctx.db.get(pledge.userId);
+        if (!u?.email) continue;
+        const entry = followerMap.get(pledge.userId);
+        if (entry) {
+          entry.isMotivator = true;
+        } else {
+          followerMap.set(pledge.userId, {
+            userId: pledge.userId,
+            email: u.email,
+            isMotivator: true,
+            isSupporter: false,
+          });
+        }
+      }
+
+      const supporters = await ctx.db
+        .query("supporters")
+        .withIndex("by_goal", (q) => q.eq("goalId", goal._id))
+        .collect();
+      for (const supporter of supporters) {
+        if (supporter.userId === goal.ownerId) continue;
+        const u = await ctx.db.get(supporter.userId);
+        if (!u?.email) continue;
+        const entry = followerMap.get(supporter.userId);
+        if (entry) {
+          entry.isSupporter = true;
+        } else {
+          followerMap.set(supporter.userId, {
+            userId: supporter.userId,
+            email: u.email,
+            isMotivator: false,
+            isSupporter: true,
+          });
+        }
+      }
+
       result.push({
         goalId: goal._id,
         ownerId: goal.ownerId,
@@ -536,6 +641,7 @@ export const listDeadlinePassed = internalQuery({
         targetValue: goal.targetValue,
         unit: goal.unit,
         progressPct,
+        followers: Array.from(followerMap.values()),
       });
     }
     return result;

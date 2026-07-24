@@ -81,7 +81,7 @@ function GoalDetailContent() {
   );
   const updateImageUrlOf = (imageId: Id<"_storage">) => updateImageUrls?.[imageId] ?? null;
 
-  const [showUpdate, setShowUpdate] = useState<null | "note" | "media" | "link" | "value" | "milestone">(null);
+  const [showUpdate, setShowUpdate] = useState<null | "note" | "media" | "link" | "value" | "milestone" | "streak">(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
 
@@ -342,9 +342,9 @@ function GoalDetailContent() {
           <div className="grid divide-x divide-[#deddd6] border-y border-[#deddd6] sm:grid-cols-4">
             <QuickAddButton
               icon={TrendingUp}
-              label="New value"
-              onClick={() => setShowUpdate("value")}
-              disabled={goal.progressType !== "number"}
+              label={goal.progressType === "streak" ? "Mark today" : "New value"}
+              onClick={() => setShowUpdate(goal.progressType === "streak" ? "streak" : "value")}
+              disabled={goal.progressType !== "number" && goal.progressType !== "streak"}
             />
             <QuickAddButton
               icon={MessageSquare}
@@ -611,7 +611,7 @@ function UpdateModal({
   milestones,
   onClose,
 }: {
-  type: "note" | "media" | "link" | "value" | "milestone";
+  type: "note" | "media" | "link" | "value" | "milestone" | "streak";
   goalId: Id<"goals">;
   unit: string;
   milestones: any[];
@@ -653,6 +653,7 @@ function UpdateModal({
         {type === "media" && <MediaForm goalId={goalId} onDone={onClose} />}
         {type === "link" && <LinkForm goalId={goalId} onDone={onClose} />}
         {type === "value" && <ValueForm goalId={goalId} unit={unit} onDone={onClose} />}
+        {type === "streak" && <StreakForm goalId={goalId} onDone={onClose} />}
         {type === "milestone" && (
           <MilestoneForm goalId={goalId} milestones={milestones} onDone={onClose} />
         )}
@@ -974,6 +975,56 @@ function ValueForm({
       >
         <Plus size={14} />
         {busy ? "Saving..." : "Log value"}
+      </button>
+    </form>
+  );
+}
+
+function StreakForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void }) {
+  const logStreakDay = useMutation(api.goals.logStreakDay);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        setErr(null);
+        try {
+          await logStreakDay({ goalId, note: note || undefined });
+          onDone();
+        } catch (e) {
+          setErr(e instanceof Error ? e.message : "Could not log streak day");
+        } finally {
+          setBusy(false);
+        }
+      }}
+      className="space-y-3"
+    >
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2.5">
+        <p className="text-sm font-medium text-[var(--color-text)]">
+          Mark today as done
+        </p>
+        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+          Your streak count goes up by 1. You can do this once per day.
+        </p>
+      </div>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        rows={2}
+        placeholder="How did it go? (optional)"
+        className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+      />
+      {err && <p className="text-xs text-[var(--color-danger)]">{err}</p>}
+      <button
+        type="submit"
+        disabled={busy}
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--color-accent)] py-2 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+      >
+        <Plus size={14} />
+        {busy ? "Saving..." : "Mark today"}
       </button>
     </form>
   );

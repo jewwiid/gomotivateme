@@ -110,6 +110,12 @@ function DashboardContent() {
           >
             See your commitments <ArrowRight size={15} />
           </Link>
+          <Link
+            href="/dashboard/supporting"
+            className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3"
+          >
+            Goals you're supporting <ArrowRight size={15} />
+          </Link>
 
           <div className="mt-12 border-t border-[#deddd6] pt-8">
             <div className="flex items-center gap-2">

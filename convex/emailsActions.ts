@@ -263,10 +263,43 @@ export const sendDeadlineApproaching = internalAction({
           progressPct: item.progressPct,
         }),
       });
+      enqueued++;
+
+      // Fan out to supporters + motivators (gated by their prefs).
+      // Reuses the deadlineApproaching template; the greeting uses the
+      // follower's name and the body reads as "a goal you're following".
+      for (const follower of item.followers ?? []) {
+        const prefs = await ctx.runMutation(
+          internal.notificationPrefs.getForUser,
+          { userId: follower.userId }
+        );
+        if (prefs) {
+          const motivatorOk = follower.isMotivator && (prefs.yourMotivations ?? true);
+          const supporterOk = follower.isSupporter && (prefs.supportedGoalUpdates ?? true);
+          if (!motivatorOk && !supporterOk) continue;
+        }
+        await ctx.runMutation(internal.emails.enqueue, {
+          userId: follower.userId,
+          toEmail: follower.email,
+          templateId: "deadlineApproaching",
+          category: "lifecycle",
+          payload: JSON.stringify({
+            ownerName: item.ownerName,
+            goalTitle: item.goalTitle,
+            goalSlug: item.goalSlug,
+            daysRemaining: item.daysRemaining,
+            currentValue: item.currentValue,
+            targetValue: item.targetValue,
+            unit: item.unit,
+            progressPct: item.progressPct,
+          }),
+        });
+        enqueued++;
+      }
+
       await ctx.runMutation(internal.emails.markDeadlineWarned, {
         goalId: item.goalId,
       });
-      enqueued++;
     }
     return { enqueued };
   },
@@ -307,10 +340,42 @@ export const sendDeadlinePassed = internalAction({
           progressPct: item.progressPct,
         }),
       });
+      enqueued++;
+
+      // Fan out to supporters + motivators (gated by their prefs).
+      // Reuses the deadlinePassed template.
+      for (const follower of item.followers ?? []) {
+        const prefs = await ctx.runMutation(
+          internal.notificationPrefs.getForUser,
+          { userId: follower.userId }
+        );
+        if (prefs) {
+          const motivatorOk = follower.isMotivator && (prefs.yourMotivations ?? true);
+          const supporterOk = follower.isSupporter && (prefs.supportedGoalUpdates ?? true);
+          if (!motivatorOk && !supporterOk) continue;
+        }
+        await ctx.runMutation(internal.emails.enqueue, {
+          userId: follower.userId,
+          toEmail: follower.email,
+          templateId: "deadlinePassed",
+          category: "lifecycle",
+          payload: JSON.stringify({
+            ownerName: item.ownerName,
+            goalTitle: item.goalTitle,
+            goalSlug: item.goalSlug,
+            daysOverdue: item.daysOverdue,
+            currentValue: item.currentValue,
+            targetValue: item.targetValue,
+            unit: item.unit,
+            progressPct: item.progressPct,
+          }),
+        });
+        enqueued++;
+      }
+
       await ctx.runMutation(internal.emails.markDeadlinePassedNotified, {
         goalId: item.goalId,
       });
-      enqueued++;
     }
     return { enqueued };
   },

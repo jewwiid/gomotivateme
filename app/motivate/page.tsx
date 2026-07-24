@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -162,6 +162,7 @@ function MotivateRow({
         </div>
         <div className="flex items-center gap-3 sm:justify-end">
           <span className="hidden text-sm text-[#686963] sm:inline">{pledge.isCoreMotivator ? "Core" : "Community"}</span>
+          <WithdrawPledgeButton pledgeId={pledge._id} />
           <button
             onClick={() => setExpanded((e) => !e)}
             className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
@@ -211,5 +212,48 @@ function EmptyState() {
         Browse goals <ArrowRight size={15} />
       </Link>
     </div>
+  );
+}
+
+function WithdrawPledgeButton({ pledgeId }: { pledgeId: Id<"motivatorPledges"> }) {
+  const updatePledge = useMutation(api.motivation.updateMyPledge);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (confirming) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <button
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await updatePledge({ pledgeId, status: "removed" });
+            } finally {
+              setBusy(false);
+              setConfirming(false);
+            }
+          }}
+          disabled={busy}
+          className="text-xs font-semibold text-[var(--color-danger)] hover:opacity-70 disabled:opacity-50"
+        >
+          {busy ? "Withdrawing..." : "Confirm"}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          className="text-xs text-[#888983] hover:text-[#292929]"
+        >
+          Cancel
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setConfirming(true)}
+      className="text-xs font-medium text-[#888983] transition hover:text-[var(--color-danger)]"
+    >
+      Withdraw
+    </button>
   );
 }
