@@ -96,6 +96,13 @@ export function StructuredSupportComposer({
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  // Follow-up message form (shown in the "already supporting" card)
+  const [showFollowUp, setShowFollowUp] = useState(false);
+  const [followUpBody, setFollowUpBody] = useState("");
+  const [followUpBusy, setFollowUpBusy] = useState(false);
+  const [followUpErr, setFollowUpErr] = useState<string | null>(null);
+  const [followUpDone, setFollowUpDone] = useState(false);
+
   const typesToShow = allowedTypes.length > 0 ? allowedTypes : (Object.keys(SUPPORT_META) as SupportType[]);
 
   if (!isAuthenticated) {
@@ -154,6 +161,82 @@ export function StructuredSupportComposer({
           </button>
           <span className="text-[var(--color-border)]">·</span>
           <LeaveSupportButton goalId={goalId} />
+        </div>
+
+        {/* Follow-up message form */}
+        <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+          {!showFollowUp && !followUpDone && (
+            <button
+              onClick={() => setShowFollowUp(true)}
+              className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+            >
+              Post a message
+            </button>
+          )}
+          {followUpDone && (
+            <p className="text-xs font-medium text-[var(--color-success)]">
+              Message posted ✓
+            </p>
+          )}
+          {showFollowUp && (
+            <div className="space-y-2">
+              <textarea
+                autoFocus
+                value={followUpBody}
+                onChange={(e) => setFollowUpBody(e.target.value)}
+                rows={3}
+                placeholder="Write a follow-up message..."
+                maxLength={1000}
+                className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+              />
+              <div className="text-right text-[10px] text-[var(--color-text-dim)]">
+                {followUpBody.length}/1000
+              </div>
+              {followUpErr && (
+                <p className="text-xs text-[var(--color-danger)]">{followUpErr}</p>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowFollowUp(false);
+                    setFollowUpBody("");
+                    setFollowUpErr(null);
+                  }}
+                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--color-border-strong)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!followUpBody.trim()) return;
+                    setFollowUpBusy(true);
+                    setFollowUpErr(null);
+                    try {
+                      await createMessage({
+                        goalId,
+                        supportType: amISupporting.supportType as SupportType,
+                        body: followUpBody,
+                      });
+                      setFollowUpDone(true);
+                      setShowFollowUp(false);
+                      setFollowUpBody("");
+                      setTimeout(() => setFollowUpDone(false), 2500);
+                    } catch (e) {
+                      setFollowUpErr(
+                        e instanceof Error ? e.message : "Could not post message"
+                      );
+                    } finally {
+                      setFollowUpBusy(false);
+                    }
+                  }}
+                  disabled={followUpBusy || !followUpBody.trim()}
+                  className="rounded-lg bg-[var(--color-accent)] px-4 py-1.5 text-xs font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+                >
+                  {followUpBusy ? "Posting..." : "Post message"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     );

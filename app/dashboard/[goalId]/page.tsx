@@ -75,6 +75,9 @@ function GoalDetailContent() {
   const supporters = useQuery(api.supporters.listForOwner, { goalId });
   const supportMessages = useQuery(api.supportMessages.listForOwner, { goalId });
 
+  const hideMessage = useMutation(api.supportMessages.hide);
+  const removeMessage = useMutation(api.supportMessages.remove);
+
   const updateImageIds = useMemo(() => {
     const ids = new Set<Id<"_storage">>();
     for (const update of updates ?? []) {
@@ -98,6 +101,7 @@ function GoalDetailContent() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
   const [showAllSupporters, setShowAllSupporters] = useState(false);
+  const [moderatingMsgId, setModeratingMsgId] = useState<string | null>(null);
 
   const publicUrl = useMemo(() => {
     if (!goal) return "";
@@ -426,7 +430,55 @@ function GoalDetailContent() {
                       <p className="mt-1 text-xs italic text-[var(--color-text-muted)]">"{s.pledge}"</p>
                     )}
                     {msg && (
-                      <p className="mt-1.5 text-sm text-[var(--color-text)]">{msg.body}</p>
+                      <div className="mt-1.5">
+                        <p className="text-sm text-[var(--color-text)]">{msg.body}</p>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          {moderatingMsgId === msg._id ? (
+                            <span className="inline-flex items-center gap-2 text-[11px]">
+                              <button
+                                onClick={async () => {
+                                  await hideMessage({ messageId: msg._id });
+                                  setModeratingMsgId(null);
+                                }}
+                                className="font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                              >
+                                Confirm hide
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  await removeMessage({ messageId: msg._id });
+                                  setModeratingMsgId(null);
+                                }}
+                                className="font-medium text-[var(--color-danger)] hover:opacity-70"
+                              >
+                                Confirm delete
+                              </button>
+                              <button
+                                onClick={() => setModeratingMsgId(null)}
+                                className="text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-2 text-[11px]">
+                              <button
+                                onClick={() => setModeratingMsgId(msg._id)}
+                                className="font-medium text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+                              >
+                                Hide
+                              </button>
+                              <span className="text-[var(--color-border)]">·</span>
+                              <button
+                                onClick={() => setModeratingMsgId(msg._id)}
+                                className="font-medium text-[var(--color-text-dim)] hover:text-[var(--color-danger)]"
+                              >
+                                Delete
+                              </button>
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                 );

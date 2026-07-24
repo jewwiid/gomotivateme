@@ -60,6 +60,7 @@ export function MotivationCircleManager({
 
   const addInvite = useMutation(api.motivation.addInvite);
   const revokeInvite = useMutation(api.motivation.revokeInvite);
+  const removeMotivator = useMutation(api.motivation.removeMotivator);
   const launchGoal = useMutation(api.goals.launch);
 
   const [showForm, setShowForm] = useState(false);
@@ -72,6 +73,7 @@ export function MotivationCircleManager({
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [launchErr, setLaunchErr] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const isPreLaunch = goalStatus === "draft";
   const allInvites = invites ?? [];
@@ -180,6 +182,71 @@ export function MotivationCircleManager({
           );
         })}
       </div>
+
+      {/* Active motivators list with remove controls */}
+      {(motivators ?? []).length > 0 && (
+        <div className="mt-4 space-y-2">
+          {(motivators ?? []).map((m) => {
+            const meta = ROLE_META[m.role] ?? ROLE_META.encourager;
+            const Icon = meta.icon;
+            return (
+              <div
+                key={m._id}
+                className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2"
+              >
+                <div className={`shrink-0 ${meta.color}`}>
+                  <Icon size={14} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <div className="truncate text-xs font-semibold">
+                      {m.user?.name ?? "Motivator"}
+                    </div>
+                    <div className="text-[10px] text-[var(--color-text-dim)]">
+                      {meta.label}
+                      {m.isCoreMotivator ? " · Core" : " · Public"}
+                    </div>
+                  </div>
+                  {m.pledgeText && (
+                    <div className="mt-0.5 truncate text-[10px] italic text-[var(--color-text-dim)]">
+                      "{m.pledgeText}"
+                    </div>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {removingId === m._id ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <button
+                        onClick={async () => {
+                          await removeMotivator({ pledgeId: m._id });
+                          setRemovingId(null);
+                        }}
+                        className="text-[10px] font-medium text-[var(--color-danger)] hover:opacity-70"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setRemovingId(null)}
+                        className="text-[10px] text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setRemovingId(m._id)}
+                      className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 py-1 text-[10px] font-medium text-[var(--color-text-muted)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger)]"
+                      title="Remove motivator"
+                    >
+                      <Trash2 size={10} /> Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Pending invites — with copyable links */}
       {allInvites.length > 0 && (
