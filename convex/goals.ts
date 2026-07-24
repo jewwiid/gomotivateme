@@ -347,6 +347,10 @@ export const update = mutation({
     supportTypes: v.optional(v.array(v.string())),
     visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"))),
     coverImageId: v.optional(v.id("_storage")),
+    targetValue: v.optional(v.number()),
+    startValue: v.optional(v.number()),
+    unit: v.optional(v.string()),
+    direction: v.optional(v.union(v.literal("increase"), v.literal("decrease"))),
     publicMotivatorPolicy: v.optional(
       v.union(v.literal("auto"), v.literal("approval"), v.literal("disabled"))
     ),
@@ -377,6 +381,10 @@ export const update = mutation({
       patch.publicMotivatorPolicy = args.publicMotivatorPolicy;
     }
     if (args.coverImageId !== undefined) patch.coverImageId = args.coverImageId;
+    if (args.targetValue !== undefined) patch.targetValue = args.targetValue;
+    if (args.startValue !== undefined) patch.startValue = args.startValue;
+    if (args.unit !== undefined) patch.unit = args.unit;
+    if (args.direction !== undefined) patch.direction = args.direction;
     if (needsModeration) {
       patch.moderationStatus = "pending";
       patch.moderationReason = undefined;

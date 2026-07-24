@@ -2,19 +2,21 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Check, Copy, Heart, Share2, MessageCircle, X } from "lucide-react";
+import { Check, Copy, Heart, Share2, MessageCircle, Sparkles, X } from "lucide-react";
 
 /**
- * The 3-action sticky mobile action bar.
- *   [Support]  [Encourage]  [Share]
+ * The 4-action sticky mobile action bar.
+ *   [Support]  [Cheer]  [Encourage]  [Share]
  */
 export function MobileActionBar({
   onSupport,
   onEncourage,
+  onCheer,
   isOwner = false,
 }: {
   onSupport: () => void;
   onEncourage: () => void;
+  onCheer?: () => void;
   isOwner?: boolean;
 }) {
   const [showShareToast, setShowShareToast] = useState(false);
@@ -55,6 +57,15 @@ export function MobileActionBar({
             >
               <Heart size={14} />
               Support
+            </button>
+          )}
+          {!isOwner && onCheer && (
+            <button
+              onClick={onCheer}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-2.5 text-sm font-semibold text-[var(--color-accent)] transition hover:bg-[var(--color-accent)]/20"
+            >
+              <Sparkles size={14} />
+              Cheer
             </button>
           )}
           {!isOwner && (

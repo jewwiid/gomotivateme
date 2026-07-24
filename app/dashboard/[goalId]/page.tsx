@@ -25,6 +25,7 @@ import {
   Archive,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -50,9 +51,21 @@ export default function GoalDetailPage() {
   );
 }
 
+const SUPPORT_TYPE_LABELS: Record<string, string> = {
+  encourage: "Encouraging",
+  experience: "Sharing experience",
+  advice: "Offering advice",
+  checkin: "Checking in",
+  join: "Joined the challenge",
+};
+
+const supportTypeLabel = (raw: string): string =>
+  SUPPORT_TYPE_LABELS[raw] ?? raw;
+
 function GoalDetailContent() {
   const params = useParams<{ goalId: string }>();
   const goalId = params.goalId as Id<"goals">;
+  const router = useRouter();
 
   const { user: _user } = useCurrentUser();
   const goal = useQuery(api.goals.getMine, { goalId });
@@ -84,6 +97,7 @@ function GoalDetailContent() {
   const [showUpdate, setShowUpdate] = useState<null | "note" | "media" | "link" | "value" | "milestone" | "streak">(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
+  const [showAllSupporters, setShowAllSupporters] = useState(false);
 
   const publicUrl = useMemo(() => {
     if (!goal) return "";
@@ -310,6 +324,12 @@ function GoalDetailContent() {
           supporterTarget={goal.supporterTarget}
           supportTypes={goal.supportTypes}
           visibility={goal.visibility}
+          targetValue={goal.targetValue}
+          startValue={goal.startValue}
+          unit={goal.unit}
+          direction={goal.direction}
+          progressType={goal.progressType}
+          onDeleted={() => router.push("/dashboard")}
         />
 
         {/* Milestones (if milestone template) */}
@@ -389,7 +409,7 @@ function GoalDetailContent() {
               Your support team ({supporters.length})
             </h2>
             <div className="space-y-2">
-              {supporters.slice(0, 10).map((s: any) => {
+              {(showAllSupporters ? supporters : supporters.slice(0, 10)).map((s: any) => {
                 const msg = supportMessages?.find((m: any) => m.authorId === s.userId && !m.hiddenAt);
                 return (
                   <div
@@ -397,7 +417,7 @@ function GoalDetailContent() {
                     className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3"
                   >
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{s.supportType}</span>
+                      <span className="font-medium">{supportTypeLabel(s.supportType)}</span>
                       <span className="text-xs text-[var(--color-text-dim)]">
                         {relativeTime(s.createdAt)}
                       </span>
@@ -412,6 +432,16 @@ function GoalDetailContent() {
                 );
               })}
             </div>
+            {supporters.length > 10 && (
+              <button
+                onClick={() => setShowAllSupporters((v) => !v)}
+                className="mt-3 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+              >
+                {showAllSupporters
+                  ? "Show fewer"
+                  : `Show all ${supporters.length} supporters`}
+              </button>
+            )}
           </motion.div>
         )}
 
@@ -1082,6 +1112,12 @@ function GoalSettings({
   supporterTarget,
   supportTypes,
   visibility,
+  targetValue,
+  startValue,
+  unit,
+  direction,
+  progressType,
+  onDeleted,
 }: {
   goalId: Id<"goals">;
   title: string;
@@ -1091,8 +1127,15 @@ function GoalSettings({
   supporterTarget?: number;
   supportTypes: string[];
   visibility: string;
+  targetValue?: number;
+  startValue?: number;
+  unit?: string;
+  direction?: "increase" | "decrease";
+  progressType?: string;
+  onDeleted: () => void;
 }) {
   const updateGoal = useMutation(api.goals.update);
+  const removeGoal = useMutation(api.goals.remove);
   const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
   const coverUrl = useQuery(
     api.storage.getUrls,
@@ -1110,10 +1153,27 @@ function GoalSettings({
   const [draftVisibility, setDraftVisibility] = useState<"public" | "unlisted">(
     (visibility as any) ?? "public"
   );
+  const [draftTargetValue, setDraftTargetValue] = useState<string>(
+    targetValue?.toString() ?? ""
+  );
+  const [draftStartValue, setDraftStartValue] = useState<string>(
+    startValue?.toString() ?? ""
+  );
+  const [draftUnit, setDraftUnit] = useState<string>(unit ?? "");
+  const [draftDirection, setDraftDirection] = useState<"increase" | "decrease">(
+    direction ?? "increase"
+  );
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+
+  // Delete-goal confirmation state
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const canEditTargetFields = progressType !== "milestones" && progressType !== "streak";
 
   const onUploadCover = async (file: File | null) => {
     if (!file) return;
@@ -1140,6 +1200,12 @@ function GoalSettings({
       const parsedSupTarget = draftSupporterTarget
         ? parseInt(draftSupporterTarget, 10)
         : undefined;
+      const parsedTargetValue = canEditTargetFields && draftTargetValue !== ""
+        ? parseFloat(draftTargetValue)
+        : undefined;
+      const parsedStartValue = canEditTargetFields && draftStartValue !== ""
+        ? parseFloat(draftStartValue)
+        : undefined;
       await updateGoal({
         goalId,
         title: draftTitle,
@@ -1148,6 +1214,10 @@ function GoalSettings({
         coverImageId: draftCover,
         supporterTarget: parsedSupTarget,
         visibility: draftVisibility,
+        targetValue: parsedTargetValue,
+        startValue: parsedStartValue,
+        unit: canEditTargetFields && draftUnit !== "" ? draftUnit : undefined,
+        direction: canEditTargetFields ? draftDirection : undefined,
       });
       setEditing(false);
     } catch (e) {
@@ -1155,6 +1225,33 @@ function GoalSettings({
     } finally {
       setBusy(false);
     }
+  };
+
+  const onDelete = async () => {
+    setDeleting(true);
+    setErr(null);
+    try {
+      await removeGoal({ goalId });
+      onDeleted();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not delete");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const startEditing = () => {
+    setDraftTitle(title);
+    setDraftSummary(summary ?? "");
+    setDraftStory(story ?? "");
+    setDraftCover(coverImageId);
+    setDraftSupporterTarget(supporterTarget?.toString() ?? "");
+    setDraftVisibility((visibility as any) ?? "public");
+    setDraftTargetValue(targetValue?.toString() ?? "");
+    setDraftStartValue(startValue?.toString() ?? "");
+    setDraftUnit(unit ?? "");
+    setDraftDirection(direction ?? "increase");
+    setEditing(true);
   };
 
   const currentCoverUrl =
@@ -1175,15 +1272,7 @@ function GoalSettings({
         </h2>
         {!editing ? (
           <button
-            onClick={() => {
-              setDraftTitle(title);
-              setDraftSummary(summary ?? "");
-              setDraftStory(story ?? "");
-              setDraftCover(coverImageId);
-              setDraftSupporterTarget(supporterTarget?.toString() ?? "");
-              setDraftVisibility((visibility as any) ?? "public");
-              setEditing(true);
-            }}
+            onClick={startEditing}
             className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
           >
             Edit
@@ -1336,6 +1425,135 @@ function GoalSettings({
             <p className="text-sm text-[var(--color-text)] capitalize">{visibility}</p>
           )}
         </div>
+      </div>
+
+      {canEditTargetFields && (
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+              Target value
+            </label>
+            {editing ? (
+              <input
+                type="number"
+                step="any"
+                value={draftTargetValue}
+                onChange={(e) => setDraftTargetValue(e.target.value)}
+                placeholder="e.g. 100"
+                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+              />
+            ) : (
+              <p className="text-sm text-[var(--color-text)]">
+                {targetValue ?? <span className="text-[var(--color-text-dim)]">—</span>}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+              Start value
+            </label>
+            {editing ? (
+              <input
+                type="number"
+                step="any"
+                value={draftStartValue}
+                onChange={(e) => setDraftStartValue(e.target.value)}
+                placeholder="e.g. 0"
+                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+              />
+            ) : (
+              <p className="text-sm text-[var(--color-text)]">
+                {startValue ?? <span className="text-[var(--color-text-dim)]">0</span>}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+              Unit
+            </label>
+            {editing ? (
+              <input
+                type="text"
+                value={draftUnit}
+                onChange={(e) => setDraftUnit(e.target.value)}
+                placeholder="e.g. kg, books, runs"
+                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+              />
+            ) : (
+              <p className="text-sm text-[var(--color-text)]">
+                {unit || <span className="text-[var(--color-text-dim)]">—</span>}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+              Direction
+            </label>
+            {editing ? (
+              <select
+                value={draftDirection}
+                onChange={(e) => setDraftDirection(e.target.value as "increase" | "decrease")}
+                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+              >
+                <option value="increase">Increase</option>
+                <option value="decrease">Decrease</option>
+              </select>
+            ) : (
+              <p className="text-sm text-[var(--color-text)] capitalize">
+                {direction ?? "increase"}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete goal */}
+      <div className="mt-6 border-t border-[var(--color-border)] pt-5">
+        {!confirmingDelete ? (
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-red-300/60 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+          >
+            <Trash2 size={12} />
+            Delete goal
+          </button>
+        ) : (
+          <div className="rounded-xl border border-red-300/60 bg-red-50/50 p-4">
+            <p className="text-sm font-medium text-red-700">
+              Delete this goal? This cannot be undone.
+            </p>
+            <p className="mt-1 text-xs text-red-600/80">
+              Type the goal title to confirm:
+            </p>
+            <input
+              autoFocus
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={title}
+              className="mt-2 w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm text-[var(--color-text)] focus:border-red-500 focus:outline-none"
+            />
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  setDeleteConfirmText("");
+                }}
+                disabled={deleting}
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onDelete}
+                disabled={deleting || deleteConfirmText.trim() !== title.trim()}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                <Trash2 size={12} className="mr-1 inline" />
+                {deleting ? "Deleting..." : "Delete forever"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {err && <p className="mt-3 text-xs text-[var(--color-danger)]">{err}</p>}

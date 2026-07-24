@@ -84,6 +84,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
   const coverUrl = imageUrlOf(goal.coverImageId);
 
   const supportSectionRef = useRef<HTMLDivElement>(null);
+  const cheerSectionRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
   const onShare = async () => {
@@ -108,6 +109,15 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
 
   const scrollToSupport = () =>
     supportSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const scrollToCheer = () => {
+    // Prefer the ref (in-page), fall back to the anchor for SSR/no-ref cases.
+    if (cheerSectionRef.current) {
+      cheerSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (typeof document !== "undefined") {
+      document.getElementById("cheer")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   const supporterCount = goal.supporterCount ?? 0;
   const supporterTarget = goal.supporterTarget ?? null;
@@ -265,7 +275,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
 
             {/* Reaction bar (cheer) — visitors only */}
             {!isOwner && (
-              <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <section ref={cheerSectionRef} id="cheer" className="rounded-2xl border border-zinc-200 bg-white p-5 scroll-mt-4">
                 <h2 className="text-base font-semibold text-zinc-900">Cheer them on</h2>
                 <p className="mt-1 text-xs text-zinc-500">
                   Quick, anonymous reactions to show you noticed.
@@ -400,7 +410,7 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
       </section>
 
       {/* Mobile 3-action sticky bar */}
-      <MobileActionBar onSupport={scrollToSupport} onEncourage={scrollToSupport} isOwner={isOwner} />
+      <MobileActionBar onSupport={scrollToSupport} onEncourage={scrollToSupport} onCheer={scrollToCheer} isOwner={isOwner} />
     </div>
   );
 }

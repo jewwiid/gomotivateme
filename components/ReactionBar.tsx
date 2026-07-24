@@ -218,12 +218,39 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
               </button>
             </div>
           ) : hasCheered ? (
-            <Link
-              href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
-              className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
-            >
-              Sign in to get update emails
-            </Link>
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-1 flex items-center justify-between gap-3 rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-[var(--color-text)]">
+                      Get update emails
+                    </p>
+                    <p className="text-[11px] text-[var(--color-text-dim)]">
+                      Sign in to join the support team and know when they post progress.
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
+                      className="rounded-full bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[var(--color-accent-soft)]"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(redirectPath)}&mode=signup`}
+                      className="rounded-full px-2 py-1.5 text-xs font-medium text-[var(--color-text-dim)] transition hover:text-[var(--color-text)]"
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           ) : (
             <button
               onClick={() => setShowNameInput(true)}

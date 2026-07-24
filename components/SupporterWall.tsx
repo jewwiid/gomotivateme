@@ -34,14 +34,13 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
       : "skip"
   );
 
-  // Build a map of userId -> latest support message
+  // Group all support messages by author (sorted oldest → newest as returned).
   const messagesByUser = useMemo(() => {
-    const map = new Map<string, { body: string; createdAt: number }>();
+    const map = new Map<string, Array<{ body: string; createdAt: number }>>();
     for (const m of messages ?? []) {
-      const existing = map.get(m.authorId);
-      if (!existing || m.createdAt > existing.createdAt) {
-        map.set(m.authorId, { body: m.body, createdAt: m.createdAt });
-      }
+      const arr = map.get(m.authorId) ?? [];
+      arr.push({ body: m.body, createdAt: m.createdAt });
+      map.set(m.authorId, arr);
     }
     return map;
   }, [messages]);
@@ -60,7 +59,7 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
           const profile = profiles?.[s.userId];
           const name = profile?.name ?? "Someone";
           const initial = name[0]?.toUpperCase() ?? "?";
-          const message = messagesByUser.get(s.userId);
+          const userMessages = messagesByUser.get(s.userId) ?? [];
           return (
             <motion.div
               key={s._id}
@@ -102,10 +101,17 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
                 </div>
               )}
 
-              {message && (
-                <p className="mt-2.5 text-sm leading-relaxed text-[var(--color-text)]">
-                  {message.body}
-                </p>
+              {userMessages.length > 0 && (
+                <div className="mt-2.5 space-y-2">
+                  {userMessages.map((m, mi) => (
+                    <div key={mi} className="text-sm leading-relaxed text-[var(--color-text)]">
+                      <p>{m.body}</p>
+                      <div className="mt-0.5 text-[10px] text-[var(--color-text-dim)]">
+                        {relativeTime(m.createdAt)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </motion.div>
           );
