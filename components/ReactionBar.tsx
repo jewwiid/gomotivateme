@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useVisitorKey } from "@/lib/useVisitorKey";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import Link from "next/link";
 
 const EMOJIS: Array<{ key: "thumbsup" | "muscle" | "heart" | "fire"; glyph: string; label: string }> = [
   { key: "thumbsup", glyph: "👍", label: "Cheer" },
@@ -23,16 +24,22 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
     api.reactions.visitorEmoji,
     visitorKey ? { goalId, visitorKey } : "skip"
   );
+  const amISupporting = useQuery(
+    api.supporters.amISupporting,
+    isAuthenticated ? { goalId } : "skip"
+  );
   const setEmoji = useMutation(api.reactions.setEmoji);
+  const joinSupport = useMutation(api.supporters.join);
   const [burst, setBurst] = useState<string | null>(null);
   const [showNameInput, setShowNameInput] = useState(false);
   const [nameInput, setNameInput] = useState("");
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joined, setJoined] = useState(false);
 
   const onPick = async (emoji: typeof EMOJIS[number]["key"]) => {
     if (!visitorKey) return;
     setBurst(emoji);
-    // If signed in, the backend auto-resolves the name from auth.
-    // If not signed in, pass any name the visitor typed.
     const displayName = !isAuthenticated && nameInput.trim() ? nameInput.trim() : undefined;
     try {
       await setEmoji({ goalId, visitorKey, emoji, displayName });
@@ -41,7 +48,29 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
     }
   };
 
+  const onJoin = async () => {
+    setJoining(true);
+    try {
+      await joinSupport({ goalId, supportType: "encourage" });
+      setJoined(true);
+    } finally {
+      setJoining(false);
+    }
+  };
+
   const total = stats?.emojiTotal ?? 0;
+  const hasCheered = mine !== null && mine !== undefined;
+  const showNudge =
+    isAuthenticated &&
+    hasCheered &&
+    !amISupporting &&
+    !nudgeDismissed &&
+    !joined;
+
+  const redirectPath =
+    typeof window !== "undefined"
+      ? window.location.pathname + window.location.search
+      : "/";
 
   return (
     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
@@ -108,6 +137,67 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
           );
         })}
       </div>
+
+      {/* Post-cheer nudge: convert cheerers to supporters for update emails */}
+      <AnimatePresence>
+        {showNudge && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-3 py-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-[var(--color-text)]">
+                  Get update emails
+                </p>
+                <p className="text-[11px] text-[var(--color-text-dim)]">
+                  Join the support team to know when they post progress.
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  onClick={onJoin}
+                  disabled={joining}
+                  className="rounded-full bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+                >
+                  {joining ? "Joining..." : "Join"}
+                </button>
+                <button
+                  onClick={() => setNudgeDismissed(true)}
+                  className="rounded-full p-1.5 text-[var(--color-text-dim)] transition hover:text-[var(--color-text)]"
+                  aria-label="Dismiss"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Joined confirmation */}
+      <AnimatePresence>
+        {joined && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 rounded-xl border border-[var(--color-success)]/30 bg-[var(--color-success)]/5 px-3 py-2.5">
+              <p className="text-xs font-medium text-[var(--color-text)]">
+                You're on the team. You'll get an email when they post updates.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Anonymous: name input + sign-in nudge */}
       {!isAuthenticated && (
         <div className="mt-2">
           {showNameInput ? (
@@ -127,6 +217,13 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
                 Done
               </button>
             </div>
+          ) : hasCheered ? (
+            <Link
+              href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
+              className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+            >
+              Sign in to get update emails
+            </Link>
           ) : (
             <button
               onClick={() => setShowNameInput(true)}
