@@ -103,6 +103,86 @@ export const listUsersByEmail = internalQuery({
 });
 
 /**
+ * Admin: approve a goal's moderation status directly.
+ */
+export const approveGoal = internalMutation({
+  args: { goalId: v.id("goals") },
+  handler: async (ctx, { goalId }) => {
+    const goal = await ctx.db.get(goalId);
+    if (!goal) throw new Error(`Goal not found: ${goalId}`);
+    await ctx.db.patch(goalId, {
+      moderationStatus: "approved",
+      moderationReason: "Admin approved",
+      moderationCategories: [],
+      moderatedAt: Date.now(),
+    });
+    return { ok: true, goalId };
+  },
+});
+
+/**
+ * Admin: generate a storage upload URL (bypasses auth).
+ * Used to upload cover images via CLI. Returns the upload URL;
+ * you then POST the file to it and use the returned storageId.
+ */
+export const adminGenerateUploadUrl = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/**
+ * Admin: update a goal directly (bypasses auth). Used for one-off fixes
+ * where the owner can't or won't use the UI. Only patches the fields
+ * provided. Re-runs moderation on title/summary/story/cover changes.
+ *
+ * Invoke:
+ *   npx convex run admin:updateGoal '{ "goalId": "...", "title": "...", ... }'
+ */
+export const updateGoal = internalMutation({
+  args: {
+    goalId: v.id("goals"),
+    title: v.optional(v.string()),
+    summary: v.optional(v.string()),
+    story: v.optional(v.string()),
+    coverImageId: v.optional(v.id("_storage")),
+    supporterTarget: v.optional(v.number()),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"))),
+  },
+  handler: async (ctx, args) => {
+    const goal = await ctx.db.get(args.goalId);
+    if (!goal) throw new Error(`Goal not found: ${args.goalId}`);
+
+    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    if (args.title !== undefined) {
+      if (args.title.trim().length === 0) throw new Error("Title is required");
+      patch.title = args.title.trim();
+    }
+    if (args.summary !== undefined) patch.summary = args.summary.trim() || undefined;
+    if (args.story !== undefined) patch.story = args.story.trim() || undefined;
+    if (args.coverImageId !== undefined) patch.coverImageId = args.coverImageId;
+    if (args.supporterTarget !== undefined) patch.supporterTarget = args.supporterTarget;
+    if (args.visibility !== undefined) patch.visibility = args.visibility;
+
+    // Re-run moderation if text or cover changed
+    if (
+      args.title !== undefined ||
+      args.summary !== undefined ||
+      args.story !== undefined ||
+      args.coverImageId !== undefined
+    ) {
+      patch.moderationStatus = "pending";
+      patch.moderationReason = undefined;
+      patch.moderationCategories = [];
+    }
+
+    await ctx.db.patch(args.goalId, patch);
+    return { ok: true, goalId: args.goalId, patched: Object.keys(patch).filter((k) => k !== "updatedAt") };
+  },
+});
+
+/**
  * Delete the user with the given email, plus all their auth accounts
  * and active sessions. Goal/motivation/etc. rows owned by this user
  * are left in place (the foreign keys still point at the user; you'd
