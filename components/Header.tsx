@@ -124,8 +124,8 @@ export function Header() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="sticky top-0 z-40 border-b border-[#e9e7df] bg-[#fffdf8]/95 backdrop-blur"
     >
-      <div className="relative mx-auto flex h-[4.25rem] max-w-[50rem] items-center px-5 sm:px-6">
-        {/* Primary nav (public, hidden on mobile) */}
+      <div className="relative mx-auto grid h-[4.25rem] max-w-[80rem] grid-cols-[1fr_auto_1fr] items-center px-5 sm:px-6">
+        {/* Primary nav (public, hidden on mobile) — left column */}
         <nav
           aria-label="Primary navigation"
           className="hidden items-center gap-5 text-sm font-medium text-[#31312e] md:flex"
@@ -153,16 +153,14 @@ export function Header() {
           </Link>
         </nav>
 
-        <Wordmark
-          size="xl"
-          ariaLabel="GoMotivateMe — home"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        />
+        <div className="flex justify-center">
+          <Wordmark size="xl" ariaLabel="GoMotivateMe — home" />
+        </div>
 
-        {/* Account / avatar nav */}
+        {/* Account / avatar nav — right column, pushed to the right edge */}
         <nav
           aria-label="Account navigation"
-          className="ml-auto flex items-center gap-4 text-sm font-medium text-[#31312e]"
+          className="flex items-center justify-end gap-4 text-sm font-medium text-[#31312e]"
         >
           {isAuthenticated && user ? (
             <div className="relative">
