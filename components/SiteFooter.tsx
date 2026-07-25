@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/Logo";
+import { Wordmark } from "@/components/Wordmark";
 
 const columns = [
   {
@@ -58,7 +58,7 @@ export function SiteFooter() {
     <footer className="mt-20 bg-[#fffdf8] px-5 pt-16 sm:px-8 sm:pt-20">
       <div className="mx-auto grid max-w-[80rem] gap-10 border-b border-[#e3e1d8] pb-14 md:grid-cols-[1.35fr_repeat(3,1fr)]">
         <div>
-          <Logo href="/" height={30} />
+          <Wordmark href="/" size="2xl" />
           <p className="mt-4 max-w-xs text-sm leading-6 text-[#676862]">
             Real goals. Real people. Together.
           </p>

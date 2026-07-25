@@ -18,11 +18,11 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { RequireAuth } from "@/components/RequireAuth";
+import { AvatarCropModal } from "@/components/AvatarCropModal";
 import {
   MAX_HANDLE_LENGTH,
   validateHandleClient,
 } from "@/lib/handle";
-import { prepareAvatarImage } from "@/lib/media";
 
 type Tab = "account" | "notifications";
 
@@ -186,6 +186,7 @@ function AccountTab() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPending, setAvatarPending] = useState<File | null>(null);
   const onPickCover = () => fileInputRef.current?.click();
   const onUploadCover = async (file: File) => {
     setBusy(true);
@@ -209,19 +210,16 @@ function AccountTab() {
 
   const onPickAvatar = () => avatarInputRef.current?.click();
   const onUploadAvatar = async (file: File) => {
+    // The crop modal has already produced a square 256x256 JPEG — no further
+    // client-side processing needed. Just upload.
     setBusy(true);
     setErr(null);
     try {
-      // Resize the photo in-browser before upload. A 12MP iPhone shot
-      // (~2MB) becomes a 256x256 JPEG (~30KB), which is what the header
-      // actually needs and means the avatar URL loads instantly on
-      // every page.
-      const prepared = await prepareAvatarImage(file);
       const url = await generateCoverUploadUrl();
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": prepared.type },
-        body: prepared,
+        headers: { "Content-Type": file.type },
+        body: file,
       });
       if (!res.ok) throw new Error("Upload failed");
       const { storageId } = await res.json();
@@ -339,7 +337,17 @@ function AccountTab() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) onUploadAvatar(f);
+                if (f) setAvatarPending(f);
+                // Reset the input so picking the same file again re-opens the modal.
+                e.target.value = "";
+              }}
+            />
+            <AvatarCropModal
+              file={avatarPending}
+              onCancel={() => setAvatarPending(null)}
+              onConfirm={(cropped) => {
+                setAvatarPending(null);
+                void onUploadAvatar(cropped);
               }}
             />
           </div>

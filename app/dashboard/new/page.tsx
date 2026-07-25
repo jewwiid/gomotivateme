@@ -25,7 +25,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { CATEGORIES, CategoryId, getCategory, getDefaultMilestones } from "@/lib/categories";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { RequireAuth } from "@/components/RequireAuth";
-import { Logo } from "@/components/Logo";
+import { Wordmark } from "@/components/Wordmark";
 
 const WIZARD_COPY = [
   {
@@ -274,7 +274,7 @@ function NewGoalContent() {
   return (
     <div className="min-h-dvh bg-[#f3f3f1] text-[#292929] lg:grid lg:grid-cols-[minmax(20rem,33%)_1fr]">
       <aside className="hidden min-h-dvh flex-col justify-between px-14 py-12 lg:flex xl:px-20">
-        <Logo href="/dashboard" height={28} />
+        <Wordmark href="/dashboard" size="xl" />
         <div className="max-w-xs pb-16">
           <p className="text-sm font-semibold text-[var(--color-primary)]">Step {step + 1} of {totalSteps}</p>
           <h1 className="mt-5 font-display text-5xl font-bold leading-[0.95] tracking-[-0.065em] xl:text-6xl">{stepCopy.title}</h1>
@@ -287,7 +287,7 @@ function NewGoalContent() {
 
       <section className="flow-form flex min-h-dvh flex-col rounded-tl-[0] bg-white lg:rounded-tl-[4rem]">
         <div className="flex items-center justify-between border-b border-[#ebeae5] px-5 py-5 lg:hidden">
-          <Logo href="/dashboard" height={24} />
+          <Wordmark href="/dashboard" size="md" />
           <span className="text-xs font-semibold text-[var(--color-primary)]">{step + 1} / {totalSteps}</span>
         </div>
         <div className="flex-1 px-5 pb-10 pt-10 sm:px-12 sm:pt-16 lg:px-[10vw] lg:pt-28">

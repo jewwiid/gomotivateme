@@ -1,60 +1,33 @@
-import Link from "next/link";
-import Image from "next/image";
+import { Wordmark } from "@/components/Wordmark";
 
 /**
- * GoMotivateMe brand system.
+ * @deprecated Use `<Wordmark />` directly. This re-export exists for
+ * backward compatibility with code that still imports `Logo`.
  *
- * Brand assets live in /public/brand/:
- *   - GoMotivateMe_Logo.png          the icon/mark — used only for the favicon
- *                                     and apple-touch-icon (app/icon.png,
- *                                     app/apple-icon.png), NOT in the UI.
- *   - GoMotivateMe_Wordmark.png      the two-tone wordmark — used in the
- *                                     header and footer via <Logo/>.
- *   - GoMotivateMe_Wordmark.svg      clean vector source of the wordmark.
- *   - GoMotivateMe_Logo_Wordmark.png mark + wordmark lockup (unused in UI).
- *
- * The mark ships only as a raster PNG (no vector source exists). The wordmark
- * is a single two-tone lockup ("Go" blue · "Motivate" gold · "Me" blue) —
- * render it whole rather than reconstructing the split from text, to stay
- * faithful to the official asset.
- *
- * Colors: brand blue #044dfc, brand gold #feb604.
+ * The old image-based wordmark (GoMotivateMe_Wordmark.svg) is still used
+ * for the favicon, the OG image, and emails — but in the UI itself the
+ * wordmark is now rendered as text in the loaded display font, so it
+ * scales crisply and stays consistent with the page titles.
  */
 
-const WORDMARK_SRC = "/brand/GoMotivateMe_Wordmark.svg";
-// Wordmark intrinsic size: 2172×724 → aspect ratio ≈ 3.003:1.
-const WORDMARK_ASPECT = 2172 / 724;
-
-/**
- * Full wordmark lockup. Defaults to linking home.
- *
- * Used in the header and footer — the icon mark is intentionally not shown
- * here (it lives only in the favicon/browser chrome).
- *
- * @param height  rendered height of the wordmark in px (default 28)
- * @param href    link target; pass null to render without a link wrapper
- */
-export function Logo({
-  href = "/",
-  height = 28,
-  className,
-}: {
+type LogoProps = {
   href?: string | null;
-  height?: number;
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
-} = {}) {
-  const width = Math.round(height * WORDMARK_ASPECT);
+  height?: never; // accepted-and-ignored for old callers passing `height`
+};
 
-  const content = (
-    <Image
-      src={WORDMARK_SRC}
-      alt="GoMotivateMe"
-      width={width}
-      height={height}
-      className={`h-auto ${className ?? ""}`}
-    />
-  );
-
-  if (href === null) return content;
-  return <Link href={href}>{content}</Link>;
+export function Logo(props: LogoProps) {
+  // Pick a size based on the old `height` value if it's still being passed.
+  // Otherwise use the explicit `size` prop, defaulting to "lg".
+  const { height, size, ...rest } = props as LogoProps & { height?: number };
+  let resolvedSize: "sm" | "md" | "lg" | "xl" | "2xl" = size ?? "lg";
+  if (typeof height === "number") {
+    if (height <= 22) resolvedSize = "sm";
+    else if (height <= 26) resolvedSize = "md";
+    else if (height <= 32) resolvedSize = "lg";
+    else if (height <= 40) resolvedSize = "xl";
+    else resolvedSize = "2xl";
+  }
+  return <Wordmark size={resolvedSize} {...rest} />;
 }

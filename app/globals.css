@@ -67,6 +67,8 @@
     background: var(--color-bg);
     color: var(--color-text);
     font-family:
+      var(--font-jakarta),
+      var(--font-manrope),
       "Plus Jakarta Sans",
       "Manrope",
       "Inter",
