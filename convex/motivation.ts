@@ -241,6 +241,7 @@ export const acceptInvite = mutation({
     if (invite.creatorId !== userId) {
       const owner = await ctx.db.get(invite.creatorId);
       const motivator = await ctx.db.get(userId);
+      const invitedGoal = await ctx.db.get(invite.goalId);
       if (owner?.email) {
         const prefs = await ctx.runMutation(
           internal.notificationPrefs.getForUser,
@@ -255,7 +256,8 @@ export const acceptInvite = mutation({
             payload: JSON.stringify({
               applicantName: motivator?.name ?? motivator?.handle ?? "Someone",
               goalTitle: invite.goalTitle,
-              goalSlug: (await ctx.db.get(invite.goalId))?.slug ?? "",
+              goalSlug: invitedGoal?.slug ?? "",
+              ownerHandle: invitedGoal?.ownerHandle ?? owner?.handle ?? undefined,
               decision: "approved",
               roleLabel: args.role ?? invite.proposedRole,
             }),
@@ -534,19 +536,29 @@ export const listMyMotivations = query({
       .query("motivatorPledges")
       .withIndex("by_user_status", (q) => q.eq("userId", userId))
       .collect();
-    return all
-      .filter((p) => statuses.includes(p.status))
-      .map((p) => ({
-        _id: p._id,
-        goalId: p.goalId,
-        role: p.role,
-        checkInFrequency: p.checkInFrequency,
-        pledgeText: p.pledgeText ?? null,
-        status: p.status,
-        isCoreMotivator: p.isCoreMotivator,
-        acceptedAt: p.acceptedAt,
-        lastCheckInAt: p.lastCheckInAt ?? null,
-      }));
+    // Hydrate each pledge with its goal slug + ownerHandle so the motivate
+    // page can build namespaced /o/[handle]/[slug] links.
+    const withGoal = await Promise.all(
+      all
+        .filter((p) => statuses.includes(p.status))
+        .map(async (p) => {
+          const g = await ctx.db.get(p.goalId);
+          return {
+            _id: p._id,
+            goalId: p.goalId,
+            goalSlug: g?.slug ?? null,
+            ownerHandle: g?.ownerHandle ?? null,
+            role: p.role,
+            checkInFrequency: p.checkInFrequency,
+            pledgeText: p.pledgeText ?? null,
+            status: p.status,
+            isCoreMotivator: p.isCoreMotivator,
+            acceptedAt: p.acceptedAt,
+            lastCheckInAt: p.lastCheckInAt ?? null,
+          };
+        })
+    );
+    return withGoal;
   },
 });
 
@@ -680,6 +692,7 @@ export const requestApplication = mutation({
           motivatorName: applicant?.name ?? applicant?.handle ?? "Someone",
           goalTitle: goal.title,
           goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
           roleLabel: args.requestedRole,
           applicationMessage: message,
         }),
@@ -742,6 +755,7 @@ export const approveApplication = mutation({
 
     // Email C2 — "Application decision" → to the applicant.
     const applicant = await ctx.db.get(app.applicantId);
+    const owner = await ctx.db.get(goal.ownerId);
     if (applicant?.email) {
       await ctx.runMutation(internal.emails.enqueue, {
         userId: app.applicantId,
@@ -752,6 +766,7 @@ export const approveApplication = mutation({
           applicantName: applicant.name ?? applicant.handle ?? "there",
           goalTitle: goal.title,
           goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
           decision: "approved",
           roleLabel: args.role ?? app.requestedRole,
         }),
@@ -779,6 +794,7 @@ export const declineApplication = mutation({
 
     // Email C2 — "Application decision" → to the applicant.
     const applicant = await ctx.db.get(app.applicantId);
+    const owner = await ctx.db.get(goal.ownerId);
     if (applicant?.email) {
       await ctx.runMutation(internal.emails.enqueue, {
         userId: app.applicantId,
@@ -789,6 +805,7 @@ export const declineApplication = mutation({
           applicantName: applicant.name ?? applicant.handle ?? "there",
           goalTitle: goal.title,
           goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
           decision: "declined",
           roleLabel: app.requestedRole,
         }),
@@ -919,6 +936,7 @@ export const createCheckIn = mutation({
             authorName: motivator?.name ?? motivator?.handle ?? "Someone",
             goalTitle: goal.title,
             goalSlug: goal.slug,
+            ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
             messageExcerpt: trimmed.slice(0, 160),
             supportTypeLabel: `a ${type} check-in`,
           }),

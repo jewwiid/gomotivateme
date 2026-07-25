@@ -239,6 +239,7 @@ export const getDigestData = internalQuery({
       goalData.push({
         title: goal.title,
         slug: goal.slug,
+        ownerHandle: goal.ownerHandle ?? undefined,
         unit: goal.unit,
         currentValue: goal.currentValue ?? 0,
         targetValue: goal.targetValue ?? 0,
@@ -309,6 +310,7 @@ export const listDueCheckIns = internalQuery({
         ownerName: goal.ownerName ?? "Someone",
         goalTitle: goal.title,
         goalSlug: goal.slug,
+        ownerHandle: goal.ownerHandle ?? undefined,
         daysSinceLastCheckin: Math.floor(elapsed / DAY),
       });
     }
@@ -358,6 +360,7 @@ export const listStaleGoals = internalQuery({
         goalId: any;
         title: string;
         slug: string;
+        ownerHandle: string | undefined;
         daysSinceLastUpdate: number;
         supporterCount: number;
         motivatorCount: number;
@@ -399,6 +402,7 @@ export const listStaleGoals = internalQuery({
         goalId: goal._id,
         title: goal.title,
         slug: goal.slug,
+        ownerHandle: goal.ownerHandle ?? undefined,
         daysSinceLastUpdate: Math.floor(elapsed / DAY),
         supporterCount: supporters.length,
         motivatorCount: motivators.length,
@@ -533,6 +537,7 @@ export const listDeadlineApproaching = internalQuery({
         ownerName: owner.name ?? owner.handle ?? "there",
         goalTitle: goal.title,
         goalSlug: goal.slug,
+        ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
         daysRemaining: isThreeDay ? 3 : 1,
         currentValue: goal.currentValue ?? 0,
         targetValue: goal.targetValue,
@@ -636,6 +641,7 @@ export const listDeadlinePassed = internalQuery({
         ownerName: owner.name ?? owner.handle ?? "there",
         goalTitle: goal.title,
         goalSlug: goal.slug,
+        ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
         daysOverdue: Math.floor((now - goal.targetDate) / DAY),
         currentValue: goal.currentValue ?? 0,
         targetValue: goal.targetValue,

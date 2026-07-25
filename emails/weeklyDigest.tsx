@@ -5,6 +5,7 @@ import { EmailLayout } from "./components/Layout";
 export interface DigestGoal {
   title: string;
   slug: string;
+  ownerHandle: string;
   unit: string;
   currentValue: number;
   targetValue: number;
@@ -63,7 +64,7 @@ export function WeeklyDigestEmail({
           <React.Fragment key={goal.slug}>
             {i > 0 && <Hr style={{ borderColor: "#e4e4dc", margin: "20px 0" }} />}
             <Text style={{ fontSize: "15px", fontWeight: 700, color: "#202124", margin: "0 0 4px" }}>
-              <Link href={`${siteUrl}/o/${goal.slug}`} style={{ color: "#044dfc", textDecoration: "none" }}>
+              <Link href={`${siteUrl}/o/${goal.ownerHandle}/${goal.slug}`} style={{ color: "#044dfc", textDecoration: "none" }}>
                 {goal.title}
               </Link>
             </Text>

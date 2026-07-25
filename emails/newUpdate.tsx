@@ -7,6 +7,7 @@ export interface NewUpdateEmailProps {
   ownerName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   updateExcerpt?: string;
   valueLabel?: string;
   siteUrl?: string;
@@ -18,6 +19,7 @@ export function NewUpdateEmail({
   ownerName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   updateExcerpt,
   valueLabel,
   siteUrl = "https://gomotivateme.com",
@@ -57,7 +59,7 @@ export function NewUpdateEmail({
         </Text>
       )}
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Cheer them on</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>Cheer them on</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
         You&apos;re on their team. A few words from you can help today.

@@ -7,6 +7,7 @@ export interface SupportMessageReceivedEmailProps {
   authorName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   messageExcerpt: string;
   supportTypeLabel: string;
   siteUrl?: string;
@@ -18,6 +19,7 @@ export function SupportMessageReceivedEmail({
   authorName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   messageExcerpt,
   supportTypeLabel,
   siteUrl = "https://gomotivateme.com",
@@ -50,7 +52,7 @@ export function SupportMessageReceivedEmail({
         &ldquo;{messageExcerpt}&rdquo;
       </Text>
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Read it on your goal</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>Read it on your goal</CTAButton>
     </EmailLayout>
   );
 }

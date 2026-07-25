@@ -115,6 +115,7 @@ function MotivateRow({
     _id: Id<"motivatorPledges">;
     goalId: string;
     goalSlug?: string | null;
+    ownerHandle?: string | null;
     role: string;
     checkInFrequency: string;
     pledgeText: string | null;
@@ -133,7 +134,9 @@ function MotivateRow({
     ? `Last check-in ${timeAgoShort(pledge.lastCheckInAt)}`
     : "No check-ins yet";
 
-  const goalHref = pledge.goalSlug ? `/o/${pledge.goalSlug}` : `/o/${pledge.goalId}`;
+  const goalHref = pledge.goalSlug
+    ? `/o/${pledge.ownerHandle ?? ""}/${pledge.goalSlug}`
+    : `/o/apply/${pledge.goalId}`;
 
   return (
     <div className="py-5">

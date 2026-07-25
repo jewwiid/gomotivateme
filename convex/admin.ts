@@ -103,6 +103,28 @@ export const listUsersByEmail = internalQuery({
 });
 
 /**
+ * Admin: migrate a goal to the namespaced slug format.
+ * Strips the random suffix from the slug and sets ownerHandle.
+ */
+export const migrateGoalSlug = internalMutation({
+  args: {
+    goalId: v.id("goals"),
+    newSlug: v.string(),
+    ownerHandle: v.string(),
+  },
+  handler: async (ctx, { goalId, newSlug, ownerHandle }) => {
+    const goal = await ctx.db.get(goalId);
+    if (!goal) throw new Error(`Goal not found: ${goalId}`);
+    await ctx.db.patch(goalId, {
+      slug: newSlug,
+      ownerHandle,
+      updatedAt: Date.now(),
+    });
+    return { ok: true, goalId, oldSlug: goal.slug, newSlug, ownerHandle };
+  },
+});
+
+/**
  * Admin: approve a goal's moderation status directly.
  */
 export const approveGoal = internalMutation({

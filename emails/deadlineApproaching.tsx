@@ -6,6 +6,7 @@ export interface DeadlineApproachingEmailProps {
   ownerName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   daysRemaining: number;
   currentValue: number;
   targetValue: number;
@@ -19,6 +20,7 @@ export function DeadlineApproachingEmail({
   ownerName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   daysRemaining,
   currentValue,
   targetValue,
@@ -55,7 +57,7 @@ export function DeadlineApproachingEmail({
             : "There's still time. Post an update today and let your supporters know you're going for it."}
       </Text>
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Post an update</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>Post an update</CTAButton>
     </EmailLayout>
   );
 }

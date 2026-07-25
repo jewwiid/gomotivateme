@@ -193,15 +193,29 @@ export const create = mutation({
       (user as { email?: string } | null)?.email ??
       undefined;
     const ownerImage = (user as { image?: string } | null)?.image ?? undefined;
+    const ownerHandle = (user as { handle?: string } | null)?.handle ?? undefined;
+
+    // Slugs are namespaced per owner. If the user has no handle yet, fall
+    // back to the ownerId string as the namespace key so collision checks
+    // still scope correctly (the slug will be re-namespaced once a handle is
+    // set, via the ownerHandle sync in users.updateProfile / setHandle).
+    const namespaceKey = ownerHandle ?? userId;
 
     let slug = buildSlug(args.title);
-    for (let i = 0; i < 4; i++) {
+    // Per-owner uniqueness: append -2, -3, -4 ... on collision instead of
+    // regenerating a random suffix.
+    let suffix = 2;
+    for (;;) {
       const existing = await ctx.db
         .query("goals")
-        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .withIndex("by_handle_slug", (q) =>
+          q.eq("ownerHandle", namespaceKey).eq("slug", slug)
+        )
         .first();
       if (!existing) break;
-      slug = buildSlug(args.title);
+      slug = `${buildSlug(args.title)}-${suffix}`;
+      suffix++;
+      if (suffix > 100) break; // safety valve
     }
 
     const now = Date.now();
@@ -209,6 +223,7 @@ export const create = mutation({
       ownerId: userId,
       ownerName,
       ownerImage,
+      ownerHandle,
       title: args.title.trim(),
       summary: args.summary?.trim() || undefined,
       story: args.story?.trim() || undefined,
@@ -354,6 +369,8 @@ export const update = mutation({
     publicMotivatorPolicy: v.optional(
       v.union(v.literal("auto"), v.literal("approval"), v.literal("disabled"))
     ),
+    /** Optional: sync denormalized ownerHandle (used by handle-change flows). */
+    ownerHandle: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -415,6 +432,12 @@ export const update = mutation({
     if (args.visibility !== undefined) patch.visibility = args.visibility;
     if (args.publicMotivatorPolicy !== undefined) {
       patch.publicMotivatorPolicy = args.publicMotivatorPolicy;
+    }
+    // Allow syncing the denormalized ownerHandle if the caller explicitly
+    // passes one (used by profile/handle change flows). Optional field —
+    // most update calls don't include it.
+    if (args.ownerHandle !== undefined) {
+      patch.ownerHandle = args.ownerHandle;
     }
     if (args.coverImageId !== undefined) patch.coverImageId = args.coverImageId;
     if (args.targetValue !== undefined) patch.targetValue = args.targetValue;
@@ -603,6 +626,7 @@ export const toggleMilestone = mutation({
             ownerName: owner.name ?? owner.handle ?? "there",
             goalTitle: goal.title,
             goalSlug: goal.slug,
+            ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
             unit: goal.unit,
             targetValue: goal.targetValue,
           }),
@@ -773,6 +797,7 @@ export const logStreakDay = mutation({
             ownerName: owner.name ?? owner.handle ?? "there",
             goalTitle: goal.title,
             goalSlug: goal.slug,
+            ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
             unit: goal.unit,
             targetValue: goal.targetValue,
           }),
@@ -885,6 +910,7 @@ export const recordValue = mutation({
             ownerName: owner.name ?? owner.handle ?? "there",
             goalTitle: goal.title,
             goalSlug: goal.slug,
+            ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
             unit: goal.unit,
             targetValue: goal.targetValue,
           }),
@@ -1014,6 +1040,7 @@ export const notifyFollowersOfUpdate = internalMutation({
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
     const ownerName = await ownerDisplayName(ctx, ownerId);
+    const owner = await ctx.db.get(ownerId);
 
     // Resolve update excerpt + value label if we have an updateId.
     let updateExcerpt: string | undefined;
@@ -1038,6 +1065,7 @@ export const notifyFollowersOfUpdate = internalMutation({
           ownerName,
           goalTitle: goal.title,
           goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
           updateExcerpt,
           valueLabel,
         }),
@@ -1060,6 +1088,7 @@ export const notifyFollowersOfCompletion = internalMutation({
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
 
+    const owner = await ctx.db.get(ownerId);
     const recipients = await collectNotifiableFollowers(ctx, goalId, ownerId);
     for (const r of recipients) {
       await ctx.runMutation(internal.emails.enqueue, {
@@ -1073,6 +1102,7 @@ export const notifyFollowersOfCompletion = internalMutation({
           ownerName: r.name,
           goalTitle: goal.title,
           goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
           unit: goal.unit,
           targetValue: goal.targetValue,
         }),
@@ -1103,6 +1133,7 @@ export const notifyFollowersOfStatusChange = internalMutation({
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
     const ownerName = await ownerDisplayName(ctx, ownerId);
+    const owner = await ctx.db.get(ownerId);
 
     const excerpt =
       newStatus === "paused"
@@ -1125,6 +1156,7 @@ export const notifyFollowersOfStatusChange = internalMutation({
           ownerName,
           goalTitle: goal.title,
           goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
           updateExcerpt: excerpt,
           valueLabel: undefined,
         }),

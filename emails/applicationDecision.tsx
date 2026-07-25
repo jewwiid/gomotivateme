@@ -6,6 +6,7 @@ export interface ApplicationDecisionEmailProps {
   applicantName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   /** "approved" | "declined" */
   decision: string;
   roleLabel: string;
@@ -17,6 +18,7 @@ export function ApplicationDecisionEmail({
   applicantName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   decision,
   roleLabel,
   siteUrl = "https://gomotivateme.com",
@@ -38,7 +40,7 @@ export function ApplicationDecisionEmail({
             You&apos;ve been approved as a <strong>{roleLabel}</strong> on{" "}
             <strong>{goalTitle}</strong>. You&apos;re on the team.
           </Text>
-          <CTAButton href={`${siteUrl}/o/${goalSlug}`}>See the goal</CTAButton>
+          <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>See the goal</CTAButton>
         </>
       ) : (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>

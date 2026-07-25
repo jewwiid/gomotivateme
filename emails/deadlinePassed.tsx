@@ -6,6 +6,7 @@ export interface DeadlinePassedEmailProps {
   ownerName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   daysOverdue: number;
   currentValue: number;
   targetValue: number;
@@ -19,6 +20,7 @@ export function DeadlinePassedEmail({
   ownerName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   daysOverdue,
   currentValue,
   targetValue,
@@ -63,7 +65,7 @@ export function DeadlinePassedEmail({
         </Text>
       )}
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>Post an update</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>Post an update</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
         You can also extend your deadline from the dashboard if you need more time.

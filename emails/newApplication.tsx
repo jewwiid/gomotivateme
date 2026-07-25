@@ -7,6 +7,7 @@ export interface NewApplicationEmailProps {
   motivatorName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   roleLabel: string;
   applicationMessage: string;
   siteUrl?: string;
@@ -18,6 +19,7 @@ export function NewApplicationEmail({
   motivatorName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   roleLabel,
   applicationMessage,
   siteUrl = "https://gomotivateme.com",
@@ -54,7 +56,7 @@ export function NewApplicationEmail({
         </Text>
       )}
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}/applicants`}>Review application</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>See the goal</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
         You can approve, decline, or just sit on it for a bit. No rush.

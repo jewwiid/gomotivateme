@@ -143,6 +143,7 @@ export const profileSummary = query({
           goal: {
             _id: g._id,
             slug: g.slug,
+            ownerHandle: g.ownerHandle,
             title: g.title,
             summary: g.summary ?? null,
             category: g.category,
@@ -263,6 +264,10 @@ export const updateProfile = mutation({
     name: v.optional(v.string()),
     bio: v.optional(v.string()),
     image: v.optional(v.string()),
+    /** Optional handle sync (usually handled by setHandle, but supported
+     * here so the denormalized ownerHandle on goals stays in sync if a
+     * caller ever passes it). */
+    handle: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -282,6 +287,17 @@ export const updateProfile = mutation({
     if (args.image !== undefined) {
       patch.image = args.image.trim() || undefined;
     }
+    if (args.handle !== undefined) {
+      // Normalize + validate the same way setHandle does. Empty string
+      // clears the handle (falls back to ownerId as the slug namespace).
+      const normalized = args.handle.trim().toLowerCase();
+      if (normalized && !HANDLE_RE.test(normalized)) {
+        throw new Error(
+          `Handle must be ${MIN_HANDLE_LENGTH}-${MAX_HANDLE_LENGTH} chars: lowercase letters, digits, _ or -`
+        );
+      }
+      patch.handle = normalized || undefined;
+    }
     if (Object.keys(patch).length === 0) return { ok: true, changed: 0 };
 
     // Detect first-time profile setup (user had no name before) to fire the
@@ -298,9 +314,11 @@ export const updateProfile = mutation({
 
     await ctx.db.patch(userId, patch);
 
-    // Sync denormalized ownerName/ownerImage on all the user's goals
-    // so stale snapshots don't show old avatars after a profile change.
-    if (patch.name !== undefined || patch.image !== undefined) {
+    // Sync denormalized ownerName/ownerImage/ownerHandle on all the user's
+    // goals so stale snapshots don't show old avatars/handles after a profile
+    // change. ownerHandle is included for safety — updateProfile doesn't
+    // currently set handle, but if a future caller passes it the sync fires.
+    if (patch.name !== undefined || patch.image !== undefined || patch.handle !== undefined) {
       const goals = await ctx.db
         .query("goals")
         .withIndex("by_owner", (q) => q.eq("ownerId", userId))
@@ -309,6 +327,7 @@ export const updateProfile = mutation({
         await ctx.db.patch(g._id, {
           ...(patch.name !== undefined && { ownerName: patch.name as string }),
           ...(patch.image !== undefined && { ownerImage: (patch.image as string | undefined) ?? undefined }),
+          ...(patch.handle !== undefined && { ownerHandle: (patch.handle as string | undefined) ?? undefined }),
         });
       }
     }
@@ -380,6 +399,19 @@ export const setHandle = mutation({
         handleChangesRemaining: Math.max(0, remaining - 1),
       });
     }
+
+    // Sync the denormalized ownerHandle on every goal this user owns so the
+    // namespaced /o/[handle]/[slug] URLs and the by_handle_slug index stay
+    // correct after a handle change. Without this, old goals keep the old
+    // handle and the namespaced lookup misses them.
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+    for (const g of goals) {
+      await ctx.db.patch(g._id, { ownerHandle: normalized });
+    }
+
     return { handle: normalized };
   },
 });

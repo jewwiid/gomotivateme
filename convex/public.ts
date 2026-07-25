@@ -13,7 +13,45 @@ function isModerationApproved(goal: any) {
   return !goal.moderationStatus || goal.moderationStatus === "approved";
 }
 
-/** Fetch a public goal by slug, with computed progress + days remaining. */
+/**
+ * Fetch a public goal by owner handle + slug (namespaced URL
+ * /o/[handle]/[slug]), with computed progress + days remaining.
+ */
+export const getGoalByHandleAndSlug = query({
+  args: { handle: v.string(), slug: v.string() },
+  handler: async (ctx, { handle, slug }) => {
+    const normalized = handle.toLowerCase().trim();
+    const goal = await ctx.db
+      .query("goals")
+      .withIndex("by_handle_slug", (q) =>
+        q.eq("ownerHandle", normalized).eq("slug", slug)
+      )
+      .first();
+    if (!goal) return null;
+    if (goal.visibility !== "public") return null;
+    if (!isModerationApproved(goal)) return null;
+    // Pre-launch goals (status: "draft") are not visible on the public page.
+    // The creator manages them via the dashboard.
+    if (goal.status === "draft") return null;
+
+    const progress = computeProgress(
+      goal.startValue,
+      goal.currentValue,
+      goal.targetValue,
+      goal.direction
+    );
+    const days = goal.targetDate ? daysUntil(goal.targetDate, Date.now()) : null;
+
+    return { ...goal, progress, daysRemaining: days };
+  },
+});
+
+/**
+ * @deprecated Backward-compat wrapper for old /o/[slug] URLs. Queries by slug
+ * only via the legacy `by_slug` index. Used by redirect logic during the
+ * migration to namespaced /o/[handle]/[slug] URLs. Prefer
+ * `getGoalByHandleAndSlug` for new code.
+ */
 export const getGoalBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
@@ -24,8 +62,6 @@ export const getGoalBySlug = query({
     if (!goal) return null;
     if (goal.visibility !== "public") return null;
     if (!isModerationApproved(goal)) return null;
-    // Pre-launch goals (status: "draft") are not visible on the public page.
-    // The creator manages them via the dashboard.
     if (goal.status === "draft") return null;
 
     const progress = computeProgress(
@@ -60,6 +96,7 @@ export const getGoalById = query({
     return {
       _id: goal._id,
       slug: goal.slug,
+      ownerHandle: goal.ownerHandle,
       title: goal.title,
       summary: goal.summary,
       story: goal.story,
@@ -96,6 +133,7 @@ export const listRecentPublic = query({
       .map((g) => ({
         _id: g._id,
         slug: g.slug,
+        ownerHandle: g.ownerHandle,
         title: g.title,
         summary: g.summary,
         category: g.category,
@@ -140,6 +178,7 @@ export const listByCategory = query({
       .map((g) => ({
         _id: g._id,
         slug: g.slug,
+        ownerHandle: g.ownerHandle,
         title: g.title,
         summary: g.summary,
         currentValue: g.currentValue,

@@ -81,7 +81,7 @@ function SupportingContent() {
                 className="py-5"
               >
                 <Link
-                  href={`/o/${s.goalSlug}`}
+                  href={`/o/${s.ownerHandle ?? ""}/${s.goalSlug}`}
                   className="group block"
                 >
                   <h2 className="truncate font-display text-xl font-bold tracking-[-0.03em] transition group-hover:text-[var(--color-primary)]">

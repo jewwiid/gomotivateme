@@ -219,7 +219,7 @@ function GoalTile({ goal, image, featured }: { goal: any; image: string; feature
   const progress = Math.max(0, Math.min(100, Number(goal.progress ?? 0)));
   return (
     <motion.article initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.4 }} className={featured ? "md:col-span-2 lg:row-span-2 lg:col-span-2" : ""}>
-      <Link href={`/o/${goal.slug}`} className="group block">
+      <Link href={`/o/${goal.ownerHandle}/${goal.slug}`} className="group block">
         <div className={`overflow-hidden rounded-[1rem] bg-[#edede8] ${featured ? "aspect-[1.32/1]" : "aspect-[1.45/1]"}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image} alt={`${goal.title} goal by ${goal.ownerName || "a GoMotivateMe member"}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />

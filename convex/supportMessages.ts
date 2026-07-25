@@ -83,6 +83,7 @@ export const create = mutation({
           authorName: author?.name ?? author?.handle ?? "Someone",
           goalTitle: goal.title,
           goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
           messageExcerpt: trimmed.slice(0, 160),
           supportTypeLabel: typeLabels[supportType] ?? "support",
         }),

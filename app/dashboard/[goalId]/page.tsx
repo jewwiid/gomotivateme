@@ -109,7 +109,7 @@ function GoalDetailContent() {
     const base =
       process.env.NEXT_PUBLIC_SITE_URL ??
       (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
-    return `${base}/o/${goal.slug}`;
+    return `${base}/o/${goal.ownerHandle ?? ""}/${goal.slug}`;
   }, [goal]);
 
   const onCopyLink = async () => {
@@ -280,7 +280,7 @@ function GoalDetailContent() {
                 {linkCopied ? "Copied" : "Copy"}
               </button>
               <Link
-                href={`/o/${goal.slug}`}
+                href={`/o/${goal.ownerHandle ?? ""}/${goal.slug}`}
                 target="_blank"
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#c9c8c0] px-4 py-2 text-xs font-semibold text-[#454540] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
               >

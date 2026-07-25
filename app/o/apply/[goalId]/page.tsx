@@ -134,7 +134,7 @@ export default function ApplyPage() {
       <ApplyShell>
         <div className="mx-auto max-w-2xl py-6 sm:py-12">
           <Link
-            href={`/o/${goal.slug}`}
+            href={`/o/${goal.ownerHandle}/${goal.slug}`}
             className="inline-flex items-center gap-1.5 text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
           >
             <ArrowLeft size={12} />
@@ -239,7 +239,7 @@ export default function ApplyPage() {
             <div className="mt-1">"{myApplication.message}"</div>
           </div>
           <Link
-            href={`/o/${goal.slug}`}
+            href={`/o/${goal.ownerHandle}/${goal.slug}`}
             className="mt-6 inline-flex items-center gap-2 text-sm text-zinc-500 transition hover:text-zinc-900"
           >
             Back to goal
@@ -391,7 +391,7 @@ export default function ApplyPage() {
               you'll be added to their Motivation Circle.
             </p>
             <Link
-              href={`/o/${goal.slug}`}
+              href={`/o/${goal.ownerHandle}/${goal.slug}`}
               className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
             >
               Back to goal
@@ -407,7 +407,7 @@ export default function ApplyPage() {
       <div className="grid gap-12 lg:grid-cols-[minmax(0,0.82fr)_minmax(30rem,1fr)] lg:gap-20">
         <aside className="lg:pt-2">
           <Link
-            href={`/o/${goal.slug}`}
+            href={`/o/${goal.ownerHandle}/${goal.slug}`}
             className="inline-flex items-center gap-1.5 text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
           >
             <ArrowLeft size={14} />
@@ -573,7 +573,7 @@ export default function ApplyPage() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link
-              href={`/o/${goal.slug}`}
+              href={`/o/${goal.ownerHandle}/${goal.slug}`}
               className="text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
             >
               Cancel

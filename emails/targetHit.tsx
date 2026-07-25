@@ -6,6 +6,7 @@ export interface TargetHitEmailProps {
   ownerName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   unit: string;
   targetValue: number;
   siteUrl?: string;
@@ -16,6 +17,7 @@ export function TargetHitEmail({
   ownerName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   unit,
   targetValue,
   siteUrl = "https://gomotivateme.com",
@@ -36,7 +38,7 @@ export function TargetHitEmail({
         You set a goal, you showed up, and you got there.
       </Text>
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>See your goal</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>See your goal</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
         Then{" "}

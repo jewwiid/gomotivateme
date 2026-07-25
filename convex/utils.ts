@@ -25,8 +25,12 @@ function randomFragment(length: number = SLUG_LENGTH): string {
 }
 
 /**
- * Build a human-friendly URL slug from a goal title plus a random suffix.
- * Example: "Lose 20kg by summer" -> "lose-20kg-by-summer-a1b2c"
+ * Build a human-friendly URL slug from a goal title (kebab-case, no random
+ * suffix). Slugs are now namespaced per owner, so global uniqueness is no
+ * longer required — uniqueness only needs to hold within one owner's goals,
+ * and the caller handles per-owner collision suffixing (-2, -3, ...).
+ * Example: "Lose 20kg by summer" -> "lose-20kg-by-summer"
+ * If the title produces an empty slug (all symbols), returns "goal".
  */
 export function buildSlug(title: string): string {
   const base = title
@@ -36,8 +40,7 @@ export function buildSlug(title: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
-  const fragment = randomFragment();
-  return base ? `${base}-${fragment}` : fragment;
+  return base || "goal";
 }
 
 /**

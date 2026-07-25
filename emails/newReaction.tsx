@@ -6,6 +6,7 @@ export interface NewReactionEmailProps {
   ownerName: string;
   goalTitle: string;
   goalSlug: string;
+  ownerHandle: string;
   /** Which emoji was reacted with, e.g. "👍", "💪", "❤️", "🔥" */
   emojiLabel: string;
   /** "goal" or "update" — where the reaction was left */
@@ -20,6 +21,7 @@ export function NewReactionEmail({
   ownerName,
   goalTitle,
   goalSlug,
+  ownerHandle,
   emojiLabel,
   targetType,
   totalReactions,
@@ -45,7 +47,7 @@ export function NewReactionEmail({
           : `That's ${totalReactions} cheers now. People are rooting for you.`}
       </Text>
 
-      <CTAButton href={`${siteUrl}/o/${goalSlug}`}>See your goal</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${goalSlug}`}>See your goal</CTAButton>
     </EmailLayout>
   );
 }

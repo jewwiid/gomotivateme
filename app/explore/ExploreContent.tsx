@@ -225,7 +225,7 @@ function GoalsTab({
                 transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.4) }}
               >
                 <Link
-                  href={`/o/${g.slug}`}
+                  href={`/o/${g.ownerHandle}/${g.slug}`}
                   className="group block"
                 >
                   <div className="relative aspect-[1.4/1] w-full overflow-hidden rounded-[1rem] bg-[#e8edf9]">

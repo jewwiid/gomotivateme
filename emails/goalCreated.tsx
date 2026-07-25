@@ -6,6 +6,7 @@ export interface GoalCreatedEmailProps {
   firstName?: string;
   goalTitle: string;
   slug: string;
+  ownerHandle: string;
   siteUrl?: string;
   unsubscribeToken?: string;
 }
@@ -14,6 +15,7 @@ export function GoalCreatedEmail({
   firstName,
   goalTitle,
   slug,
+  ownerHandle,
   siteUrl = "https://gomotivateme.com",
   unsubscribeToken,
 }: GoalCreatedEmailProps) {
@@ -36,7 +38,7 @@ export function GoalCreatedEmail({
         people who'll cheer you on, and let them keep you going.
       </Text>
 
-      <CTAButton href={`${siteUrl}/o/${slug}`}>View your goal</CTAButton>
+      <CTAButton href={`${siteUrl}/o/${ownerHandle}/${slug}`}>View your goal</CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0", textAlign: "center" }}>
         Or{" "}

@@ -708,7 +708,7 @@ function GoalsGrid({
         return (
           <Link
             key={g._id}
-            href={`/o/${g.slug}`}
+            href={`/o/${g.ownerHandle ?? ""}/${g.slug}`}
             className="group block"
           >
             <div className="relative aspect-[1.45/1] w-full overflow-hidden rounded-[1rem] bg-[#e8edf9]">
@@ -800,7 +800,7 @@ function MotivationsList({
         return (
           <li key={m._id}>
             <Link
-              href={`/o/${m.goal.slug}`}
+              href={`/o/${m.goal.ownerHandle ?? ""}/${m.goal.slug}`}
               className="flex items-center gap-4 py-4 transition hover:text-[var(--color-primary)]"
             >
               {coverUrl ? (

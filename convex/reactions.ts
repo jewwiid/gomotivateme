@@ -57,6 +57,7 @@ async function maybeNotifyOwnerOfReaction(
       ownerName,
       goalTitle: goal.title,
       goalSlug: goal.slug,
+      ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
       emojiLabel: EMOJI_LABELS[emoji],
       targetType,
       totalReactions: total,

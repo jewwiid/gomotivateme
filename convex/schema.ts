@@ -173,8 +173,13 @@ export default defineSchema({
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_created", ["ownerId", "createdAt"])
+    // `by_slug` is kept for backward-compat redirects of old /o/[slug] URLs
+    // during the migration to namespaced /o/[handle]/[slug] URLs.
     .index("by_slug", ["slug"])
-    .index("by_handle", ["ownerHandle"])
+    // `by_handle_slug` serves both (ownerHandle, slug) lookups (namespaced
+    // goal pages) and ownerHandle-only prefix scans (all goals by a user),
+    // so there is no separate `by_handle` index.
+    .index("by_handle_slug", ["ownerHandle", "slug"])
     .index("by_moderation_status_created", ["moderationStatus", "createdAt"])
     .index("by_public_created", ["visibility", "status", "createdAt"])
     /**
