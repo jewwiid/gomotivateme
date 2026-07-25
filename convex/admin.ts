@@ -40,6 +40,7 @@ import { v } from "convex/values";
 import {
   internalAction,
   internalMutation,
+  internalQuery,
 } from "./_generated/server";
 import { modifyAccountCredentials } from "@convex-dev/auth/server";
 import { DEFAULT_PREFS } from "./notificationPrefs";
@@ -86,6 +87,19 @@ export const resetPasswordByEmail = internalAction({
       // it, and looking it up just to return it costs an extra query.
     };
   },
+});
+
+/**
+ * List ALL users matching an email address (duplicate check).
+ * Returns _id, name, handle, email, emailVerificationTime, _creationTime.
+ */
+export const listUsersByEmail = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) =>
+    ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", email))
+      .collect(),
 });
 
 /**

@@ -122,8 +122,10 @@ function PublicGoalView({ goalId, goal }: { goalId: Id<"goals">; goal: any }) {
   const supporterCount = goal.supporterCount ?? 0;
   const supporterTarget = goal.supporterTarget ?? null;
   const showSupporterTarget = supporterTarget && supporterCount >= 3;
-  const ownerName = goal.ownerName ?? owner?.[goal.ownerId]?.name ?? "Someone";
-  const ownerImage = goal.ownerImage ?? owner?.[goal.ownerId]?.image ?? null;
+  // Prefer the live user image so profile changes reflect immediately;
+  // fall back to the denormalized snapshot only if the live lookup misses.
+  const ownerName = owner?.[goal.ownerId]?.name ?? goal.ownerName ?? "Someone";
+  const ownerImage = owner?.[goal.ownerId]?.image ?? goal.ownerImage ?? null;
   const isCompleted = goal.status === "completed";
   const isPaused = goal.status === "paused";
   const isClosed = goal.status === "closed";

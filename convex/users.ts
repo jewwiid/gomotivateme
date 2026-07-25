@@ -14,7 +14,7 @@ export const getRawByEmail = query({
   handler: async (ctx, { email }) =>
     ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", email))
+      .withIndex("email", (q) => q.eq("email", email))
       .first(),
 });
 
@@ -297,6 +297,21 @@ export const updateProfile = mutation({
     }
 
     await ctx.db.patch(userId, patch);
+
+    // Sync denormalized ownerName/ownerImage on all the user's goals
+    // so stale snapshots don't show old avatars after a profile change.
+    if (patch.name !== undefined || patch.image !== undefined) {
+      const goals = await ctx.db
+        .query("goals")
+        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+        .collect();
+      for (const g of goals) {
+        await ctx.db.patch(g._id, {
+          ...(patch.name !== undefined && { ownerName: patch.name as string }),
+          ...(patch.image !== undefined && { ownerImage: (patch.image as string | undefined) ?? undefined }),
+        });
+      }
+    }
 
     // Email A1 — Welcome (transactional, fires once on first profile setup).
     if (isFirstSetup && before?.email) {

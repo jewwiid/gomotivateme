@@ -16,13 +16,13 @@ export function OrganizerCard({
   ownerImage?: string;
   goalCount: number;
 }) {
-  // We trust the denormalized name on the goal; fall back to a live lookup if missing.
+  // Always do a live lookup so profile changes reflect on existing goals.
   const live = useQuery(
     api.users.profilesById,
-    !ownerName || !ownerImage ? { ids: [ownerId] } : "skip"
+    { ids: [ownerId] }
   );
-  const name = ownerName || live?.[ownerId]?.name || "Organizer";
-  const image = ownerImage || live?.[ownerId]?.image;
+  const name = live?.[ownerId]?.name || ownerName || "Organizer";
+  const image = live?.[ownerId]?.image || ownerImage;
 
   return (
     <motion.div
