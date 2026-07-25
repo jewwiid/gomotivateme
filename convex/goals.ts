@@ -361,6 +361,29 @@ export const update = mutation({
     const goal = await ctx.db.get(args.goalId);
     if (!goal || goal.ownerId !== userId) throw new Error("Not found");
 
+    // Once a goal has traction (supporters or progress logged), the contract
+    // fields are locked — supporters signed up for a specific metric. Changing
+    // targetValue / startValue / unit / direction / progressType mid-run would
+    // invalidate the commitment. Owners should close the goal and start a new one.
+    const hasTraction =
+      (goal.supporterCount ?? 0) > 0 || (goal.currentValue ?? 0) > 0;
+    const lockedFields: string[] = [];
+    if (hasTraction) {
+      if (args.targetValue !== undefined && args.targetValue !== goal.targetValue)
+        lockedFields.push("targetValue");
+      if (args.startValue !== undefined && args.startValue !== goal.startValue)
+        lockedFields.push("startValue");
+      if (args.unit !== undefined && args.unit !== goal.unit)
+        lockedFields.push("unit");
+      if (args.direction !== undefined && args.direction !== goal.direction)
+        lockedFields.push("direction");
+    }
+    if (lockedFields.length > 0) {
+      throw new Error(
+        `Cannot change ${lockedFields.join(", ")} after supporters have joined or progress has been logged. Close this goal and create a new one instead.`
+      );
+    }
+
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
     const needsModeration =
       args.title !== undefined ||

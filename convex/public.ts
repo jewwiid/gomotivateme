@@ -240,3 +240,4 @@ export const countByCategory = query({
     return counts;
   },
 });
+// force redeploy Fri Jul 24 09:13:12 IST 2026

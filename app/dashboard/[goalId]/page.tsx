@@ -23,6 +23,7 @@ import {
   X,
   CheckCircle2,
   Archive,
+  Lock as LockIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -333,6 +334,8 @@ function GoalDetailContent() {
           unit={goal.unit}
           direction={goal.direction}
           progressType={goal.progressType}
+          supporterCount={goal.supporterCount ?? 0}
+          currentValue={goal.currentValue ?? 0}
           onDeleted={() => router.push("/dashboard")}
         />
 
@@ -1169,6 +1172,8 @@ function GoalSettings({
   unit,
   direction,
   progressType,
+  supporterCount,
+  currentValue,
   onDeleted,
 }: {
   goalId: Id<"goals">;
@@ -1184,6 +1189,8 @@ function GoalSettings({
   unit?: string;
   direction?: "increase" | "decrease";
   progressType?: string;
+  supporterCount: number;
+  currentValue: number;
   onDeleted: () => void;
 }) {
   const updateGoal = useMutation(api.goals.update);
@@ -1226,6 +1233,8 @@ function GoalSettings({
   const [deleting, setDeleting] = useState(false);
 
   const canEditTargetFields = progressType !== "milestones" && progressType !== "streak";
+  const hasTraction = supporterCount > 0 || currentValue > 0;
+  const targetFieldsLocked = canEditTargetFields && hasTraction;
 
   const onUploadCover = async (file: File | null) => {
     if (!file) return;
@@ -1252,10 +1261,10 @@ function GoalSettings({
       const parsedSupTarget = draftSupporterTarget
         ? parseInt(draftSupporterTarget, 10)
         : undefined;
-      const parsedTargetValue = canEditTargetFields && draftTargetValue !== ""
+      const parsedTargetValue = canEditTargetFields && !targetFieldsLocked && draftTargetValue !== ""
         ? parseFloat(draftTargetValue)
         : undefined;
-      const parsedStartValue = canEditTargetFields && draftStartValue !== ""
+      const parsedStartValue = canEditTargetFields && !targetFieldsLocked && draftStartValue !== ""
         ? parseFloat(draftStartValue)
         : undefined;
       await updateGoal({
@@ -1268,8 +1277,8 @@ function GoalSettings({
         visibility: draftVisibility,
         targetValue: parsedTargetValue,
         startValue: parsedStartValue,
-        unit: canEditTargetFields && draftUnit !== "" ? draftUnit : undefined,
-        direction: canEditTargetFields ? draftDirection : undefined,
+        unit: canEditTargetFields && !targetFieldsLocked && draftUnit !== "" ? draftUnit : undefined,
+        direction: canEditTargetFields && !targetFieldsLocked ? draftDirection : undefined,
       });
       setEditing(false);
     } catch (e) {
@@ -1480,81 +1489,97 @@ function GoalSettings({
       </div>
 
       {canEditTargetFields && (
-        <div className="mb-3 grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-              Target value
-            </label>
-            {editing ? (
-              <input
-                type="number"
-                step="any"
-                value={draftTargetValue}
-                onChange={(e) => setDraftTargetValue(e.target.value)}
-                placeholder="e.g. 100"
-                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-            ) : (
-              <p className="text-sm text-[var(--color-text)]">
-                {targetValue ?? <span className="text-[var(--color-text-dim)]">—</span>}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-              Start value
-            </label>
-            {editing ? (
-              <input
-                type="number"
-                step="any"
-                value={draftStartValue}
-                onChange={(e) => setDraftStartValue(e.target.value)}
-                placeholder="e.g. 0"
-                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-            ) : (
-              <p className="text-sm text-[var(--color-text)]">
-                {startValue ?? <span className="text-[var(--color-text-dim)]">0</span>}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-              Unit
-            </label>
-            {editing ? (
-              <input
-                type="text"
-                value={draftUnit}
-                onChange={(e) => setDraftUnit(e.target.value)}
-                placeholder="e.g. kg, books, runs"
-                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-            ) : (
-              <p className="text-sm text-[var(--color-text)]">
-                {unit || <span className="text-[var(--color-text-dim)]">—</span>}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-              Direction
-            </label>
-            {editing ? (
-              <select
-                value={draftDirection}
-                onChange={(e) => setDraftDirection(e.target.value as "increase" | "decrease")}
-                className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
-              >
-                <option value="increase">Increase</option>
-                <option value="decrease">Decrease</option>
-              </select>
-            ) : (
-              <p className="text-sm text-[var(--color-text)] capitalize">
-                {direction ?? "increase"}
-              </p>
-            )}
+        <div className="mb-3">
+          {targetFieldsLocked && (
+            <div className="mb-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-xs text-amber-800">
+              <LockIcon size={12} className="mt-0.5 shrink-0" />
+              <span>
+                Target value, start value, unit, and direction are locked because this goal
+                {supporterCount > 0 ? ` has ${supporterCount} supporter${supporterCount === 1 ? "" : "s"}` : " has logged progress"}.
+                Close this goal and create a new one to change these.
+              </span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+                Target value
+              </label>
+              {editing ? (
+                <input
+                  type="number"
+                  step="any"
+                  value={draftTargetValue}
+                  onChange={(e) => setDraftTargetValue(e.target.value)}
+                  placeholder="e.g. 100"
+                  disabled={targetFieldsLocked}
+                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              ) : (
+                <p className="text-sm text-[var(--color-text)]">
+                  {targetValue ?? <span className="text-[var(--color-text-dim)]">—</span>}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+                Start value
+              </label>
+              {editing ? (
+                <input
+                  type="number"
+                  step="any"
+                  value={draftStartValue}
+                  onChange={(e) => setDraftStartValue(e.target.value)}
+                  placeholder="e.g. 0"
+                  disabled={targetFieldsLocked}
+                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              ) : (
+                <p className="text-sm text-[var(--color-text)]">
+                  {startValue ?? <span className="text-[var(--color-text-dim)]">0</span>}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+                Unit
+              </label>
+              {editing ? (
+                <input
+                  type="text"
+                  value={draftUnit}
+                  onChange={(e) => setDraftUnit(e.target.value)}
+                  placeholder="e.g. kg, books, runs"
+                  disabled={targetFieldsLocked}
+                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              ) : (
+                <p className="text-sm text-[var(--color-text)]">
+                  {unit || <span className="text-[var(--color-text-dim)]">—</span>}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+                Direction
+              </label>
+              {editing ? (
+                <select
+                  value={draftDirection}
+                  onChange={(e) => setDraftDirection(e.target.value as "increase" | "decrease")}
+                  disabled={targetFieldsLocked}
+                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="increase">Increase</option>
+                  <option value="decrease">Decrease</option>
+                </select>
+              ) : (
+                <p className="text-sm text-[var(--color-text)] capitalize">
+                  {direction ?? "increase"}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
