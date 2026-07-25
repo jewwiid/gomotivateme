@@ -42,6 +42,7 @@ import {
   internalMutation,
 } from "./_generated/server";
 import { modifyAccountCredentials } from "@convex-dev/auth/server";
+import { DEFAULT_PREFS } from "./notificationPrefs";
 
 /**
  * Reset the password for the user with the given email. Keeps all
@@ -287,5 +288,60 @@ export const mergeDuplicateUsers = internalMutation({
       refsRePointed,
       profileFieldsMerged: Object.keys(mergePatch),
     };
+  },
+});
+
+/**
+ * Set notification preference flags for a user by email.
+ *
+ * Ops tool for the opt-in prefs (`weeklyDigest`, `productUpdates`, …) that
+ * users normally toggle themselves at /settings. Creates the prefs row from
+ * DEFAULT_PREFS if the user doesn't have one yet, so it works for accounts
+ * that have never opened the settings page.
+ *
+ *   npx convex run admin:setNotificationPrefs \
+ *     '{"email":"someone@example.com","weeklyDigest":true}'
+ */
+export const setNotificationPrefs = internalMutation({
+  args: {
+    email: v.string(),
+    yourMotivations: v.optional(v.boolean()),
+    supportedGoalUpdates: v.optional(v.boolean()),
+    newMotivatorOnGoal: v.optional(v.boolean()),
+    weeklyDigest: v.optional(v.boolean()),
+    urgentCauses: v.optional(v.boolean()),
+    productUpdates: v.optional(v.boolean()),
+    unsubscribedAll: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { email, ...patch }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", email))
+      .first();
+    if (!user) throw new Error(`No user with email: ${email}`);
+
+    const existing = await ctx.db
+      .query("notificationPrefs")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    const now = Date.now();
+    if (existing) {
+      await ctx.db.patch(existing._id, { ...patch, updatedAt: now });
+    } else {
+      await ctx.db.insert("notificationPrefs", {
+        ...DEFAULT_PREFS,
+        ...patch,
+        userId: user._id,
+        email: (user as { email?: string }).email,
+        updatedAt: now,
+      });
+    }
+
+    const after = await ctx.db
+      .query("notificationPrefs")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+    return { ok: true, userId: user._id, email, created: !existing, prefs: after };
   },
 });
