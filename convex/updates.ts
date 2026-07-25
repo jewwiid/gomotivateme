@@ -106,31 +106,49 @@ function normalizePublicEmbed(rawUrl: string) {
   throw new Error("Media embeds currently support YouTube, TikTok, and Instagram");
 }
 
-/** Public: timeline of visible updates on a goal (newest first). */
+/**
+ * Public: timeline of visible updates on a goal (newest first).
+ *
+ * Bounded — an unbounded `.collect()` here would send a goal's entire history
+ * on every page load and eventually trip Convex's read limits. Callers wanting
+ * the full archive should use `listForGoalPaginated`.
+ */
 export const listForGoal = query({
-  args: { goalId: v.id("goals") },
-  handler: async (ctx, { goalId }) => {
+  args: { goalId: v.id("goals"), limit: v.optional(v.number()) },
+  handler: async (ctx, { goalId, limit }) => {
     return ctx.db
       .query("updates")
       .withIndex("by_goal_visible_created", (q) =>
         q.eq("goalId", goalId).eq("publicVisible", true)
       )
       .order("desc")
-      .collect();
+      .take(Math.min(Math.max(limit ?? 100, 1), 200));
   },
 });
 
-/** Public: updates tied to a specific milestone (for expandable milestone rows). */
+/**
+ * Public: updates tied to a specific milestone (for expandable milestone rows).
+ *
+ * Must filter on `publicVisible` like every other public read path. Milestone
+ * ticks written by `goals.toggleMilestone` are auto-approved, but `updates.add`
+ * accepts an owner-supplied `milestoneId` on note/image/link updates, and those
+ * are created `publicVisible: false` — and stay false when moderation rejects
+ * them. Without this filter the query hands pending and rejected content to
+ * anonymous callers: both arguments are public (`public.getGoalBySlug` returns
+ * the goal `_id` plus the whole `milestones` array).
+ */
 export const listForMilestone = query({
   args: { goalId: v.id("goals"), milestoneId: v.string() },
-  handler: async (ctx, { goalId, milestoneId }) =>
-    ctx.db
+  handler: async (ctx, { goalId, milestoneId }) => {
+    const rows = await ctx.db
       .query("updates")
       .withIndex("by_goal_milestone_created", (q) =>
         q.eq("goalId", goalId).eq("milestoneId", milestoneId)
       )
       .order("desc")
-      .collect(),
+      .collect();
+    return rows.filter((u) => u.publicVisible === true);
+  },
 });
 
 /** Public: a small activity slice without transferring an entire timeline. */

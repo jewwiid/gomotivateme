@@ -177,7 +177,16 @@ export default defineSchema({
     .index("by_handle", ["ownerHandle"])
     .index("by_moderation_status_created", ["moderationStatus", "createdAt"])
     .index("by_public_created", ["visibility", "status", "createdAt"])
+    /**
+     * Recency feed. `by_public_created` cannot serve this: it lists `status`
+     * before `createdAt`, so a query that pins only `visibility` comes back
+     * sorted by status first (descending: paused, draft, completed, closed,
+     * active) and only then by date — which buries active goals at the end.
+     * This index pins visibility and sorts purely by date.
+     */
+    .index("by_visibility_created", ["visibility", "createdAt"])
     .index("by_category_status", ["category", "status"])
+    .index("by_category_created", ["category", "createdAt"])
     .searchIndex("search_title", {
       searchField: "title",
       filterFields: ["status", "category", "visibility"],

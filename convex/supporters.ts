@@ -33,8 +33,8 @@ export const join = mutation({
     }
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
-    if (!goal.publicEnabled && goal.visibility !== "public") {
-      // publicEnabled is legacy; visibility is the source of truth now.
+    if (goal.status === "draft") {
+      throw new Error("This campaign hasn't launched yet");
     }
     if (goal.status === "closed" || goal.status === "completed") {
       throw new Error("This campaign isn't accepting new supporters");
@@ -127,16 +127,31 @@ export const leave = mutation({
   },
 });
 
-/** List supporters for a goal (public). Newest first. */
+/**
+ * List supporters for a goal (public). Newest first.
+ *
+ * Bounded rather than an unbounded `.collect()`. `userId` is included on
+ * purpose: the supporter wall resolves it to a public profile for the avatar
+ * and name, and those profiles are public already.
+ */
 export const listForGoal = query({
   args: { goalId: v.id("goals"), limit: v.optional(v.number()) },
   handler: async (ctx, { goalId, limit }) => {
+    const take = Math.min(Math.max(limit ?? 50, 1), 200);
     const all = await ctx.db
       .query("supporters")
       .withIndex("by_goal", (q) => q.eq("goalId", goalId))
-      .collect();
+      .take(take * 2);
     all.sort((a, b) => b.createdAt - a.createdAt);
-    return all.slice(0, limit ?? 50);
+    return all.slice(0, take).map((s) => ({
+      _id: s._id,
+      goalId: s.goalId,
+      userId: s.userId,
+      supportType: s.supportType,
+      pledge: s.pledge,
+      checkInFrequency: s.checkInFrequency,
+      createdAt: s.createdAt,
+    }));
   },
 });
 

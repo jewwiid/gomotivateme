@@ -365,8 +365,14 @@ export const update = mutation({
     // fields are locked — supporters signed up for a specific metric. Changing
     // targetValue / startValue / unit / direction / progressType mid-run would
     // invalidate the commitment. Owners should close the goal and start a new one.
-    const hasTraction =
-      (goal.supporterCount ?? 0) > 0 || (goal.currentValue ?? 0) > 0;
+    // "Progress logged" means the value has actually moved off its starting
+    // point — not merely that it's non-zero. `create` seeds
+    // `currentValue = startValue`, so a `> 0` test locks every goal with a
+    // non-zero start (weight loss 100 → 80, "5 books → 50") the instant it's
+    // created, leaving the owner unable to correct a typo.
+    const hasProgress =
+      (goal.currentValue ?? 0) !== (goal.startValue ?? 0);
+    const hasTraction = (goal.supporterCount ?? 0) > 0 || hasProgress;
     const lockedFields: string[] = [];
     if (hasTraction) {
       if (args.targetValue !== undefined && args.targetValue !== goal.targetValue)
@@ -398,7 +404,14 @@ export const update = mutation({
     if (args.story !== undefined) patch.story = args.story.trim() || undefined;
     if (args.targetDate !== undefined) patch.targetDate = args.targetDate;
     if (args.supporterTarget !== undefined) patch.supporterTarget = args.supporterTarget;
-    if (args.supportTypes !== undefined) patch.supportTypes = args.supportTypes;
+    if (args.supportTypes !== undefined) {
+      // `create` filters these against the allowlist; without the same filter
+      // here an unknown chip reaches the schema validator and surfaces as a
+      // raw Convex error instead of a clean rejection.
+      patch.supportTypes = args.supportTypes.filter((t) =>
+        SUPPORT_TYPES.includes(t as (typeof SUPPORT_TYPES)[number])
+      );
+    }
     if (args.visibility !== undefined) patch.visibility = args.visibility;
     if (args.publicMotivatorPolicy !== undefined) {
       patch.publicMotivatorPolicy = args.publicMotivatorPolicy;
@@ -408,6 +421,43 @@ export const update = mutation({
     if (args.startValue !== undefined) patch.startValue = args.startValue;
     if (args.unit !== undefined) patch.unit = args.unit;
     if (args.direction !== undefined) patch.direction = args.direction;
+
+    // Re-run the coherence checks `create` enforces. These fields are only
+    // editable before a goal has traction, but until now nothing stopped an
+    // owner setting start === target or putting the target on the wrong side
+    // of the direction — which makes `computeProgress` fall into its
+    // degenerate branch and silently report 0% forever.
+    if (
+      args.targetValue !== undefined ||
+      args.startValue !== undefined ||
+      args.direction !== undefined
+    ) {
+      const nextStart = (patch.startValue ?? goal.startValue ?? 0) as number;
+      const nextTarget = (patch.targetValue ?? goal.targetValue) as number;
+      const nextDirection = (patch.direction ?? goal.direction) as
+        | "increase"
+        | "decrease";
+      if (!Number.isFinite(nextStart) || !Number.isFinite(nextTarget)) {
+        throw new Error("Start and target must be numbers");
+      }
+      if (goal.progressType === "number") {
+        if (nextStart === nextTarget) {
+          throw new Error("Start and target must differ");
+        }
+        if (
+          nextDirection === "decrease"
+            ? nextTarget >= nextStart
+            : nextTarget <= nextStart
+        ) {
+          throw new Error(
+            "Target is on the wrong side of start for the chosen direction"
+          );
+        }
+      }
+    }
+    if (args.targetDate !== undefined && args.targetDate <= Date.now()) {
+      throw new Error("Target date must be in the future");
+    }
     if (needsModeration) {
       patch.moderationStatus = "pending";
       patch.moderationReason = undefined;
@@ -606,7 +656,23 @@ export const remove = mutation({
       if (intent.goalId === goalId) await ctx.db.delete(intent._id);
     }
 
-    for (const table of ["reactions", "badges", "supporters", "supportMessages"] as const) {
+    // Every table carrying a `goalId` + `by_goal` index. The Motivation
+    // Circle tables were missing here, so deleting a goal left motivators
+    // holding pledges, invites, applications and check-ins pointing at a
+    // row that no longer exists — their dashboards would render entries for
+    // a goal nobody can open. `reports` is included so a deleted goal
+    // doesn't leave unresolvable items in the moderation queue.
+    for (const table of [
+      "reactions",
+      "badges",
+      "supporters",
+      "supportMessages",
+      "motivatorInvites",
+      "motivatorPledges",
+      "motivatorApplications",
+      "checkIns",
+      "reports",
+    ] as const) {
       const rows = await ctx.db
         .query(table as any)
         .withIndex("by_goal" as any, (q: any) => q.eq("goalId", goalId))
@@ -625,8 +691,15 @@ export const logStreakDay = mutation({
   args: {
     goalId: v.id("goals"),
     note: v.optional(v.string()),
+    /**
+     * The caller's `new Date().getTimezoneOffset()` — minutes *behind* UTC
+     * (UTC-7 sends 420). Needed because "did I already log today?" has to be
+     * answered in the user's day, not the server's. Optional so older clients
+     * keep working; omitted means UTC.
+     */
+    tzOffsetMinutes: v.optional(v.number()),
   },
-  handler: async (ctx, { goalId, note }) => {
+  handler: async (ctx, { goalId, note, tzOffsetMinutes }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
     const goal = await ctx.db.get(goalId);
@@ -635,17 +708,25 @@ export const logStreakDay = mutation({
     if (goal.progressType !== "streak") throw new Error("This goal isn't a streak");
 
     const now = Date.now();
-    const today = new Date(now);
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    // Convex runs in UTC, so `new Date(y, m, d)` here yields UTC midnight —
+    // not the user's. That let someone at UTC-7 log twice for one local day
+    // (their 8am and 6pm straddle UTC midnight) while someone at UTC+13 was
+    // blocked early. Shift into the caller's wall clock, floor to their
+    // midnight, then shift back to a real UTC instant.
+    const offsetMs = (tzOffsetMinutes ?? 0) * 60_000;
+    const DAY_MS = 86_400_000;
+    const todayStart =
+      Math.floor((now - offsetMs) / DAY_MS) * DAY_MS + offsetMs;
 
-    // Check if already logged today.
-    const recentUpdates = await ctx.db
+    // Range-scan from today's boundary instead of reading the goal's entire
+    // history — a year-long streak would otherwise read 365+ docs per log.
+    const todaysUpdates = await ctx.db
       .query("updates")
-      .withIndex("by_goal_created", (q) => q.eq("goalId", goalId))
+      .withIndex("by_goal_created", (q) =>
+        q.eq("goalId", goalId).gte("createdAt", todayStart)
+      )
       .collect();
-    const alreadyLoggedToday = recentUpdates.some(
-      (u) => u.type === "value" && u.createdAt >= todayStart
-    );
+    const alreadyLoggedToday = todaysUpdates.some((u) => u.type === "value");
     if (alreadyLoggedToday) throw new Error("Already logged today");
 
     const newValue = (goal.currentValue ?? 0) + 1;
@@ -735,6 +816,20 @@ export const recordValue = mutation({
     const goal = await ctx.db.get(goalId);
     if (!goal || goal.ownerId !== userId) throw new Error("Not found");
     if (goal.status !== "active") throw new Error("This goal isn't active");
+    // Mirror the guard in `logStreakDay`. Without it this mutation writes
+    // `currentValue` directly on any goal type: on a milestones goal that
+    // sidesteps the checklist entirely and can flip the goal to "completed"
+    // — firing the targetHit email and the completion fan-out to every
+    // supporter and motivator — with no milestone actually ticked. On a
+    // streak goal it bypasses the once-per-day check.
+    if (goal.progressType !== "number") {
+      throw new Error(
+        goal.progressType === "milestones"
+          ? "This goal tracks milestones — tick them off instead of logging a value"
+          : "This goal tracks a streak — use the daily log instead"
+      );
+    }
+    if (!Number.isFinite(value)) throw new Error("Value must be a number");
 
     const now = Date.now();
     const updateId = await ctx.db.insert("updates", {
@@ -819,18 +914,94 @@ export const recordValue = mutation({
   },
 });
 
+
+/**
+ * Collect the people who should hear about a change to a goal.
+ *
+ * Followers = active motivators (committed tier) + supporters (casual tier),
+ * deduped by userId so someone who is both gets one email rather than two.
+ * The owner is always excluded. Each candidate is then gated on their own
+ * notification prefs:
+ *   - motivators: `yourMotivations`
+ *   - supporters: `supportedGoalUpdates`
+ *   - someone who is both passes if either is on
+ *   - `unsubscribedAll` is handled downstream by `emails.enqueue`
+ *
+ * This used to be copy-pasted three times, once per fan-out below, which
+ * meant a fix to the gating logic had to be made in three places to hold.
+ */
+async function collectNotifiableFollowers(ctx: any, goalId: any, ownerId: any) {
+  const followerMap = new Map<
+    string,
+    { userId: any; isMotivator: boolean; isSupporter: boolean }
+  >();
+
+  const pledges = await ctx.db
+    .query("motivatorPledges")
+    .withIndex("by_goal_status", (q: any) =>
+      q.eq("goalId", goalId).eq("status", "active")
+    )
+    .collect();
+  for (const pledge of pledges) {
+    if (pledge.userId === ownerId) continue;
+    const entry = followerMap.get(pledge.userId);
+    if (entry) entry.isMotivator = true;
+    else
+      followerMap.set(pledge.userId, {
+        userId: pledge.userId,
+        isMotivator: true,
+        isSupporter: false,
+      });
+  }
+
+  const supporters = await ctx.db
+    .query("supporters")
+    .withIndex("by_goal", (q: any) => q.eq("goalId", goalId))
+    .collect();
+  for (const supporter of supporters) {
+    if (supporter.userId === ownerId) continue;
+    const entry = followerMap.get(supporter.userId);
+    if (entry) entry.isSupporter = true;
+    else
+      followerMap.set(supporter.userId, {
+        userId: supporter.userId,
+        isMotivator: false,
+        isSupporter: true,
+      });
+  }
+
+  const recipients: Array<{ userId: any; email: string; name: string }> = [];
+  for (const [, { userId, isMotivator, isSupporter }] of followerMap) {
+    const follower = await ctx.db.get(userId);
+    if (!follower?.email) continue;
+    const prefs = await ctx.runMutation(internal.notificationPrefs.getForUser, {
+      userId,
+    });
+    if (prefs) {
+      const motivatorOk = isMotivator && (prefs.yourMotivations ?? true);
+      const supporterOk = isSupporter && (prefs.supportedGoalUpdates ?? true);
+      if (!motivatorOk && !supporterOk) continue;
+    }
+    recipients.push({
+      userId,
+      email: follower.email,
+      name: follower.name ?? follower.handle ?? "there",
+    });
+  }
+  return recipients;
+}
+
+/** Owner's display name for fan-out copy. */
+async function ownerDisplayName(ctx: any, ownerId: any) {
+  const owner = await ctx.db.get(ownerId);
+  return owner?.name ?? owner?.handle ?? "Someone";
+}
+
 /**
  * Email C4 — fan out a "new update" notification to a goal's followers.
  *
- * Followers = active motivators (committed tier) + supporters (casual tier).
- * Deduped by userId — if someone is both a motivator and a supporter, they
- * get one email, not two. Each recipient's notification prefs are checked:
- *   - motivators: gated by `yourMotivations` pref
- *   - supporters: gated by `supportedGoalUpdates` pref
- *   - both suppressed by `unsubscribedAll` (handled by emails.enqueue)
- *
  * Called via scheduler from:
- *   - recordValue (auto-approved value-only updates)
+ *   - recordValue / logStreakDay (auto-approved value-only updates)
  *   - moderation.applyUpdateDecision (when note/image/media updates are approved)
  */
 export const notifyFollowersOfUpdate = internalMutation({
@@ -842,89 +1013,28 @@ export const notifyFollowersOfUpdate = internalMutation({
   handler: async (ctx, { goalId, ownerId, updateId }) => {
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
-    const owner = await ctx.db.get(ownerId);
-    const ownerName = owner?.name ?? owner?.handle ?? "Someone";
+    const ownerName = await ownerDisplayName(ctx, ownerId);
 
     // Resolve update excerpt + value label if we have an updateId.
     let updateExcerpt: string | undefined;
     let valueLabel: string | undefined;
     if (updateId) {
       const update = await ctx.db.get(updateId);
-      if (update?.note) {
-        updateExcerpt = update.note.slice(0, 200);
-      }
+      if (update?.note) updateExcerpt = update.note.slice(0, 200);
       if (update?.value !== undefined) {
         valueLabel = `${update.value} / ${goal.targetValue} ${goal.unit}`;
       }
     }
 
-    // Collect all follower userIds with their tier for pref gating.
-    const followerMap = new Map<
-      string,
-      { userId: any; isMotivator: boolean; isSupporter: boolean }
-    >();
-
-    // Active motivator pledges.
-    const pledges = await ctx.db
-      .query("motivatorPledges")
-      .withIndex("by_goal_status", (q) => q.eq("goalId", goalId).eq("status", "active"))
-      .collect();
-    for (const pledge of pledges) {
-      if (pledge.userId === ownerId) continue;
-      const entry = followerMap.get(pledge.userId);
-      if (entry) {
-        entry.isMotivator = true;
-      } else {
-        followerMap.set(pledge.userId, {
-          userId: pledge.userId,
-          isMotivator: true,
-          isSupporter: false,
-        });
-      }
-    }
-
-    // Supporters (casual tier).
-    const supporters = await ctx.db
-      .query("supporters")
-      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
-      .collect();
-    for (const supporter of supporters) {
-      if (supporter.userId === ownerId) continue;
-      const entry = followerMap.get(supporter.userId);
-      if (entry) {
-        entry.isSupporter = true;
-      } else {
-        followerMap.set(supporter.userId, {
-          userId: supporter.userId,
-          isMotivator: false,
-          isSupporter: true,
-        });
-      }
-    }
-
-    // Enqueue one email per follower, respecting prefs.
-    for (const [, { userId, isMotivator, isSupporter }] of followerMap) {
-      const follower = await ctx.db.get(userId);
-      if (!follower?.email) continue;
-
-      // Pref check: motivators need yourMotivations, supporters need supportedGoalUpdates.
-      // If someone is both, they get the email if either pref is on.
-      const prefs = await ctx.runMutation(internal.notificationPrefs.getForUser, {
-        userId,
-      });
-      if (prefs) {
-        const motivatorOk = isMotivator && (prefs.yourMotivations ?? true);
-        const supporterOk = isSupporter && (prefs.supportedGoalUpdates ?? true);
-        if (!motivatorOk && !supporterOk) continue;
-      }
-
+    const recipients = await collectNotifiableFollowers(ctx, goalId, ownerId);
+    for (const r of recipients) {
       await ctx.runMutation(internal.emails.enqueue, {
-        userId,
-        toEmail: follower.email,
+        userId: r.userId,
+        toEmail: r.email,
         templateId: "newUpdate",
         category: "lifecycle",
         payload: JSON.stringify({
-          motivatorName: follower.name ?? follower.handle ?? "there",
+          motivatorName: r.name,
           ownerName,
           goalTitle: goal.title,
           goalSlug: goal.slug,
@@ -937,14 +1047,9 @@ export const notifyFollowersOfUpdate = internalMutation({
 });
 
 /**
- * Fan out a "goal completed" email to a goal's followers (motivators +
- * supporters), reusing the `targetHit` template. Same dedupe + pref-gating
- * logic as `notifyFollowersOfUpdate`. Called via scheduler from:
- *   - recordValue / logStreakDay / toggleMilestone when the target is hit.
- *
- * Followers see "Hi {firstName}, {ownerName} hit their target on {goalTitle}"
- * via the targetHit template (which is generic enough to read as a
- * supporter-facing "they did it" message).
+ * Fan out a "goal completed" email, reusing the `targetHit` template — it is
+ * generic enough to read as a supporter-facing "they did it" message. Called
+ * via scheduler from recordValue / logStreakDay / toggleMilestone.
  */
 export const notifyFollowersOfCompletion = internalMutation({
   args: {
@@ -954,79 +1059,18 @@ export const notifyFollowersOfCompletion = internalMutation({
   handler: async (ctx, { goalId, ownerId }) => {
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
-    const owner = await ctx.db.get(ownerId);
-    const ownerName = owner?.name ?? owner?.handle ?? "Someone";
 
-    // Collect all follower userIds with their tier for pref gating.
-    const followerMap = new Map<
-      string,
-      { userId: any; isMotivator: boolean; isSupporter: boolean }
-    >();
-
-    // Active motivator pledges.
-    const pledges = await ctx.db
-      .query("motivatorPledges")
-      .withIndex("by_goal_status", (q) => q.eq("goalId", goalId).eq("status", "active"))
-      .collect();
-    for (const pledge of pledges) {
-      if (pledge.userId === ownerId) continue;
-      const entry = followerMap.get(pledge.userId);
-      if (entry) {
-        entry.isMotivator = true;
-      } else {
-        followerMap.set(pledge.userId, {
-          userId: pledge.userId,
-          isMotivator: true,
-          isSupporter: false,
-        });
-      }
-    }
-
-    // Supporters (casual tier).
-    const supporters = await ctx.db
-      .query("supporters")
-      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
-      .collect();
-    for (const supporter of supporters) {
-      if (supporter.userId === ownerId) continue;
-      const entry = followerMap.get(supporter.userId);
-      if (entry) {
-        entry.isSupporter = true;
-      } else {
-        followerMap.set(supporter.userId, {
-          userId: supporter.userId,
-          isMotivator: false,
-          isSupporter: true,
-        });
-      }
-    }
-
-    // Enqueue one email per follower, respecting prefs.
-    for (const [, { userId, isMotivator, isSupporter }] of followerMap) {
-      const follower = await ctx.db.get(userId);
-      if (!follower?.email) continue;
-
-      // Pref check: motivators need yourMotivations, supporters need
-      // supportedGoalUpdates. If someone is both, they get the email if
-      // either pref is on.
-      const prefs = await ctx.runMutation(internal.notificationPrefs.getForUser, {
-        userId,
-      });
-      if (prefs) {
-        const motivatorOk = isMotivator && (prefs.yourMotivations ?? true);
-        const supporterOk = isSupporter && (prefs.supportedGoalUpdates ?? true);
-        if (!motivatorOk && !supporterOk) continue;
-      }
-
+    const recipients = await collectNotifiableFollowers(ctx, goalId, ownerId);
+    for (const r of recipients) {
       await ctx.runMutation(internal.emails.enqueue, {
-        userId,
-        toEmail: follower.email,
+        userId: r.userId,
+        toEmail: r.email,
         templateId: "targetHit",
         category: "lifecycle",
         payload: JSON.stringify({
-          // The targetHit template greets by ownerName; for followers we
-          // pass the follower's name so it reads "Hi {follower}".
-          ownerName: follower.name ?? follower.handle ?? "there",
+          // The targetHit template greets by `ownerName`; for followers we
+          // pass the follower's own name so it reads "Hi {follower}".
+          ownerName: r.name,
           goalTitle: goal.title,
           goalSlug: goal.slug,
           unit: goal.unit,
@@ -1038,11 +1082,10 @@ export const notifyFollowersOfCompletion = internalMutation({
 });
 
 /**
- * Fan out a "goal status changed" email to a goal's followers when the
- * owner pauses or closes the goal. Reuses the `newUpdate` template (the
- * closest semantic match: "an update on a goal you're following") with a
- * status-change excerpt. Same dedupe + pref-gating logic as
- * `notifyFollowersOfUpdate`. Called via scheduler from `setStatus`.
+ * Fan out a "goal status changed" email when the owner pauses or closes the
+ * goal. Reuses the `newUpdate` template (closest semantic match: "an update on
+ * a goal you're following") with a status-change excerpt. Called via scheduler
+ * from `setStatus`.
  */
 export const notifyFollowersOfStatusChange = internalMutation({
   args: {
@@ -1059,87 +1102,26 @@ export const notifyFollowersOfStatusChange = internalMutation({
   handler: async (ctx, { goalId, ownerId, newStatus, pausedReason }) => {
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
-    const owner = await ctx.db.get(ownerId);
-    const ownerName = owner?.name ?? owner?.handle ?? "Someone";
+    const ownerName = await ownerDisplayName(ctx, ownerId);
 
-    // Build a human-readable excerpt for the status change.
     const excerpt =
       newStatus === "paused"
         ? pausedReason
           ? `${ownerName} paused this goal: ${pausedReason}`
           : `${ownerName} pressed pause on this goal.`
         : newStatus === "closed"
-        ? `${ownerName} closed this goal.`
-        : `${ownerName} changed this goal's status to ${newStatus}.`;
+          ? `${ownerName} closed this goal.`
+          : `${ownerName} changed this goal's status to ${newStatus}.`;
 
-    // Collect all follower userIds with their tier for pref gating.
-    const followerMap = new Map<
-      string,
-      { userId: any; isMotivator: boolean; isSupporter: boolean }
-    >();
-
-    // Active motivator pledges.
-    const pledges = await ctx.db
-      .query("motivatorPledges")
-      .withIndex("by_goal_status", (q) => q.eq("goalId", goalId).eq("status", "active"))
-      .collect();
-    for (const pledge of pledges) {
-      if (pledge.userId === ownerId) continue;
-      const entry = followerMap.get(pledge.userId);
-      if (entry) {
-        entry.isMotivator = true;
-      } else {
-        followerMap.set(pledge.userId, {
-          userId: pledge.userId,
-          isMotivator: true,
-          isSupporter: false,
-        });
-      }
-    }
-
-    // Supporters (casual tier).
-    const supporters = await ctx.db
-      .query("supporters")
-      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
-      .collect();
-    for (const supporter of supporters) {
-      if (supporter.userId === ownerId) continue;
-      const entry = followerMap.get(supporter.userId);
-      if (entry) {
-        entry.isSupporter = true;
-      } else {
-        followerMap.set(supporter.userId, {
-          userId: supporter.userId,
-          isMotivator: false,
-          isSupporter: true,
-        });
-      }
-    }
-
-    // Enqueue one email per follower, respecting prefs.
-    for (const [, { userId, isMotivator, isSupporter }] of followerMap) {
-      const follower = await ctx.db.get(userId);
-      if (!follower?.email) continue;
-
-      // Pref check: motivators need yourMotivations, supporters need
-      // supportedGoalUpdates. If someone is both, they get the email if
-      // either pref is on.
-      const prefs = await ctx.runMutation(internal.notificationPrefs.getForUser, {
-        userId,
-      });
-      if (prefs) {
-        const motivatorOk = isMotivator && (prefs.yourMotivations ?? true);
-        const supporterOk = isSupporter && (prefs.supportedGoalUpdates ?? true);
-        if (!motivatorOk && !supporterOk) continue;
-      }
-
+    const recipients = await collectNotifiableFollowers(ctx, goalId, ownerId);
+    for (const r of recipients) {
       await ctx.runMutation(internal.emails.enqueue, {
-        userId,
-        toEmail: follower.email,
+        userId: r.userId,
+        toEmail: r.email,
         templateId: "newUpdate",
         category: "lifecycle",
         payload: JSON.stringify({
-          motivatorName: follower.name ?? follower.handle ?? "there",
+          motivatorName: r.name,
           ownerName,
           goalTitle: goal.title,
           goalSlug: goal.slug,

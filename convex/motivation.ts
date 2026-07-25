@@ -52,6 +52,35 @@ const inviteFields = v.object({
   expiresAt: v.number(),
 });
 
+/**
+ * Throw unless `userId` is the person this invite was addressed to.
+ *
+ * Precedence matches how invites get populated: `invitedUserId` is set once
+ * the creator's typed email resolves to a real account, so it wins. Failing
+ * that we compare the typed `email` against the signed-in user's, case- and
+ * whitespace-insensitively. An invite carrying neither was created without a
+ * named recipient and stays open to any holder of the link.
+ */
+async function assertInviteAddressee(ctx: any, invite: any, userId: any) {
+  if (invite.invitedUserId) {
+    if (invite.invitedUserId !== userId) {
+      throw new Error("This invitation was sent to someone else");
+    }
+    return;
+  }
+  const invitedEmail = invite.email?.trim().toLowerCase();
+  if (!invitedEmail) return; // open invite — no named recipient
+  const user = await ctx.db.get(userId);
+  const userEmail = (user as { email?: string } | null)?.email
+    ?.trim()
+    .toLowerCase();
+  if (userEmail !== invitedEmail) {
+    throw new Error(
+      `This invitation was sent to ${invite.email}. Sign in with that address to accept it.`
+    );
+  }
+}
+
 /** Public: look up an invite by its one-time token (for the landing page). */
 export const getInviteByToken = query({
   args: { token: v.string() },
@@ -62,10 +91,31 @@ export const getInviteByToken = query({
       .first();
     if (!invite) return null;
     // Soft-expire reads.
-    if (invite.status === "pending" && invite.expiresAt < Date.now()) {
-      return { ...invite, status: "expired" as const };
-    }
-    return invite;
+    const status =
+      invite.status === "pending" && invite.expiresAt < Date.now()
+        ? ("expired" as const)
+        : invite.status;
+    // Project rather than spreading the row. Invite links get pasted into
+    // group chats, and the raw document carries the recipient's email address
+    // — everyone in that thread would see it. `email` is replaced by a
+    // boolean the landing page can use to explain who the invite is for.
+    return {
+      _id: invite._id,
+      goalId: invite.goalId,
+      goalTitle: invite.goalTitle,
+      // Echoed back for convenience — the caller had to supply it to get here.
+      token: invite.token,
+      creatorId: invite.creatorId,
+      name: invite.name,
+      proposedRole: invite.proposedRole,
+      proposedFrequency: invite.proposedFrequency,
+      personalMessage: invite.personalMessage,
+      status,
+      createdAt: invite.createdAt,
+      expiresAt: invite.expiresAt,
+      /** True when the invite is bound to a specific address (see acceptInvite). */
+      isAddressed: Boolean(invite.invitedUserId || invite.email?.trim()),
+    };
   },
 });
 
@@ -141,6 +191,31 @@ export const acceptInvite = mutation({
       throw new Error("You can't accept an invite to your own goal");
     }
 
+    // Bind the invite to its addressee. Without this the token is a bearer
+    // credential: anyone the link is forwarded to becomes a core motivator,
+    // and since `goals.launch` gates on the count of active core pledges,
+    // one person accepting several links satisfies `coreMotivatorMin` alone.
+    // An invite with neither `invitedUserId` nor `email` was created without
+    // a specific recipient, so it stays open to whoever holds the link.
+    await assertInviteAddressee(ctx, invite, userId);
+
+    // One pledge per (goal, user). Creators send up to six invites, so
+    // without this the same person could accept several and be counted
+    // several times toward the launch gate.
+    // Same active/paused convention as `approveApplication` — a completed or
+    // removed pledge doesn't block rejoining.
+    const goalPledges = await ctx.db
+      .query("motivatorPledges")
+      .withIndex("by_goal", (q) => q.eq("goalId", invite.goalId))
+      .collect();
+    const alreadyMotivating = goalPledges.some(
+      (p) =>
+        p.userId === userId && (p.status === "active" || p.status === "paused")
+    );
+    if (alreadyMotivating) {
+      throw new Error("You're already a motivator on this goal");
+    }
+
     const now = Date.now();
     const pledgeId = await ctx.db.insert("motivatorPledges", {
       goalId: invite.goalId,
@@ -207,6 +282,9 @@ export const declineInvite = mutation({
     if (invite.status !== "pending") {
       throw new Error("This invitation is no longer pending");
     }
+    // Same binding as accept — otherwise anyone the link is forwarded to can
+    // burn someone else's invitation.
+    await assertInviteAddressee(ctx, invite, userId);
     await ctx.db.patch(invite._id, {
       status: "declined",
       invitedUserId: userId,
@@ -333,6 +411,15 @@ export const listActiveMotivators = query({
     const result = await Promise.all(
       pledges.map(async (p) => {
         const u = await ctx.db.get(p.userId);
+        // This query is public (it backs the motivator strip on /o/[slug]),
+        // so the user projection must never include the email address. The
+        // UI only ever wanted a label, so resolve the display name here —
+        // including the old email local-part fallback — and keep the address
+        // server-side.
+        const name = (u as { name?: string } | null)?.name ?? null;
+        const handle = (u as { handle?: string } | null)?.handle ?? null;
+        const emailLocalPart =
+          (u as { email?: string } | null)?.email?.split("@")[0] ?? null;
         return {
           _id: p._id,
           role: p.role,
@@ -344,8 +431,9 @@ export const listActiveMotivators = query({
           user: u
             ? {
                 _id: u._id,
-                name: (u as { name?: string }).name ?? null,
-                email: (u as { email?: string }).email ?? null,
+                name,
+                handle,
+                displayName: name ?? handle ?? emailLocalPart ?? "Motivator",
                 image: (u as { image?: string }).image ?? null,
               }
             : null,

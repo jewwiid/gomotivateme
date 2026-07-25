@@ -105,7 +105,7 @@ export function MotivationCircleWidget({
             );
           }
           return (
-            <Avatar key={m._id} name={(m.user as any)?.name ?? (m.user as any)?.handle ?? "Motivator"} image={m.user?.image ?? null} />
+            <Avatar key={m._id} name={m.user?.displayName ?? "Motivator"} image={m.user?.image ?? null} />
           );
         })}
       </div>
@@ -127,7 +127,7 @@ export function MotivationCircleWidget({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <div className="truncate text-xs font-semibold text-zinc-900">
-                      {(m.user as any)?.name ?? (m.user as any)?.handle ?? "Motivator"}
+                      {m.user?.displayName ?? "Motivator"}
                     </div>
                     <div className="text-[10px] text-zinc-500">
                       {meta.label} · {FREQ_LABEL[m.checkInFrequency] ?? m.checkInFrequency}
@@ -164,7 +164,7 @@ export function MotivationCircleWidget({
                     <span className={`${meta.color}`}>
                       <meta.icon size={10} />
                     </span>
-                    {m.user?.name ?? m.user?.email?.split("@")[0] ?? "Motivator"}
+                    {m.user?.displayName ?? "Motivator"}
                   </span>
                 );
               })}

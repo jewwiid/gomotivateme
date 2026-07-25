@@ -1077,7 +1077,13 @@ function StreakForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => voi
         setBusy(true);
         setErr(null);
         try {
-          await logStreakDay({ goalId, note: note || undefined });
+          // Send the browser's UTC offset so "already logged today" is
+          // evaluated against the user's day, not the server's.
+          await logStreakDay({
+            goalId,
+            note: note || undefined,
+            tzOffsetMinutes: new Date().getTimezoneOffset(),
+          });
           onDone();
         } catch (e) {
           setErr(e instanceof Error ? e.message : "Could not log streak day");

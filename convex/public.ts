@@ -86,7 +86,7 @@ export const listRecentPublic = query({
     const take = limit ?? 24;
     const goals = await ctx.db
       .query("goals")
-      .withIndex("by_public_created", (q) => q.eq("visibility", "public"))
+      .withIndex("by_visibility_created", (q) => q.eq("visibility", "public"))
       .order("desc")
       .take(take * 4);
 
@@ -127,7 +127,7 @@ export const listByCategory = query({
     const take = limit ?? 24;
     const all = await ctx.db
       .query("goals")
-      .withIndex("by_category_status", (q) => q.eq("category", category))
+      .withIndex("by_category_created", (q) => q.eq("category", category))
       .order("desc")
       .take(take * 4);
     return all
@@ -175,7 +175,7 @@ export const searchPublicGoals = query({
     // we'd swap to the searchIndex + filterFields combo on the goals table.
     const recent = await ctx.db
       .query("goals")
-      .withIndex("by_public_created", (qq) => qq.eq("visibility", "public"))
+      .withIndex("by_visibility_created", (qq) => qq.eq("visibility", "public"))
       .order("desc")
       .take(Math.max(take, 200));
 
@@ -228,10 +228,18 @@ export const searchPublicGoals = query({
 export const countByCategory = query({
   args: {},
   handler: async (ctx) => {
+    // Bounded scan over the most recent public goals. An unbounded
+    // `.collect()` reads every public goal on every /explore load and would
+    // eventually exceed Convex's per-query read limit. Counts therefore
+    // reflect the newest CATEGORY_COUNT_WINDOW goals, which is what the
+    // Categories tab is for; exact lifetime totals would need a maintained
+    // counter table.
+    const CATEGORY_COUNT_WINDOW = 1000;
     const all = await ctx.db
       .query("goals")
-      .withIndex("by_public_created", (q) => q.eq("visibility", "public"))
-      .collect();
+      .withIndex("by_visibility_created", (q) => q.eq("visibility", "public"))
+      .order("desc")
+      .take(CATEGORY_COUNT_WINDOW);
     const counts: Record<string, number> = {};
     for (const g of all) {
       if (g.status === "draft" || g.status === "closed" || !isModerationApproved(g)) continue;
