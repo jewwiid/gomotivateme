@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { ArrowRight, Plus, Sparkles, Users } from "lucide-react";
 import { api } from "@/convex/_generated/api";
-import { Header } from "@/components/Header";
+import { DashboardWorkspaceShell } from "@/components/DashboardWorkspaceShell";
 import { GoalCard } from "@/components/GoalCard";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -25,46 +25,44 @@ function DashboardContent() {
   const supporters = goals?.reduce((sum: number, goal: any) => sum + (goal.supporterCount ?? 0), 0) ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
-      <Header />
-
-      <main className="mx-auto grid max-w-[90rem] gap-12 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
+    <DashboardWorkspaceShell active="goals">
+      <main className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <p className="brand-kicker">Dashboard</p>
-            <div className="mt-3 flex flex-wrap items-end justify-between gap-6">
+            <p className="brand-kicker">My goals</p>
+            <div className="mt-2 flex flex-wrap items-end justify-between gap-5">
               <div>
-                <h1 className="font-display text-balance text-5xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl">
+                <h1 className="font-display text-balance text-4xl font-bold leading-[0.96] tracking-[-0.055em] sm:text-5xl">
                   Your goals, your pace.
                 </h1>
-                <p className="mt-4 max-w-xl text-base leading-7 text-[#686963]">
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[#686963]">
                   See what's next and let your people know how to help.
                 </p>
               </div>
               <Link
                 href="/dashboard/new"
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(4,77,252,0.16)] transition hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)]"
+                className="workspace-button-primary w-auto px-5"
               >
                 Start a goal <Plus size={16} />
               </Link>
             </div>
           </motion.div>
 
-          <dl className="mt-12 grid divide-y divide-[#deddd6] border-y border-[#deddd6] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <dl className="workspace-card mt-7 grid divide-y divide-[var(--color-border)] overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <DashboardStat value={goals?.length ?? 0} label="total goals" loading={goals === undefined} />
             <DashboardStat value={activeGoals} label="active" loading={goals === undefined} />
             <DashboardStat value={supporters} label="supporters" loading={goals === undefined} />
           </dl>
 
-          <section className="mt-12">
+          <section className="mt-8">
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="brand-kicker">Your goals</p>
-                <h2 className="mt-2 font-display text-3xl font-bold tracking-[-0.045em]">All goals</h2>
+                <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.04em]">All goals</h2>
               </div>
               {goals && goals.length > 3 && (
                 <span className="text-sm text-[#777872]">{goals.length} in total</span>
@@ -72,7 +70,7 @@ function DashboardContent() {
             </div>
 
             {goals === undefined ? (
-              <div className="mt-7 divide-y divide-[#deddd6] border-y border-[#deddd6]">
+              <div className="workspace-card mt-5 divide-y divide-[var(--color-border)] overflow-hidden">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="h-36 animate-pulse bg-[#f4f3ed]" />
                 ))}
@@ -80,7 +78,7 @@ function DashboardContent() {
             ) : goals.length === 0 ? (
               <EmptyState />
             ) : (
-              <div className="mt-7 divide-y divide-[#deddd6] border-y border-[#deddd6]">
+              <div className="workspace-card mt-5 divide-y divide-[var(--color-border)] overflow-hidden px-4">
                 {goals.map((goal: any, i: number) => (
                   <motion.div
                     key={goal._id}
@@ -96,28 +94,30 @@ function DashboardContent() {
           </section>
         </div>
 
-        <aside className="border-t border-[#deddd6] pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-1">
-          <div className="flex items-center justify-between">
+        <aside className="space-y-4">
+          <section className="workspace-card p-5">
+            <div className="flex items-center justify-between">
             <h2 className="font-display text-xl font-bold tracking-[-0.035em]">Your circle</h2>
             <Users size={18} className="text-[var(--color-primary)]" />
-          </div>
-          <p className="mt-3 text-sm leading-6 text-[#686963]">
-            The people you show up for, and the people showing up for you.
-          </p>
-          <Link
-            href="/motivate"
-            className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3"
-          >
-            See your commitments <ArrowRight size={15} />
-          </Link>
-          <Link
-            href="/dashboard/supporting"
-            className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3"
-          >
-            Goals you're supporting <ArrowRight size={15} />
-          </Link>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-[#686963]">
+              The people you show up for, and the people showing up for you.
+            </p>
+            <Link
+              href="/motivate"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3"
+            >
+              See your commitments <ArrowRight size={15} />
+            </Link>
+            <Link
+              href="/dashboard/supporting"
+              className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3"
+            >
+              Goals you're supporting <ArrowRight size={15} />
+            </Link>
+          </section>
 
-          <div className="mt-12 border-t border-[#deddd6] pt-8">
+          <section className="workspace-card p-5">
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-[#c68d00]" />
               <h2 className="font-display text-xl font-bold tracking-[-0.035em]">Post an update</h2>
@@ -133,16 +133,16 @@ function DashboardContent() {
                 View your profile <ArrowRight size={15} />
               </Link>
             )}
-          </div>
+          </section>
         </aside>
       </main>
-    </div>
+    </DashboardWorkspaceShell>
   );
 }
 
 function DashboardStat({ value, label, loading }: { value: number; label: string; loading: boolean }) {
   return (
-    <div className="px-0 py-5 first:pt-5 sm:px-7 sm:first:pl-0 sm:last:pr-0">
+    <div className="px-5 py-5 sm:px-6">
       <dt className="text-sm text-[#686963]">{label}</dt>
       <dd className="mt-1 font-display text-4xl font-bold tracking-[-0.05em] tabular-nums">
         {loading ? "—" : value}
@@ -153,7 +153,7 @@ function DashboardStat({ value, label, loading }: { value: number; label: string
 
 function EmptyState() {
   return (
-    <div className="mt-7 grid place-items-center border-y border-[#deddd6] px-6 py-16 text-center">
+    <div className="workspace-card mt-5 grid place-items-center px-6 py-14 text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/illustrations/empty-new-beginning-v3.webp"

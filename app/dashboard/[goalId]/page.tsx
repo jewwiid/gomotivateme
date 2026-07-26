@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -31,24 +31,117 @@ import { useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
-import { CategoryIcon } from "@/components/CategoryIcon";
 import { MotivationCircleManager } from "@/components/MotivationCircleManager";
 import { ApplicationQueue } from "@/components/ApplicationQueue";
-import { ProgressBar } from "@/components/ProgressBar";
-import { BadgeChip } from "@/components/BadgeChip";
 import { UpdateCard } from "@/components/UpdateCard";
-import { DualProgress } from "@/components/DualProgress";
 import { MilestonesList } from "@/components/MilestonesList";
+import {
+  OwnerGoalWorkspace,
+  type OwnerUpdateKind,
+} from "@/components/OwnerGoalWorkspace";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 import { prepareProgressImage } from "@/lib/media";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function GoalDetailPage() {
+  const searchParams = useSearchParams();
+  const showDesignPreview =
+    process.env.NODE_ENV !== "production" &&
+    searchParams.get("designPreview") === "1";
+
+  if (showDesignPreview) {
+    return <GoalDetailDesignPreview />;
+  }
+
   return (
     <RequireAuth>
       <GoalDetailContent />
     </RequireAuth>
+  );
+}
+
+function GoalDetailDesignPreview() {
+  const [copied, setCopied] = useState(false);
+  const [updates, setUpdates] = useState<any[]>([
+    {
+      _id: "preview-update-1",
+      type: "note",
+      note: "Defined the MVP and shared the first feature set.",
+      createdAt: Date.now() - 2 * 60 * 60 * 1000,
+    },
+    {
+      _id: "preview-update-2",
+      type: "milestone",
+      note: "Research complete — seven interviews captured.",
+      createdAt: Date.now() - 20 * 60 * 60 * 1000,
+    },
+  ]);
+  const publicUrl = "/o/jude/launch-gomotivateme";
+  const previewGoal = {
+    title: "Launch GoMotivateMe",
+    summary:
+      "Building a platform where people put their goals on the line: public, accountable, supported.",
+    category: "Creative",
+    status: "active",
+    currentValue: 1,
+    targetValue: 4,
+    supporterCount: 1,
+    coreMotivatorMin: 6,
+    milestones: [
+      { id: "research", title: "Research", done: true },
+      { id: "plan", title: "Plan", done: false },
+      { id: "execute", title: "Execute", done: false },
+      { id: "complete", title: "Complete", done: false },
+    ],
+  };
+
+  return (
+    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+      <Header previewUser={{ name: "Jude Okun", handle: "jude" }} />
+      <OwnerGoalWorkspace
+        goal={previewGoal}
+        coverUrl="/illustrations/hero-community-v3.webp"
+        owner={{ name: "Jude Okun" }}
+        progress={25}
+        publicUrl={publicUrl}
+        linkCopied={copied}
+        updates={updates}
+        supporters={[
+          {
+            _id: "preview-supporter",
+            supportType: "encourage",
+            pledge: "Regular check-ins",
+            createdAt: Date.now() - 9 * 60 * 60 * 1000,
+          },
+        ]}
+        motivators={[]}
+        supporterName="Jewel Cage"
+        onCopyLink={() => {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1500);
+        }}
+        onOpenUpdate={(kind) => {
+          document
+            .querySelector<HTMLTextAreaElement>('textarea[placeholder="What progress have you made?"]')
+            ?.focus();
+          if (kind === "milestone") {
+            document.getElementById("milestones")?.scrollIntoView({ behavior: "smooth" });
+          }
+        }}
+        onPostUpdate={async (note) => {
+          setUpdates((current) => [
+            {
+              _id: `preview-update-${Date.now()}`,
+              type: "note",
+              note,
+              createdAt: Date.now(),
+            },
+            ...current,
+          ]);
+        }}
+      />
+    </div>
   );
 }
 
@@ -68,16 +161,17 @@ function GoalDetailContent() {
   const goalId = params.goalId as Id<"goals">;
   const router = useRouter();
 
-  const { user: _user } = useCurrentUser();
+  const { user } = useCurrentUser();
   const goal = useQuery(api.goals.getMine, { goalId });
   const updates = useQuery(api.updates.listForOwner, { goalId });
-  const badges = useQuery(api.badges.listForGoal, { goalId });
-  const stats = useQuery(api.reactions.publicStats, { goalId });
   const supporters = useQuery(api.supporters.listForOwner, { goalId });
   const supportMessages = useQuery(api.supportMessages.listForOwner, { goalId });
-
-  const hideMessage = useMutation(api.supportMessages.hide);
-  const removeMessage = useMutation(api.supportMessages.remove);
+  const motivators = useQuery(api.motivation.listActiveMotivators, { goalId });
+  const addUpdate = useMutation(api.updates.add);
+  const coverImageUrls = useQuery(
+    api.storage.getUrls,
+    goal?.coverImageId ? { ids: [goal.coverImageId] } : "skip"
+  );
 
   const updateImageIds = useMemo(() => {
     const ids = new Set<Id<"_storage">>();
@@ -101,8 +195,6 @@ function GoalDetailContent() {
   const [showUpdate, setShowUpdate] = useState<null | "note" | "media" | "link" | "value" | "milestone" | "streak">(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
-  const [showAllSupporters, setShowAllSupporters] = useState(false);
-  const [moderatingMsgId, setModeratingMsgId] = useState<string | null>(null);
 
   const publicUrl = useMemo(() => {
     if (!goal) return "";
@@ -120,6 +212,10 @@ function GoalDetailContent() {
     } catch {
       // ignore
     }
+  };
+
+  const postQuickUpdate = async (note: string) => {
+    await addUpdate({ goalId, type: "note", note });
   };
 
   if (goal === undefined) {
@@ -151,388 +247,187 @@ function GoalDetailContent() {
   }
 
   const progress = computeProgress(goal);
-  const daysLeft = goal.targetDate
-    ? Math.ceil((goal.targetDate - Date.now()) / (1000 * 60 * 60 * 24))
+  const ownerName = user?.name ?? user?.handle ?? goal.ownerName ?? "Goal owner";
+  const coverUrl = goal.coverImageId
+    ? coverImageUrls?.[goal.coverImageId] ?? null
     : null;
-  const supporterCount = goal.supporterCount ?? 0;
-  const supporterTarget = goal.supporterTarget ?? null;
-  const isCompleted = goal.status === "completed";
-  const isPaused = goal.status === "paused";
-  const isClosed = goal.status === "closed";
+  const supporterName =
+    motivators?.[0]?.user?.displayName ??
+    motivators?.[0]?.user?.name ??
+    undefined;
 
   return (
     <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
       <Header />
-      <main className="mx-auto max-w-[80rem] px-5 py-12 sm:px-8 sm:py-16">
-        <Link
-          href="/dashboard"
-          className="mb-10 inline-flex items-center gap-1.5 text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
-        >
-          <ArrowLeft size={14} />
-          Back to goals
-        </Link>
 
-        {/* Status badge */}
-        <div className="mb-3 flex items-center gap-2">
-          <StatusPill status={goal.status} />
-          {isPaused && goal.pausedReason && (
-            <span className="text-xs text-[var(--color-text-muted)]">· {goal.pausedReason}</span>
-          )}
-        </div>
-
-        {/* Header card */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="border-b border-[#deddd6] pb-10"
-        >
-          <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#777872]">
-            <CategoryIcon category={goal.category} size={12} />
-            {goal.category}
-          </div>
-          <h1 className="max-w-4xl font-display text-balance text-4xl font-bold leading-[0.94] tracking-[-0.06em] sm:text-6xl">{goal.title}</h1>
-          {goal.summary && (
-            <p className="mt-4 max-w-2xl text-base leading-7 text-[#686963]">{goal.summary}</p>
-          )}
-          {goal.story && (
-            <p className="mt-3 max-w-3xl line-clamp-3 text-sm leading-6 text-[#777872]">{goal.story}</p>
-          )}
-          {goal.moderationStatus && goal.moderationStatus !== "approved" && (
-            <div className={`mt-5 max-w-2xl rounded-xl border px-4 py-3 text-sm ${
+      {goal.moderationStatus && goal.moderationStatus !== "approved" ? (
+        <div className="mx-auto mt-4 max-w-[92rem] px-4 sm:px-6">
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
               goal.moderationStatus === "rejected"
                 ? "border-red-200 bg-red-50 text-red-800"
                 : "border-amber-200 bg-amber-50 text-amber-800"
-            }`}>
-              <span className="font-semibold">
-                {goal.moderationStatus === "pending" ? "Your goal is being checked." : goal.moderationStatus === "review" ? "Your goal needs a safety review." : "Your goal is not public."}
-              </span>{" "}
-              {goal.moderationReason ?? "Only you can see it until this is resolved."}
-            </div>
-          )}
-
-          <div className="mt-5">
-            <DualProgress
-              goalPct={progress}
-              supporterCount={supporterCount}
-              supporterTarget={supporterTarget}
-              goalLabel={
-                goal.progressType === "milestones"
-                  ? `${goal.currentValue} of ${goal.targetValue} milestones`
-                  : goal.progressType === "streak"
-                  ? `${goal.currentValue} day streak`
-                  : `${formatNumber(goal.currentValue ?? 0)} of ${formatNumber(goal.targetValue ?? 0)} ${goal.unit}`
-              }
-              unit={goal.unit}
-            />
+            }`}
+          >
+            <span className="font-semibold">
+              {goal.moderationStatus === "pending"
+                ? "Your goal is being checked."
+                : goal.moderationStatus === "review"
+                ? "Your goal needs a safety review."
+                : "Your goal is not public."}
+            </span>{" "}
+            {goal.moderationReason ?? "Only you can see it until this is resolved."}
           </div>
+        </div>
+      ) : null}
 
-          {badges && badges.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] pt-4">
-              <span className="mr-1 inline-flex items-center gap-1 text-xs text-[var(--color-text-dim)]">
-                <Trophy size={11} />
-                Milestones
-              </span>
-              {badges
-                .sort((a: any, b: any) => a.tier - b.tier)
-                .map((b: any) => (
-                  <BadgeChip key={b._id} tier={b.tier} awardedAt={b.awardedAt} />
+      <OwnerGoalWorkspace
+        goal={goal}
+        coverUrl={coverUrl}
+        owner={{ name: ownerName, image: user?.image ?? null }}
+        progress={progress}
+        publicUrl={publicUrl}
+        linkCopied={linkCopied}
+        updates={updates}
+        supporters={supporters}
+        motivators={motivators}
+        supporterName={supporterName}
+        onCopyLink={onCopyLink}
+        onOpenUpdate={(kind: OwnerUpdateKind) => setShowUpdate(kind)}
+        onPostUpdate={postQuickUpdate}
+        milestoneEditor={
+          goal.progressType === "milestones" &&
+          goal.milestones &&
+          goal.milestones.length > 0 ? (
+            <div className="workspace-card p-5">
+              <MilestonesList
+                goalId={goalId}
+                milestones={goal.milestones}
+                isOwner={true}
+                currentValue={goal.currentValue ?? 0}
+                targetValue={goal.targetValue ?? 0}
+                unit={goal.unit}
+                embedded
+              />
+            </div>
+          ) : undefined
+        }
+        updatesArchive={
+          <div className="workspace-card p-5">
+            <h2 className="text-lg font-bold text-[#292a26]">All updates</h2>
+            {updates === undefined ? (
+              <div className="mt-4 h-32 animate-pulse rounded-2xl bg-[#f2f0e9]" />
+            ) : updates.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-dashed border-[var(--color-border-strong)] p-6 text-center text-sm text-[var(--color-text-muted)]">
+                No updates yet. Share what moved forward to start the timeline.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {updates.map((update: any, index: number) => (
+                  <UpdateCard
+                    key={update._id}
+                    update={update}
+                    imageUrl={update.imageId ? updateImageUrlOf(update.imageId) : null}
+                    imageUrlOf={updateImageUrlOf}
+                    unit={goal.unit}
+                    direction={goal.direction}
+                    index={index}
+                  />
                 ))}
-            </div>
-          )}
-
-          {/* Status actions */}
-          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[#deddd6] pt-5">
-            {!isCompleted && !isClosed && (
-              <button
-                onClick={() => setShowStatus(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#c9c8c0] bg-white px-4 py-2 text-xs font-semibold text-[#454540] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              >
-                {isPaused ? <PlayCircle size={12} /> : <PauseCircle size={12} />}
-                {isPaused ? "Resume" : "Pause / complete"}
-              </button>
-            )}
-            {daysLeft !== null && (
-              <span className="text-xs text-[var(--color-text-dim)]">
-                {daysLeft < 0
-                  ? `${Math.abs(daysLeft)}d overdue`
-                  : daysLeft === 0
-                  ? "Due today"
-                  : `${daysLeft}d left`}
-              </span>
+              </div>
             )}
           </div>
-
-          {/* Share link */}
-          <div className="mt-6 border-y border-dashed border-[#c9c8c0] py-4">
-            <p className="mb-1.5 text-xs font-medium text-[var(--color-text-muted)]">
-              Your public link
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-md bg-[var(--color-bg)] px-2 py-1.5 font-mono text-xs text-[var(--color-text)]">
-                {publicUrl}
-              </code>
-              <button
-                onClick={onCopyLink}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-              >
-                {linkCopied ? <Check size={12} /> : <Copy size={12} />}
-                {linkCopied ? "Copied" : "Copy"}
-              </button>
-              <Link
-                href={`/o/${goal.ownerHandle ?? ""}/${goal.slug}`}
-                target="_blank"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#c9c8c0] px-4 py-2 text-xs font-semibold text-[#454540] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-              >
-                <ExternalLink size={12} />
-                Open
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Motivation Circle — pre-launch + active */}
-        <div className="mt-6">
+        }
+        supporterInbox={
+          supporters && supporters.length > 0 ? (
+            <SupporterInbox
+              supporters={supporters}
+              supportMessages={supportMessages ?? []}
+            />
+          ) : undefined
+        }
+        circleManager={
           <MotivationCircleManager
             goalId={goalId}
             goalStatus={goal.status}
             coreMotivatorMin={goal.coreMotivatorMin ?? 3}
             preLaunchDeadline={goal.preLaunchDeadline}
           />
-        </div>
-
-        {/* Public motivator application queue (owner only) */}
-        {goal.publicMotivatorPolicy !== "disabled" && (
-          <div className="mt-4">
+        }
+        applicationQueue={
+          goal.publicMotivatorPolicy !== "disabled" ? (
             <ApplicationQueue goalId={goalId} />
-          </div>
-        )}
-
-        {/* Status modal */}
-        <AnimatePresence>
-          {showStatus && (
-            <StatusModal
+          ) : undefined
+        }
+        settingsPanel={
+          <>
+            <div className="workspace-card flex flex-wrap items-center justify-between gap-4 p-5">
+              <div>
+                <p className="text-sm font-bold text-[#292a26]">Goal status</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <StatusPill status={goal.status} />
+                  {goal.status === "paused" && goal.pausedReason ? (
+                    <span className="text-xs text-[var(--color-text-muted)]">
+                      {goal.pausedReason}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              {goal.status !== "completed" && goal.status !== "closed" ? (
+                <button
+                  type="button"
+                  onClick={() => setShowStatus(true)}
+                  className="workspace-button-secondary w-auto px-5"
+                >
+                  {goal.status === "paused" ? (
+                    <PlayCircle size={15} aria-hidden />
+                  ) : (
+                    <PauseCircle size={15} aria-hidden />
+                  )}
+                  {goal.status === "paused" ? "Resume goal" : "Pause or complete"}
+                </button>
+              ) : null}
+            </div>
+            <GoalSettings
               goalId={goalId}
-              currentStatus={goal.status}
-              onClose={() => setShowStatus(false)}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Goal settings (cover + story + support types + target) */}
-        <GoalSettings
-          goalId={goalId}
-          title={goal.title}
-          summary={goal.summary}
-          story={goal.story}
-          coverImageId={goal.coverImageId}
-          supporterTarget={goal.supporterTarget}
-          supportTypes={goal.supportTypes}
-          visibility={goal.visibility}
-          targetValue={goal.targetValue}
-          startValue={goal.startValue}
-          unit={goal.unit}
-          direction={goal.direction}
-          progressType={goal.progressType}
-          supporterCount={goal.supporterCount ?? 0}
-          currentValue={goal.currentValue ?? 0}
-          onDeleted={() => router.push("/dashboard")}
-        />
-
-        {/* Milestones (if milestone template) */}
-        {goal.progressType === "milestones" && goal.milestones && goal.milestones.length > 0 && (
-          <div className="mt-10 border-y border-[#deddd6] py-7">
-            <h2 className="mb-4 font-display text-2xl font-bold tracking-[-0.04em]">
-              Milestones
-            </h2>
-            <MilestonesList
-              goalId={goalId}
-              milestones={goal.milestones}
-              isOwner={true}
+              title={goal.title}
+              summary={goal.summary}
+              story={goal.story}
+              coverImageId={goal.coverImageId}
+              supporterTarget={goal.supporterTarget}
+              supportTypes={goal.supportTypes ?? []}
+              visibility={goal.visibility}
+              targetValue={goal.targetValue}
+              startValue={goal.startValue}
+              unit={goal.unit}
+              direction={goal.direction}
+              progressType={goal.progressType}
+              supporterCount={goal.supporterCount ?? 0}
               currentValue={goal.currentValue ?? 0}
-              targetValue={goal.targetValue ?? 0}
-              unit={goal.unit}
+              onDeleted={() => router.push("/dashboard")}
             />
-          </div>
-        )}
+          </>
+        }
+      />
 
-        {/* Quick add */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="mt-6"
-        >
-          <h2 className="mb-4 font-display text-2xl font-bold tracking-[-0.04em]">
-            Log progress
-          </h2>
-          <div className="grid divide-x divide-[#deddd6] border-y border-[#deddd6] sm:grid-cols-4">
-            <QuickAddButton
-              icon={TrendingUp}
-              label={goal.progressType === "streak" ? "Mark today" : "New value"}
-              onClick={() => setShowUpdate(goal.progressType === "streak" ? "streak" : "value")}
-              disabled={goal.progressType !== "number" && goal.progressType !== "streak"}
-            />
-            <QuickAddButton
-              icon={MessageSquare}
-              label="Note"
-              onClick={() => setShowUpdate("note")}
-            />
-            <QuickAddButton
-              icon={ImageIcon}
-              label="Media"
-              onClick={() => setShowUpdate("media")}
-            />
-            <QuickAddButton
-              icon={LinkIcon}
-              label="Link"
-              onClick={() => setShowUpdate("link")}
-            />
-          </div>
-        </motion.div>
-
-        {/* Update modal */}
-        <AnimatePresence>
-          {showUpdate && (
-            <UpdateModal
-              type={showUpdate}
-              goalId={goalId}
-              unit={goal.unit}
-              milestones={goal.milestones ?? []}
-              onClose={() => setShowUpdate(null)}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Supporters inbox */}
-        {supporters && supporters.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-            className="mt-10"
-          >
-            <h2 className="mb-3 text-sm font-medium text-[var(--color-text-muted)]">
-              Your support team ({supporters.length})
-            </h2>
-            <div className="space-y-2">
-              {(showAllSupporters ? supporters : supporters.slice(0, 10)).map((s: any) => {
-                const msg = supportMessages?.find((m: any) => m.authorId === s.userId && !m.hiddenAt);
-                return (
-                  <div
-                    key={s._id}
-                    className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3"
-                  >
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{supportTypeLabel(s.supportType)}</span>
-                      <span className="text-xs text-[var(--color-text-dim)]">
-                        {relativeTime(s.createdAt)}
-                      </span>
-                    </div>
-                    {s.pledge && (
-                      <p className="mt-1 text-xs italic text-[var(--color-text-muted)]">"{s.pledge}"</p>
-                    )}
-                    {msg && (
-                      <div className="mt-1.5">
-                        <p className="text-sm text-[var(--color-text)]">{msg.body}</p>
-                        <div className="mt-1.5 flex items-center gap-2">
-                          {moderatingMsgId === msg._id ? (
-                            <span className="inline-flex items-center gap-2 text-[11px]">
-                              <button
-                                onClick={async () => {
-                                  await hideMessage({ messageId: msg._id });
-                                  setModeratingMsgId(null);
-                                }}
-                                className="font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                              >
-                                Confirm hide
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  await removeMessage({ messageId: msg._id });
-                                  setModeratingMsgId(null);
-                                }}
-                                className="font-medium text-[var(--color-danger)] hover:opacity-70"
-                              >
-                                Confirm delete
-                              </button>
-                              <button
-                                onClick={() => setModeratingMsgId(null)}
-                                className="text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
-                              >
-                                Cancel
-                              </button>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-2 text-[11px]">
-                              <button
-                                onClick={() => setModeratingMsgId(msg._id)}
-                                className="font-medium text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
-                              >
-                                Hide
-                              </button>
-                              <span className="text-[var(--color-border)]">·</span>
-                              <button
-                                onClick={() => setModeratingMsgId(msg._id)}
-                                className="font-medium text-[var(--color-text-dim)] hover:text-[var(--color-danger)]"
-                              >
-                                Delete
-                              </button>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            {supporters.length > 10 && (
-              <button
-                onClick={() => setShowAllSupporters((v) => !v)}
-                className="mt-3 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
-              >
-                {showAllSupporters
-                  ? "Show fewer"
-                  : `Show all ${supporters.length} supporters`}
-              </button>
-            )}
-          </motion.div>
-        )}
-
-        {/* Public timeline preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="mt-10"
-        >
-          <h2 className="mb-3 text-sm font-medium text-[var(--color-text-muted)]">
-            Public timeline
-          </h2>
-          {updates === undefined ? (
-            <div className="h-32 animate-pulse rounded-2xl bg-[var(--color-bg-card)]" />
-          ) : updates.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)]/40 p-6 text-center text-sm text-[var(--color-text-dim)]">
-              No updates yet. Log a value or post a note to start the timeline.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {updates.map((u: any, i: number) => (
-                <UpdateCard
-                  key={u._id}
-                  update={u}
-                  imageUrl={u.imageId ? updateImageUrlOf(u.imageId) : null}
-                  imageUrlOf={updateImageUrlOf}
-                  unit={goal.unit}
-                  direction={goal.direction}
-                  index={i}
-                />
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </main>
+      <AnimatePresence>
+        {showStatus ? (
+          <StatusModal
+            goalId={goalId}
+            currentStatus={goal.status}
+            onClose={() => setShowStatus(false)}
+          />
+        ) : null}
+        {showUpdate ? (
+          <UpdateModal
+            type={showUpdate}
+            goalId={goalId}
+            unit={goal.unit}
+            milestones={goal.milestones ?? []}
+            onClose={() => setShowUpdate(null)}
+          />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -665,27 +560,130 @@ function computeProgress(g: any) {
   return Math.max(0, Math.min(100, (moved / total) * 100));
 }
 
-function QuickAddButton({
-  icon: Icon,
-  label,
-  onClick,
-  disabled,
+function SupporterInbox({
+  supporters,
+  supportMessages,
 }: {
-  icon: typeof TrendingUp;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
+  supporters: any[];
+  supportMessages: any[];
 }) {
+  const hideMessage = useMutation(api.supportMessages.hide);
+  const removeMessage = useMutation(api.supportMessages.remove);
+  const [showAll, setShowAll] = useState(false);
+  const [moderatingMessageId, setModeratingMessageId] = useState<string | null>(
+    null
+  );
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="group flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40"
-    >
-      <Icon size={14} />
-      {label}
-    </button>
+    <div className="workspace-card p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-[#292a26]">Supporter inbox</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Encouragement and check-ins from the people behind this goal.
+          </p>
+        </div>
+        <span className="rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-bold text-[var(--color-primary)]">
+          {supporters.length}
+        </span>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {(showAll ? supporters : supporters.slice(0, 6)).map((supporter: any) => {
+          const message = supportMessages.find(
+            (item: any) =>
+              item.authorId === supporter.userId && !item.hiddenAt
+          );
+          return (
+            <div
+              key={supporter._id}
+              className="rounded-xl border border-[var(--color-border)] bg-[#fbfaf6] p-4"
+            >
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="font-bold text-[#30312d]">
+                  {supportTypeLabel(supporter.supportType)}
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {relativeTime(supporter.createdAt)}
+                </span>
+              </div>
+              {supporter.pledge ? (
+                <p className="mt-2 text-sm italic leading-5 text-[var(--color-text-muted)]">
+                  “{supporter.pledge}”
+                </p>
+              ) : null}
+              {message ? (
+                <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+                  <p className="text-sm leading-6 text-[var(--color-text)]">
+                    {message.body}
+                  </p>
+                  <div className="mt-2 flex items-center gap-3 text-xs">
+                    {moderatingMessageId === message._id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await hideMessage({ messageId: message._id });
+                            setModeratingMessageId(null);
+                          }}
+                          className="font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                        >
+                          Confirm hide
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await removeMessage({ messageId: message._id });
+                            setModeratingMessageId(null);
+                          }}
+                          className="font-bold text-[var(--color-danger)]"
+                        >
+                          Confirm delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModeratingMessageId(null)}
+                          className="text-[var(--color-text-muted)]"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setModeratingMessageId(message._id)}
+                          className="font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                        >
+                          Hide
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModeratingMessageId(message._id)}
+                          className="font-bold text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      {supporters.length > 6 ? (
+        <button
+          type="button"
+          onClick={() => setShowAll((current) => !current)}
+          className="mt-4 min-h-11 text-sm font-bold text-[var(--color-primary)]"
+        >
+          {showAll ? "Show fewer" : `Show all ${supporters.length} supporters`}
+        </button>
+      ) : null}
+    </div>
   );
 }
 

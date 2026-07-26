@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Header } from "@/components/Header";
+import { DashboardWorkspaceShell } from "@/components/DashboardWorkspaceShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { CheckInComposer } from "@/components/CheckInComposer";
 
@@ -58,13 +58,12 @@ function MotivateContent() {
   if (goals) for (const goal of goals) goalTitleById.set(goal._id, goal.title);
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
-      <Header />
-      <main className="mx-auto grid max-w-[90rem] gap-12 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
+    <DashboardWorkspaceShell active="circle">
+      <main className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_19rem]">
         <section className="min-w-0">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <p className="brand-kicker">Your commitments</p>
-            <h1 className="mt-3 max-w-3xl font-display text-balance text-5xl font-bold leading-[0.92] tracking-[-0.06em] sm:text-7xl">
+            <h1 className="mt-2 max-w-3xl font-display text-balance text-4xl font-bold leading-[0.96] tracking-[-0.055em] sm:text-5xl">
               Goals you’re showing up for.
             </h1>
             <Link href="/explore" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">
@@ -73,13 +72,13 @@ function MotivateContent() {
           </motion.div>
 
           {pledges === undefined ? (
-            <div className="mt-10 divide-y divide-[#deddd6] border-y border-[#deddd6]">
+            <div className="workspace-card mt-7 divide-y divide-[var(--color-border)] overflow-hidden">
               {[0, 1, 2].map((i) => <div key={i} className="h-36 animate-pulse bg-[#f3f2ed]" />)}
             </div>
           ) : pledges.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="mt-10 divide-y divide-[#deddd6] border-y border-[#deddd6]">
+            <div className="workspace-card mt-7 divide-y divide-[var(--color-border)] overflow-hidden px-5">
               {pledges.map((pledge, index) => (
                 <MotivateRow
                   key={pledge._id}
@@ -92,7 +91,7 @@ function MotivateContent() {
           )}
         </section>
 
-        <aside className="border-t border-[#deddd6] pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-16">
+        <aside className="workspace-card p-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-[1.1rem] bg-[#fdf1ca] text-[#bf8500]">
             <Sparkles size={25} />
           </div>
@@ -102,7 +101,7 @@ function MotivateContent() {
           </p>
         </aside>
       </main>
-    </div>
+    </DashboardWorkspaceShell>
   );
 }
 
@@ -207,7 +206,7 @@ function timeAgoShort(ms: number): string {
 
 function EmptyState() {
   return (
-    <div className="mt-10 grid place-items-center border-y border-dashed border-[#c9c8c0] px-6 py-16 text-center">
+    <div className="workspace-card mt-7 grid place-items-center border-dashed px-6 py-16 text-center">
       <Sparkles size={28} className="text-[#c68d00]" />
       <h2 className="mt-4 font-display text-2xl font-bold tracking-[-0.035em]">No commitments yet</h2>
       <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#686963]">When someone invites you into their circle, their goal will appear here.</p>

@@ -15,9 +15,9 @@ import { notFound } from "next/navigation";
 export default async function LegacyGoalRedirect({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ handle: string }>;
 }) {
-  const { slug } = await params;
+  const { handle: slug } = await params;
 
   const convexUrl = process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL;
   if (!convexUrl) {

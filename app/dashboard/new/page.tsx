@@ -18,6 +18,9 @@ import {
   Globe,
   ImagePlus,
   ChevronRight,
+  BarChart3,
+  Flame,
+  ListChecks,
 } from "lucide-react";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
@@ -73,19 +76,19 @@ const PROGRESS_TEMPLATES = [
     id: "number" as const,
     label: "Number target",
     description: "Hit a specific number: kg, books, miles, days, dollars.",
-    icon: "📊",
+    icon: BarChart3,
   },
   {
     id: "streak" as const,
     label: "Daily streak",
     description: "Show up every day and watch the count climb.",
-    icon: "🔥",
+    icon: Flame,
   },
   {
     id: "milestones" as const,
     label: "Milestone checklist",
     description: "Tick off a series of named steps: research, draft, publish, etc.",
-    icon: "✅",
+    icon: ListChecks,
   },
 ];
 
@@ -348,33 +351,44 @@ function NewGoalContent() {
           {step === 2 && (
             <Step title="How will you measure progress?">
               <div className="space-y-2">
-                {PROGRESS_TEMPLATES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => {
-                      setProgressType(t.id);
-                      if (t.id === "streak") {
-                        setDirection("increase");
-                        setUnit("days");
-                      }
-                      if (t.id === "milestones") {
-                        setDirection("increase");
-                      }
-                    }}
-                    className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
-                      progressType === t.id
-                        ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                        : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
-                    }`}
-                  >
-                    <span className="text-2xl leading-none">{t.icon}</span>
-                    <div>
-                      <div className="text-sm font-semibold">{t.label}</div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{t.description}</div>
-                    </div>
-                  </button>
-                ))}
+                {PROGRESS_TEMPLATES.map((t) => {
+                  const Icon = t.icon;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setProgressType(t.id);
+                        if (t.id === "streak") {
+                          setDirection("increase");
+                          setUnit("days");
+                        }
+                        if (t.id === "milestones") {
+                          setDirection("increase");
+                        }
+                      }}
+                      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+                        progressType === t.id
+                          ? "border-[var(--color-primary)] bg-[#eef3ff]"
+                          : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                          progressType === t.id
+                            ? "bg-[#d9e3ff] text-[var(--color-primary)]"
+                            : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
+                        }`}
+                      >
+                        <Icon size={19} aria-hidden />
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold">{t.label}</div>
+                        <div className="text-xs text-[var(--color-text-muted)]">{t.description}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </Step>
           )}

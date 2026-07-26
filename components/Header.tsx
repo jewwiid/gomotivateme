@@ -20,17 +20,28 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Logo } from "@/components/Logo";
 import { Wordmark } from "@/components/Wordmark";
 
-export function Header() {
+export function Header({
+  previewUser,
+}: {
+  previewUser?: {
+    name: string;
+    handle?: string;
+    image?: string | null;
+  };
+} = {}) {
   const pathname = usePathname();
   const { user, isAuthenticated } = useCurrentUser();
   const { signOut } = useAuthActions();
+  const visibleUser = user ?? previewUser;
+  const hasAccount = Boolean((isAuthenticated && user) || previewUser);
 
   const isExplore = pathname?.startsWith("/explore");
   const isDashboard = pathname?.startsWith("/dashboard");
   const isMotivate = pathname?.startsWith("/motivate");
   const isSettings = pathname?.startsWith("/settings");
-  const accountLabel = user?.name?.split(" ")[0] || user?.handle || "Account";
-  const startGoalHref = user ? "/dashboard/new" : "/signup";
+  const accountLabel =
+    visibleUser?.name?.split(" ")[0] || visibleUser?.handle || "Account";
+  const startGoalHref = visibleUser ? "/dashboard/new" : "/signup";
 
   // ── Avatar dropdown state ──────────────────────────────────────────────
   const [menuOpen, setMenuOpen] = useState(false);
@@ -70,6 +81,7 @@ export function Header() {
 
   async function handleSignOut() {
     setMenuOpen(false);
+    if (previewUser) return;
     try {
       await signOut();
     } catch {
@@ -119,12 +131,9 @@ export function Header() {
 
   return (
     <motion.header
-      initial={{ y: -16, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
       className="sticky top-0 z-40 border-b border-[#e9e7df] bg-[#fffdf8]/95 backdrop-blur"
     >
-      <div className="relative mx-auto flex h-[4.25rem] max-w-[80rem] items-center px-5 sm:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
+      <div className="relative mx-auto flex h-[4.25rem] max-w-[96rem] items-center px-5 sm:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
         {/* Primary nav (public, hidden on mobile) — left column */}
         <nav
           aria-label="Primary navigation"
@@ -163,7 +172,7 @@ export function Header() {
           aria-label="Account navigation"
           className="flex shrink-0 items-center justify-end gap-4 text-sm font-medium text-[#31312e]"
         >
-          {isAuthenticated && user ? (
+          {hasAccount && visibleUser ? (
             <div className="relative">
               <button
                 ref={triggerRef}
@@ -175,8 +184,8 @@ export function Header() {
                 className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-1 transition hover:bg-[#f0eee5] hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
               >
                 <AvatarBubble
-                  image={user.image}
-                  name={user.name ?? user.handle ?? "?"}
+                  image={visibleUser.image ?? null}
+                  name={visibleUser.name ?? visibleUser.handle ?? "?"}
                 />
                 <span className="hidden sm:inline">{accountLabel}</span>
                 <ChevronDown
@@ -206,17 +215,17 @@ export function Header() {
                         hidden. */}
                     <div className="flex items-center gap-2.5 border-b border-[#efeee7] bg-[#fafaf6] px-3.5 py-3">
                       <AvatarBubble
-                        image={user.image}
-                        name={user.name ?? user.handle ?? "?"}
+                        image={visibleUser.image ?? null}
+                        name={visibleUser.name ?? visibleUser.handle ?? "?"}
                         size={9}
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-[#1f1f1c]">
-                          {user.name ?? accountLabel}
+                          {visibleUser.name ?? accountLabel}
                         </p>
-                        {user.handle ? (
+                        {visibleUser.handle ? (
                           <p className="truncate text-xs text-[#7a7c75]">
-                            @{user.handle}
+                            @{visibleUser.handle}
                           </p>
                         ) : null}
                       </div>

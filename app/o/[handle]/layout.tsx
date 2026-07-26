@@ -1,5 +1,5 @@
 /**
- * Pass-through layout for the legacy /o/[slug] redirect route.
+ * Pass-through layout for the legacy single-segment goal redirect route.
  * The page.tsx in this directory handles the redirect; this layout just
  * renders children unchanged.
  */

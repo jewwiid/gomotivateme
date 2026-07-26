@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { Heart, ArrowRight, Sparkles } from "lucide-react";
 import { api } from "@/convex/_generated/api";
-import { Header } from "@/components/Header";
+import { DashboardWorkspaceShell } from "@/components/DashboardWorkspaceShell";
 import { RequireAuth } from "@/components/RequireAuth";
 
 const SUPPORT_LABELS: Record<string, string> = {
@@ -28,16 +28,15 @@ function SupportingContent() {
   const supports = useQuery(api.supporters.listMySupports, {});
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
-      <Header />
-      <main className="mx-auto max-w-[60rem] px-5 py-14 sm:px-8 sm:py-20">
+    <DashboardWorkspaceShell active="supporting">
+      <main className="mx-auto max-w-[68rem]">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
           <p className="brand-kicker">Your support team memberships</p>
-          <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+          <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">
             Goals you're supporting
           </h1>
           <Link
@@ -49,13 +48,13 @@ function SupportingContent() {
         </motion.div>
 
         {supports === undefined ? (
-          <div className="mt-10 divide-y divide-[#deddd6] border-y border-[#deddd6]">
+          <div className="workspace-card mt-7 divide-y divide-[var(--color-border)] overflow-hidden">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-24 animate-pulse bg-[#f3f2ed]" />
             ))}
           </div>
         ) : supports.length === 0 ? (
-          <div className="mt-10 grid place-items-center border-y border-dashed border-[#c9c8c0] px-6 py-16 text-center">
+          <div className="workspace-card mt-7 grid place-items-center border-dashed px-6 py-16 text-center">
             <Heart size={28} className="text-[#c68d00]" />
             <h2 className="mt-4 font-display text-2xl font-bold tracking-[-0.035em]">
               No support yet
@@ -71,7 +70,7 @@ function SupportingContent() {
             </Link>
           </div>
         ) : (
-          <div className="mt-10 divide-y divide-[#deddd6] border-y border-[#deddd6]">
+          <div className="workspace-card mt-7 divide-y divide-[var(--color-border)] overflow-hidden px-5">
             {supports.map((s: any, i: number) => (
               <motion.div
                 key={s._id}
@@ -118,6 +117,6 @@ function SupportingContent() {
           </div>
         )}
       </main>
-    </div>
+    </DashboardWorkspaceShell>
   );
 }

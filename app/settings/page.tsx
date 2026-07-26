@@ -5,7 +5,6 @@ import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft,
   Check,
   Image as ImageIcon,
   Loader2,
@@ -16,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Header } from "@/components/Header";
+import { DashboardWorkspaceShell } from "@/components/DashboardWorkspaceShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { AvatarCropModal } from "@/components/AvatarCropModal";
 import {
@@ -37,63 +36,56 @@ export default function SettingsPage() {
 function SettingsContent() {
   const [tab, setTab] = useState<Tab>("account");
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
-      <Header />
-
-      <main className="mx-auto max-w-[48rem] px-5 py-14 sm:px-8 sm:py-20">
-        <Link
-          href="/dashboard"
-          className="mb-8 inline-flex items-center gap-1.5 text-sm text-[#6d6e69] transition hover:text-[var(--color-primary)]"
-        >
-          <ArrowLeft size={14} />
-          Back
-        </Link>
-
-        <h1 className="font-display text-5xl font-bold tracking-[-0.055em] sm:text-6xl">Settings</h1>
+    <DashboardWorkspaceShell active="settings">
+      <main className="mx-auto max-w-[52rem]">
+        <p className="brand-kicker">Account workspace</p>
+        <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.055em] sm:text-5xl">Settings</h1>
 
         {/* Tabs */}
-        <div className="mt-10 border-b border-[#d9d8d1]">
-          <div className="flex gap-8">
-            <TabButton
-              active={tab === "account"}
-              onClick={() => setTab("account")}
-            >
-              Account
-            </TabButton>
-            <TabButton
-              active={tab === "notifications"}
-              onClick={() => setTab("notifications")}
-            >
-              Notifications
-            </TabButton>
+        <div className="workspace-card mt-7 overflow-hidden">
+          <div className="border-b border-[#d9d8d1] px-5 pt-2">
+            <div className="flex gap-8">
+              <TabButton
+                active={tab === "account"}
+                onClick={() => setTab("account")}
+              >
+                Account
+              </TabButton>
+              <TabButton
+                active={tab === "notifications"}
+                onClick={() => setTab("notifications")}
+              >
+                Notifications
+              </TabButton>
+            </div>
+          </div>
+
+          <div className="p-5 sm:p-7">
+            <AnimatePresence mode="wait">
+              {tab === "account" ? (
+                <motion.div
+                  key="account"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <AccountTab />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="notifications"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <NotificationsTab />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-
-        <div className="mt-8">
-          <AnimatePresence mode="wait">
-            {tab === "account" ? (
-              <motion.div
-                key="account"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <AccountTab />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="notifications"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <NotificationsTab />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </main>
-    </div>
+    </DashboardWorkspaceShell>
   );
 }
 

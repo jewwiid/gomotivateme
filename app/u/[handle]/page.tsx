@@ -679,6 +679,7 @@ function GoalsGrid({
     _id: Id<"goals">;
     title: string;
     slug: string;
+    ownerHandle?: string;
     summary?: string;
     category: string;
     coverImageId?: Id<"_storage">;
@@ -769,6 +770,7 @@ function MotivationsList({
     goal: {
       _id: Id<"goals">;
       slug: string;
+      ownerHandle?: string;
       title: string;
       summary: string | null;
       category: string;

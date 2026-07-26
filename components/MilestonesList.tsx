@@ -21,6 +21,7 @@ export function MilestonesList({
   currentValue,
   targetValue,
   unit,
+  embedded = false,
 }: {
   goalId: Id<"goals">;
   milestones: Milestone[];
@@ -28,9 +29,10 @@ export function MilestonesList({
   currentValue: number;
   targetValue: number;
   unit: string;
+  embedded?: boolean;
 }) {
   return (
-    <section className="mt-10">
+    <section className={embedded ? "" : "mt-10"}>
       <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
         Milestones
         <span className="font-mono text-xs tabular-nums text-[var(--color-text-dim)]">
