@@ -21,42 +21,37 @@ type SupportType = "encourage" | "experience" | "advice" | "checkin" | "join";
 
 const SUPPORT_META: Record<
   SupportType,
-  { label: string; description: string; prompt: string; icon: typeof Heart; emoji: string }
+  { label: string; description: string; prompt: string; icon: typeof Heart }
 > = {
   encourage: {
     label: "Encourage them",
     description: "Cheer them on. Tell them why you believe they can do it.",
     prompt: "What would you like them to remember when motivation gets difficult?",
     icon: Heart,
-    emoji: "💛",
   },
   experience: {
     label: "Share relevant experience",
     description: "You've done something similar. Share what worked for you.",
     prompt: "Have you completed a similar goal? Share something that helped you.",
     icon: Sparkles,
-    emoji: "✨",
   },
   advice: {
     label: "Offer practical advice",
     description: "You have specific tips, resources, or know-how to offer.",
     prompt: "What's one concrete tip that would help them right now?",
     icon: Lightbulb,
-    emoji: "💡",
   },
   checkin: {
     label: "Check in regularly",
     description: "Commit to a non-financial pledge of your time and attention.",
     prompt: "How will you show up for them? (e.g. 'Every Sunday morning')",
     icon: Calendar,
-    emoji: "📆",
   },
   join: {
     label: "Join the challenge",
     description: "Do it together. Set your own version of the same goal.",
     prompt: "Tell them you'll be working on it alongside them.",
     icon: Users,
-    emoji: "🤝",
   },
 };
 
@@ -135,6 +130,7 @@ export function StructuredSupportComposer({
   // If the user is already a supporter, show a brief confirmation card instead.
   if (amISupporting && !open) {
     const meta = SUPPORT_META[amISupporting.supportType as SupportType] ?? SUPPORT_META.encourage;
+    const Icon = meta.icon;
     return (
       <motion.div
         initial={{ opacity: 0, y: 6 }}
@@ -142,7 +138,9 @@ export function StructuredSupportComposer({
         className="rounded-2xl border border-[var(--color-success)]/30 bg-[var(--color-success)]/5 p-4"
       >
         <div className="flex items-center gap-2">
-          <span className="text-xl">{meta.emoji}</span>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--color-success-soft)] text-[var(--color-success)]">
+            <Icon size={16} aria-hidden />
+          </span>
           <span className="text-sm font-semibold">
             You're supporting as "{meta.label.toLowerCase()}"
           </span>
@@ -354,8 +352,8 @@ export function StructuredSupportComposer({
                       : "border-[var(--color-border)] bg-[var(--color-bg-elev)] hover:border-[var(--color-border-strong)]"
                   }`}
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-bg)] text-base">
-                    {meta.emoji}
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-bg)] text-[var(--color-primary)]">
+                    <Icon size={16} aria-hidden />
                   </div>
                   <div>
                     <div className="text-sm font-semibold">{meta.label}</div>
@@ -385,8 +383,12 @@ export function StructuredSupportComposer({
             </button>
 
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3">
-              <div className="text-sm font-semibold">
-                {SUPPORT_META[supportType].emoji} {SUPPORT_META[supportType].label}
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                {(() => {
+                  const Icon = SUPPORT_META[supportType].icon;
+                  return <Icon size={16} className="text-[var(--color-primary)]" aria-hidden />;
+                })()}
+                {SUPPORT_META[supportType].label}
               </div>
               <div className="mt-1 text-xs text-[var(--color-text-muted)]">
                 {SUPPORT_META[supportType].prompt}

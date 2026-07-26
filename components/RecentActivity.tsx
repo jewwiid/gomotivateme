@@ -2,18 +2,18 @@
 
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Sparkles, TrendingUp, CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon } from "lucide-react";
+import { Dumbbell, Flame, Heart, MessageCircle, Sparkles, ThumbsUp, TrendingUp, CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { relativeTime } from "@/lib/format";
 
-const EMOJI_GLYPH: Record<string, string> = {
-  thumbsup: "👍",
-  muscle: "💪",
-  heart: "❤️",
-  fire: "🔥",
+const CHEER_META: Record<string, { icon: typeof ThumbsUp; label: string }> = {
+  thumbsup: { icon: ThumbsUp, label: "a cheer" },
+  muscle: { icon: Dumbbell, label: "a you-got-this" },
+  heart: { icon: Heart, label: "some love" },
+  fire: { icon: Flame, label: "an on-fire cheer" },
 };
 
 const SUPPORT_LABEL: Record<string, string> = {
@@ -156,9 +156,10 @@ function ActivityIcon({ item }: { item: ActivityItem }) {
     );
   }
   if (item.kind === "cheer") {
+    const Icon = (CHEER_META[item.emoji] ?? CHEER_META.thumbsup).icon;
     return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-base">
-        {EMOJI_GLYPH[item.emoji] ?? "👍"}
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+        <Icon size={13} strokeWidth={1.8} aria-hidden />
       </span>
     );
   }
@@ -224,10 +225,11 @@ function ActivityBody({ item }: { item: ActivityItem }) {
     );
   }
   if (item.kind === "cheer") {
+    const cheerLabel = (CHEER_META[item.emoji] ?? CHEER_META.thumbsup).label;
     return (
       <p className="text-zinc-700">
-        <span className="font-medium text-zinc-900">{item.name ?? "Someone"}</span> cheered with{" "}
-        <span className="text-base">{EMOJI_GLYPH[item.emoji] ?? "👍"}</span>
+        <span className="font-medium text-zinc-900">{item.name ?? "Someone"}</span> sent{" "}
+        {cheerLabel}
       </p>
     );
   }

@@ -4,12 +4,17 @@ import { useQuery, useMutation } from "convex/react";
 import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { useVisitorKey } from "@/lib/useVisitorKey";
+import { Dumbbell, Flame, Heart, ThumbsUp } from "lucide-react";
 
-const EMOJIS: { kind: "thumbsup" | "muscle" | "heart" | "fire"; glyph: string }[] = [
-  { kind: "thumbsup", glyph: "👍" },
-  { kind: "muscle", glyph: "💪" },
-  { kind: "heart", glyph: "❤️" },
-  { kind: "fire", glyph: "🔥" },
+const REACTIONS: {
+  kind: "thumbsup" | "muscle" | "heart" | "fire";
+  icon: typeof ThumbsUp;
+  label: string;
+}[] = [
+  { kind: "thumbsup", icon: ThumbsUp, label: "Cheer" },
+  { kind: "muscle", icon: Dumbbell, label: "You got this" },
+  { kind: "heart", icon: Heart, label: "Love this" },
+  { kind: "fire", icon: Flame, label: "On fire" },
 ];
 
 /**
@@ -42,7 +47,7 @@ export function UpdateReactions({
 
   return (
     <div className="mt-2 flex items-center gap-1">
-      {EMOJIS.map(({ kind, glyph }) => {
+      {REACTIONS.map(({ kind, icon: Icon, label }) => {
         const count = counts[kind] ?? 0;
         const active = myEmoji === kind;
         return (
@@ -55,10 +60,10 @@ export function UpdateReactions({
                 ? "bg-[var(--color-primary-soft)] ring-1 ring-[var(--color-primary)]/30"
                 : "hover:bg-zinc-100"
             }`}
-            aria-label={`React with ${glyph}`}
+            aria-label={label}
             aria-pressed={active}
           >
-            <span className="text-sm leading-none">{glyph}</span>
+            <Icon size={14} strokeWidth={1.8} aria-hidden />
             {count > 0 && (
               <span className="font-mono text-[10px] tabular-nums text-zinc-500">
                 {count}

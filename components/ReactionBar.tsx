@@ -3,17 +3,22 @@
 import { useMutation, useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { Dumbbell, Flame, Heart, ThumbsUp, X } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useVisitorKey } from "@/lib/useVisitorKey";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import Link from "next/link";
 
-const EMOJIS: Array<{ key: "thumbsup" | "muscle" | "heart" | "fire"; glyph: string; label: string }> = [
-  { key: "thumbsup", glyph: "👍", label: "Cheer" },
-  { key: "muscle", glyph: "💪", label: "You got this" },
-  { key: "heart", glyph: "❤️", label: "Love this" },
-  { key: "fire", glyph: "🔥", label: "On fire" },
+const REACTIONS: Array<{
+  key: "thumbsup" | "muscle" | "heart" | "fire";
+  icon: typeof ThumbsUp;
+  label: string;
+}> = [
+  { key: "thumbsup", icon: ThumbsUp, label: "Cheer" },
+  { key: "muscle", icon: Dumbbell, label: "You got this" },
+  { key: "heart", icon: Heart, label: "Love this" },
+  { key: "fire", icon: Flame, label: "On fire" },
 ];
 
 export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
@@ -37,7 +42,7 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
 
-  const onPick = async (emoji: typeof EMOJIS[number]["key"]) => {
+  const onPick = async (emoji: typeof REACTIONS[number]["key"]) => {
     if (!visitorKey) return;
     setBurst(emoji);
     const displayName = !isAuthenticated && nameInput.trim() ? nameInput.trim() : undefined;
@@ -83,7 +88,8 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
         </span>
       </div>
       <div className="grid grid-cols-4 gap-2">
-        {EMOJIS.map((e) => {
+        {REACTIONS.map((e) => {
+          const Icon = e.icon;
           const active = mine === e.key;
           const count = stats?.emojiCounts[e.key] ?? 0;
           return (
@@ -107,9 +113,9 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.6, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 380, damping: 18 }}
-                    className="text-2xl leading-none"
+                    className="grid h-7 w-7 place-items-center text-[var(--color-primary)]"
                   >
-                    {e.glyph}
+                    <Icon size={21} strokeWidth={1.8} aria-hidden />
                   </motion.span>
                 </AnimatePresence>
                 {burst === e.key && (
@@ -118,9 +124,9 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
                     animate={{ scale: 1.4, opacity: 1, y: -16 }}
                     exit={{ opacity: 0, y: -28 }}
                     transition={{ duration: 0.6 }}
-                    className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 text-2xl"
+                    className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 text-[var(--color-primary)]"
                   >
-                    {e.glyph}
+                    <Icon size={22} strokeWidth={1.8} aria-hidden />
                   </motion.span>
                 )}
               </span>
@@ -169,9 +175,7 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
                   className="rounded-full p-1.5 text-[var(--color-text-dim)] transition hover:text-[var(--color-text)]"
                   aria-label="Dismiss"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6 6 18M6 6l12 12" />
-                  </svg>
+                  <X size={14} aria-hidden />
                 </button>
               </div>
             </div>

@@ -2,16 +2,22 @@
 
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
+import { useState } from "react";
 
 export function StorySection({
   story,
   embedded = false,
+  compact = false,
 }: {
   story?: string;
   embedded?: boolean;
+  compact?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
   if (!story || story.trim().length === 0) return null;
   const paragraphs = story.split(/\n{2,}/g);
+  const visibleParagraphs =
+    compact && !expanded ? paragraphs.slice(0, 2) : paragraphs;
 
   return (
     <motion.section
@@ -49,12 +55,21 @@ export function StorySection({
             embedded ? "pl-8" : ""
           }`}
         >
-          {paragraphs.map((p, i) => (
+          {visibleParagraphs.map((p, i) => (
             <p key={i} className="whitespace-pre-wrap">
               {p}
             </p>
           ))}
         </div>
+        {compact && paragraphs.length > 2 ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="ml-8 mt-4 inline-flex min-h-10 items-center text-xs font-bold text-[var(--color-primary)] hover:underline"
+          >
+            {expanded ? "Show less" : "Read the full story"}
+          </button>
+        ) : null}
       </div>
     </motion.section>
   );
