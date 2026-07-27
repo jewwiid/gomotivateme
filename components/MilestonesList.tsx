@@ -87,7 +87,7 @@ function MilestoneCard({
       transition={{ duration: 0.3, delay }}
       className={`rounded-xl border transition ${
         milestone.done
-          ? "border-emerald-500/30 bg-emerald-500/5"
+          ? "border-[var(--color-success)] bg-[var(--color-success-soft)]"
           : "border-[var(--color-border)] bg-[var(--color-bg-card)]"
       }`}
     >
@@ -102,7 +102,7 @@ function MilestoneCard({
           disabled={!isOwner || busy}
           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition disabled:cursor-not-allowed ${
             milestone.done
-              ? "border-emerald-500 bg-emerald-500 text-black"
+              ? "border-[var(--color-success)] bg-[var(--color-success)] text-black"
               : "border-[var(--color-border-strong)] bg-transparent text-transparent hover:border-[var(--color-text-muted)] disabled:hover:border-[var(--color-border-strong)]"
           }`}
           aria-label={milestone.done ? "Mark as not done" : "Mark as done"}
@@ -198,7 +198,7 @@ function MilestoneUpdateEntry({ update }: { update: any }) {
     <div className="flex gap-2.5">
       <div className="shrink-0 pt-0.5">
         {isCompletion ? (
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-black">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-success)] text-black">
             <Check size={11} />
           </div>
         ) : (

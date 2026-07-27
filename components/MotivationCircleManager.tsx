@@ -26,15 +26,15 @@ const ROLE_META: Record<
   string,
   { label: string; icon: typeof Heart; color: string }
 > = {
-  encourager: { label: "Encourager", icon: Heart, color: "text-rose-400" },
+  encourager: { label: "Encourager", icon: Heart, color: "text-[var(--color-danger)]" },
   accountability: {
     label: "Accountability",
     icon: Calendar,
-    color: "text-emerald-400",
+    color: "text-[var(--color-success-text)]",
   },
-  advice: { label: "Advice", icon: Lightbulb, color: "text-amber-400" },
-  review: { label: "Review", icon: Target, color: "text-sky-400" },
-  challenge: { label: "Challenge", icon: Users, color: "text-violet-400" },
+  advice: { label: "Advice", icon: Lightbulb, color: "text-[var(--color-gold)]" },
+  review: { label: "Review", icon: Target, color: "text-[var(--color-accent)]" },
+  challenge: { label: "Challenge", icon: Users, color: "text-[var(--color-accent)]" },
 };
 
 const FREQ_LABEL: Record<string, string> = {
@@ -192,7 +192,7 @@ export function MotivationCircleManager({
             return (
               <div
                 key={m._id}
-                className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2"
+                className="flex items-center gap-3 workspace-card-soft px-3 py-2"
               >
                 <div className={`shrink-0 ${meta.color}`}>
                   <Icon size={14} />
@@ -259,7 +259,7 @@ export function MotivationCircleManager({
             return (
               <div
                 key={inv._id}
-                className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2"
+                className="flex items-center gap-3 workspace-card-soft px-3 py-2"
               >
                 <div className={`shrink-0 ${meta.color}`}>
                   <Icon size={14} />
@@ -319,12 +319,12 @@ export function MotivationCircleManager({
                     </>
                   )}
                   {isAccepted && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-success-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-success)]">
                       <Check size={9} /> Accepted
                     </span>
                   )}
                   {inv.status === "declined" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/15 px-2 py-0.5 text-[10px] font-medium text-zinc-300">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-text-dim)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-dim)]">
                       <X size={9} /> Declined
                     </span>
                   )}
@@ -344,7 +344,7 @@ export function MotivationCircleManager({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             onSubmit={onAdd}
-            className="mt-4 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-4"
+            className="mt-4 overflow-hidden workspace-card-soft p-4"
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <input

@@ -29,31 +29,31 @@ const ROLE_META: Record<
     label: "Encourager",
     description: "Cheer them on when motivation dips",
     icon: Heart,
-    color: "bg-[#eef3ff] text-[var(--color-primary)]",
+    color: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
   },
   accountability: {
     label: "Accountability partner",
     description: "Keep them honest on a schedule",
     icon: Calendar,
-    color: "bg-[#eef3ff] text-[var(--color-primary)]",
+    color: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
   },
   advice: {
     label: "Experienced adviser",
     description: "Practical tips, resources, know-how",
     icon: Lightbulb,
-    color: "bg-[#eef3ff] text-[var(--color-primary)]",
+    color: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
   },
   review: {
     label: "Progress reviewer",
     description: "Review milestones and give feedback",
     icon: Target,
-    color: "bg-[#eef3ff] text-[var(--color-primary)]",
+    color: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
   },
   challenge: {
     label: "Challenge partner",
     description: "Set your own version of the same goal",
     icon: Users,
-    color: "bg-[#eef3ff] text-[var(--color-primary)]",
+    color: "bg-[var(--color-primary-soft)] text-[var(--color-primary)]",
   },
 };
 
@@ -81,9 +81,9 @@ const FREQUENCY_META: Record<
 
 function InviteShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
-      <main className="mx-auto max-w-[72rem] px-5 py-12 sm:px-8 sm:py-16">{children}</main>
+      <main className="shell-content px-5 py-12 sm:px-8 sm:py-16">{children}</main>
     </div>
   );
 }
@@ -110,7 +110,7 @@ export default function InvitePage() {
     return (
       <InviteShell>
         <div className="flex min-h-[58dvh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#deddd6] border-t-[var(--color-primary)]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-primary)]" />
         </div>
       </InviteShell>
     );
@@ -121,8 +121,8 @@ export default function InvitePage() {
       <InviteShell>
       <div className="mx-auto flex min-h-[58dvh] max-w-lg flex-col items-center justify-center text-center">
         <p className="brand-kicker">Invitation</p>
-        <h1 className="mt-3 font-display text-4xl font-bold leading-[0.95] tracking-[-0.055em]">Invite not found</h1>
-        <p className="mt-4 text-sm leading-6 text-[#686963]">
+        <h1 className="mt-3 title-page">Invite not found</h1>
+        <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)]">
           This invitation link may have expired or been revoked.
         </p>
         <Link
@@ -145,8 +145,8 @@ export default function InvitePage() {
       <InviteShell>
       <div className="mx-auto flex min-h-[58dvh] max-w-lg flex-col items-center justify-center text-center">
         <Sparkles size={28} className="mb-4 text-[var(--color-primary)]" />
-        <h1 className="font-display text-4xl font-bold leading-[0.95] tracking-[-0.055em]">You're invited</h1>
-        <p className="mt-4 max-w-md text-sm leading-6 text-[#686963]">
+        <h1 className="title-page">You're invited</h1>
+        <p className="mt-4 max-w-md text-sm leading-6 text-[var(--color-text-muted)]">
           Someone has asked you to join their Motivation Circle for{" "}
           <span className="font-semibold text-[var(--color-text)]">
             "{invite.goalTitle}"
@@ -156,7 +156,7 @@ export default function InvitePage() {
         <div className="mt-6 flex gap-3">
           <Link
             href={`/login?redirect=${encodeURIComponent(`/invite/${invite.token}`)}`}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#c9c8c0] bg-white px-4 py-2.5 text-sm font-semibold text-[#292929] transition hover:border-[var(--color-primary)]"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)]"
           >
             Sign in
           </Link>
@@ -176,8 +176,8 @@ export default function InvitePage() {
     return (
       <InviteShell>
       <div className="mx-auto flex min-h-[58dvh] max-w-lg flex-col items-center justify-center text-center">
-        <h1 className="font-display text-4xl font-bold leading-[0.95] tracking-[-0.055em]">This is your own goal</h1>
-        <p className="mt-4 text-sm leading-6 text-[#686963]">
+        <h1 className="title-page">This is your own goal</h1>
+        <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)]">
           You can't accept an invite to a goal you created. Manage your invites from
           the dashboard.
         </p>
@@ -199,8 +199,8 @@ export default function InvitePage() {
         <div
           className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
             invite.status === "accepted"
-              ? "bg-[#edf7f0] text-[#248451]"
-              : "bg-[#f0efe9] text-[#686963]"
+              ? "bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
+              : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
           }`}
         >
           {invite.status === "accepted" ? (
@@ -209,14 +209,14 @@ export default function InvitePage() {
             <X size={24} />
           )}
         </div>
-        <h1 className="font-display text-4xl font-bold leading-[0.95] tracking-[-0.055em]">
+        <h1 className="title-page">
           {invite.status === "accepted"
             ? "You've accepted"
             : invite.status === "declined"
             ? "You've declined"
             : "This invite has expired"}
         </h1>
-        <p className="mt-4 text-sm leading-6 text-[#686963]">
+        <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)]">
           {invite.status === "accepted"
             ? "You're part of the Motivation Circle for this goal. You'll see it on your Goals I motivate page."
             : "No further action needed."}
@@ -273,7 +273,7 @@ export default function InvitePage() {
       <div className="mx-auto max-w-[42rem]">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-[#686963] transition hover:text-[var(--color-primary)]"
+          className="inline-flex items-center gap-2 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]"
         >
           <ArrowLeft size={12} />
           gomotivateme
@@ -298,19 +298,19 @@ export default function InvitePage() {
             className="mx-auto mt-6 h-36 w-36 select-none object-contain sm:h-44 sm:w-44"
           />
 
-          <h1 className="mt-5 font-display text-4xl font-bold leading-[0.92] tracking-[-0.06em] sm:text-6xl">
+          <h1 className="mt-5 title-hero">
             You've been invited to motivate
             <br />
             <span className="text-[var(--color-primary)]">{invite.goalTitle}</span>
           </h1>
 
           {invite.personalMessage && (
-            <blockquote className="mt-8 border-l-4 border-[var(--color-primary)] px-5 text-left text-base leading-7 text-[#686963]">
+            <blockquote className="mt-8 border-l-4 border-[var(--color-primary)] px-5 text-left text-base leading-7 text-[var(--color-text-muted)]">
               <span>“{invite.personalMessage}”</span>
             </blockquote>
           )}
 
-          <div className="mt-9 grid border-y border-[#deddd6] text-left sm:grid-cols-2 sm:divide-x sm:divide-[#deddd6]">
+          <div className="mt-9 grid border-y border-[var(--color-border)] text-left sm:grid-cols-2 sm:divide-x sm:divide-[var(--color-border)]">
             <div className="py-5 sm:pr-6">
               <div className="brand-kicker">
                 Role
@@ -318,7 +318,7 @@ export default function InvitePage() {
               <div className="mt-2 flex items-start gap-3">
                 <div
                   className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                    roleMeta?.color ?? "bg-[#eef3ff] text-[var(--color-primary)]"
+                    roleMeta?.color ?? "bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
                   }`}
                 >
                   <RoleIcon size={16} />
@@ -346,7 +346,7 @@ export default function InvitePage() {
 
           {/* Already-responded state — show inline */}
           {invite.status !== "pending" && (
-            <div className="mt-6 border-y border-[#deddd6] py-4 text-sm text-[#686963]">
+            <div className="mt-6 border-y border-[var(--color-border)] py-4 text-sm text-[var(--color-text-muted)]">
               {invite.status === "accepted"
                 ? "You've already accepted this invitation. You can change your settings anytime from your Goals I motivate page."
                 : invite.status === "declined"
@@ -374,7 +374,7 @@ export default function InvitePage() {
                     "For now, drop the goal owner a note directly. We'll add in-app questions in a follow-up."
                   );
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#c9c8c0] bg-white px-5 py-3 text-sm font-semibold text-[#292929] transition hover:border-[var(--color-primary)]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)]"
               >
                 <MessageSquare size={14} />
                 Ask a question
@@ -382,7 +382,7 @@ export default function InvitePage() {
               <button
                 onClick={onDecline}
                 disabled={busy}
-                className="inline-flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium text-[#686963] transition hover:text-[var(--color-danger)] disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium text-[var(--color-text-muted)] transition hover:text-[var(--color-danger)] disabled:opacity-50"
               >
                 <X size={14} />
                 Decline
@@ -398,7 +398,7 @@ export default function InvitePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="mt-8 border-t border-[#deddd6] pt-7 text-left"
+                className="mt-8 border-t border-[var(--color-border)] pt-7 text-left"
               >
                 <div className="brand-kicker">
                   Make it yours
@@ -424,8 +424,8 @@ export default function InvitePage() {
                             onClick={() => setRole(id)}
                             className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
                               active
-                                ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                                : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                                ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                                : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                             }`}
                           >
                             <div
@@ -459,8 +459,8 @@ export default function InvitePage() {
                             onClick={() => setFrequency(id)}
                             className={`rounded-xl border p-3 text-left transition ${
                               active
-                                ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                                : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                                ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                                : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                             }`}
                           >
                             <div className="text-xs font-semibold">{m.label}</div>
@@ -487,7 +487,7 @@ export default function InvitePage() {
                       placeholder="e.g. Check in every Sunday evening"
                       maxLength={140}
                       rows={2}
-                      className="mt-2 w-full resize-none rounded-xl border border-[#c9c8c0] bg-white px-3 py-2 text-sm placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                      className="mt-2 w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -499,7 +499,7 @@ export default function InvitePage() {
                     type="button"
                     onClick={() => setStep("view")}
                     disabled={busy}
-                    className="rounded-xl border border-[#c9c8c0] bg-white px-4 py-2 text-sm font-semibold text-[#292929] transition hover:border-[var(--color-primary)]"
+                    className="rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)]"
                   >
                     Back
                   </button>

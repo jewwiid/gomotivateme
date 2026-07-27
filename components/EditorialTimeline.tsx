@@ -79,11 +79,11 @@ export function EditorialTimeline({
 
   if (status === "LoadingFirstPage") {
     return (
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-zinc-900">Timeline</h2>
+      <section className="workspace-card p-6">
+        <h2 className="text-base font-semibold text-[var(--color-text)]">Timeline</h2>
         <div className="mt-4 space-y-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-zinc-100" />
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-[var(--color-bg-elev)]" />
           ))}
         </div>
       </section>
@@ -100,13 +100,13 @@ export function EditorialTimeline({
         ? milestones.find((m) => !m.done)
         : undefined;
     return (
-      <section className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
-        <h2 className="text-base font-semibold text-zinc-900">
+      <section className="rounded-2xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] p-8 text-center">
+        <h2 className="text-base font-semibold text-[var(--color-text)]">
           {nextMilestone
             ? "Start with the first step"
             : "No updates yet"}
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
           {nextMilestone
             ? `Tick off “${nextMilestone.title}” to post your first update.`
             : "Post your first update when you're ready to share progress."}
@@ -116,8 +116,8 @@ export function EditorialTimeline({
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
-      <h2 className="text-base font-semibold text-zinc-900">Timeline</h2>
+    <section className="workspace-card p-6 sm:p-8">
+      <h2 className="text-base font-semibold text-[var(--color-text)]">Timeline</h2>
 
       <ol className="mt-6 space-y-6">
         {updates.map((u: any, i: number) => {
@@ -136,14 +136,14 @@ export function EditorialTimeline({
                 <div className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
                   {d.month}
                 </div>
-                <div className="text-3xl font-bold leading-none text-zinc-900">
+                <div className="text-3xl font-bold leading-none text-[var(--color-text)]">
                   {parseInt(d.day, 10)}
                 </div>
-                <div className="mt-1 text-[10px] text-zinc-400">{d.year}</div>
+                <div className="mt-1 text-[10px] text-[var(--color-text-dim)]">{d.year}</div>
               </div>
 
               {/* Content */}
-              <div className="border-l border-zinc-200 pl-4 sm:pl-6">
+              <div className="border-l border-[var(--color-border)] pl-4 sm:pl-6">
                 <EntryHeader u={u} />
                 {u.milestoneId && u.type !== "milestone" && (() => {
                   const ms = milestones?.find((m) => m.id === u.milestoneId);
@@ -155,11 +155,11 @@ export function EditorialTimeline({
                 })()}
                 <EntryBody u={u} unit={unit} imageUrlOf={imageUrlOf} />
                 {u.note && (
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-700">
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
                     {u.note}
                   </p>
                 )}
-                <ReportButton goalId={goalId} updateId={u._id} className="mt-3 inline-flex items-center gap-1 text-[11px] text-zinc-400 transition hover:text-zinc-700" />
+                <ReportButton goalId={goalId} updateId={u._id} className="mt-3 inline-flex items-center gap-1 text-[11px] text-[var(--color-text-dim)] transition hover:text-[var(--color-text-secondary)]" />
                 {/* Per-update reactions — visitors only (owner doesn't cheer their own progress) */}
                 {!isOwner && <UpdateReactions updateId={u._id} goalId={goalId} />}
               </div>
@@ -173,7 +173,7 @@ export function EditorialTimeline({
             type="button"
             onClick={() => loadMore(8)}
             disabled={status === "LoadingMore"}
-            className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 disabled:cursor-wait disabled:opacity-60"
+            className="rounded-full border border-[var(--color-border-strong)] px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)] disabled:cursor-wait disabled:opacity-60"
           >
             {status === "LoadingMore" ? "Loading updates..." : "Load earlier updates"}
           </button>
@@ -186,7 +186,7 @@ export function EditorialTimeline({
 function EntryHeader({ u }: { u: UpdateDoc }) {
   if (u.type === "value") {
     return (
-      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
         <TrendingUp size={11} />
         Value logged {u.value !== undefined && <span className="text-[var(--color-primary)]">· {u.value}</span>}
       </div>
@@ -202,7 +202,7 @@ function EntryHeader({ u }: { u: UpdateDoc }) {
   }
   if (u.type === "image") {
     return (
-      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
         <ImageIcon size={11} />
         Photo
       </div>
@@ -210,7 +210,7 @@ function EntryHeader({ u }: { u: UpdateDoc }) {
   }
   if (u.type === "media") {
     return (
-      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
         <Images size={11} />
         Media update
       </div>
@@ -218,14 +218,14 @@ function EntryHeader({ u }: { u: UpdateDoc }) {
   }
   if (u.type === "link") {
     return (
-      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
         <LinkIcon size={11} />
         Link shared
       </div>
     );
   }
   return (
-    <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+    <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
       <MessageSquare size={11} />
       Note
     </div>
@@ -257,12 +257,12 @@ function EntryBody({
         href={u.linkUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-1 block rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 transition hover:border-zinc-300"
+        className="mt-1 block rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)]"
       >
         <div className="font-medium text-[var(--color-primary)]">
           {u.linkTitle || u.linkUrl}
         </div>
-        {u.linkTitle && <div className="truncate text-xs text-zinc-500">{u.linkUrl}</div>}
+        {u.linkTitle && <div className="truncate text-xs text-[var(--color-text-muted)]">{u.linkUrl}</div>}
       </a>
     );
   }

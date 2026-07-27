@@ -22,11 +22,11 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { CheckInComposer } from "@/components/CheckInComposer";
 
 const ROLE_META: Record<string, { label: string; icon: typeof Heart; color: string }> = {
-  encourager: { label: "Encourager", icon: Heart, color: "text-rose-500" },
-  accountability: { label: "Accountability", icon: Calendar, color: "text-emerald-600" },
-  advice: { label: "Advice", icon: Lightbulb, color: "text-amber-600" },
-  review: { label: "Review", icon: Target, color: "text-sky-600" },
-  challenge: { label: "Challenge", icon: Users, color: "text-violet-600" },
+  encourager: { label: "Encourager", icon: Heart, color: "text-[var(--color-danger)]" },
+  accountability: { label: "Accountability", icon: Calendar, color: "text-[var(--color-success-text)]" },
+  advice: { label: "Advice", icon: Lightbulb, color: "text-[var(--color-gold-text)]" },
+  review: { label: "Review", icon: Target, color: "text-[var(--color-primary)]" },
+  challenge: { label: "Challenge", icon: Users, color: "text-[var(--color-primary)]" },
 };
 
 const FREQ_LABEL: Record<string, string> = {
@@ -63,7 +63,7 @@ function MotivateContent() {
         <section className="min-w-0">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <p className="brand-kicker">Your commitments</p>
-            <h1 className="mt-2 max-w-3xl font-display text-balance text-4xl font-bold leading-[0.96] tracking-[-0.055em] sm:text-5xl">
+            <h1 className="mt-2 max-w-3xl title-page">
               Goals you’re showing up for.
             </h1>
             <Link href="/explore" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">
@@ -73,7 +73,7 @@ function MotivateContent() {
 
           {pledges === undefined ? (
             <div className="workspace-card mt-7 divide-y divide-[var(--color-border)] overflow-hidden">
-              {[0, 1, 2].map((i) => <div key={i} className="h-36 animate-pulse bg-[#f3f2ed]" />)}
+              {[0, 1, 2].map((i) => <div key={i} className="h-36 animate-pulse bg-[var(--color-bg-elev)]" />)}
             </div>
           ) : pledges.length === 0 ? (
             <EmptyState />
@@ -92,11 +92,11 @@ function MotivateContent() {
         </section>
 
         <aside className="workspace-card p-5">
-          <div className="flex h-14 w-14 items-center justify-center rounded-[1.1rem] bg-[#fdf1ca] text-[#bf8500]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-[1.1rem] bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]">
             <Sparkles size={25} />
           </div>
           <h2 className="mt-6 font-display text-3xl font-bold tracking-[-0.045em]">Keep it simple</h2>
-          <p className="mt-4 text-base leading-7 text-[#686963]">
+          <p className="mt-4 text-base leading-7 text-[var(--color-text-muted)]">
             Small, consistent check-ins make a real difference. A few words can keep someone going.
           </p>
         </aside>
@@ -142,7 +142,7 @@ function MotivateRow({
       <div className="grid gap-4 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:items-center sm:gap-7">
         <Link
           href={goalHref}
-          className="group aspect-[1.7/1] overflow-hidden rounded-xl bg-[#e8edf9]"
+          className="group aspect-[1.7/1] overflow-hidden rounded-xl bg-[var(--color-primary-soft)]"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={ROW_MEDIA[index % ROW_MEDIA.length]} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
@@ -153,23 +153,23 @@ function MotivateRow({
               {goalTitle ?? "A goal in your circle"}
             </h2>
           </Link>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#686963]">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]">
             <span className={`inline-flex items-center gap-1.5 font-semibold ${meta.color}`}><Icon size={15} /> {meta.label}</span>
-            <span className="h-4 w-px bg-[#deddd6]" />
+            <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
             <span>{FREQ_LABEL[pledge.checkInFrequency] ?? pledge.checkInFrequency}</span>
-            <span className="h-4 w-px bg-[#deddd6]" />
-            <span className="text-[#888983]">{lastCheckInLabel}</span>
+            <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
+            <span className="text-[var(--color-text-dim)]">{lastCheckInLabel}</span>
           </div>
-          {pledge.pledgeText && <p className="mt-2 line-clamp-1 text-sm italic text-[#777872]">“{pledge.pledgeText}”</p>}
+          {pledge.pledgeText && <p className="mt-2 line-clamp-1 text-sm italic text-[var(--color-text-muted)]">“{pledge.pledgeText}”</p>}
         </div>
         <div className="flex items-center gap-3 sm:justify-end">
-          <span className="hidden text-sm text-[#686963] sm:inline">{pledge.isCoreMotivator ? "Core" : "Community"}</span>
+          <span className="hidden text-sm text-[var(--color-text-muted)] sm:inline">{pledge.isCoreMotivator ? "Core" : "Community"}</span>
           <WithdrawPledgeButton pledgeId={pledge._id} />
           <button
             onClick={() => setExpanded((e) => !e)}
             className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
               expanded
-                ? "bg-[#f0efe9] text-[#292929]"
+                ? "bg-[var(--color-bg-elev)] text-[var(--color-text)]"
                 : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
             }`}
           >
@@ -207,9 +207,9 @@ function timeAgoShort(ms: number): string {
 function EmptyState() {
   return (
     <div className="workspace-card mt-7 grid place-items-center border-dashed px-6 py-16 text-center">
-      <Sparkles size={28} className="text-[#c68d00]" />
+      <Sparkles size={28} className="text-[var(--color-gold-text)]" />
       <h2 className="mt-4 font-display text-2xl font-bold tracking-[-0.035em]">No commitments yet</h2>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#686963]">When someone invites you into their circle, their goal will appear here.</p>
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--color-text-muted)]">When someone invites you into their circle, their goal will appear here.</p>
       <Link href="/explore" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]">
         Browse goals <ArrowRight size={15} />
       </Link>
@@ -242,7 +242,7 @@ function WithdrawPledgeButton({ pledgeId }: { pledgeId: Id<"motivatorPledges"> }
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="text-xs text-[#888983] hover:text-[#292929]"
+          className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
         >
           Cancel
         </button>
@@ -253,7 +253,7 @@ function WithdrawPledgeButton({ pledgeId }: { pledgeId: Id<"motivatorPledges"> }
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="text-xs font-medium text-[#888983] transition hover:text-[var(--color-danger)]"
+      className="text-xs font-medium text-[var(--color-text-dim)] transition hover:text-[var(--color-danger)]"
     >
       Withdraw
     </button>

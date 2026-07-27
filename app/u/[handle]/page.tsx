@@ -31,11 +31,11 @@ import { useCurrentUser } from "@/lib/useCurrentUser";
 type Tab = "activity" | "about";
 
 const ROLE_META: Record<string, { label: string; color: string }> = {
-  encourager: { label: "Encourager", color: "text-rose-500" },
-  accountability: { label: "Accountability", color: "text-emerald-500" },
-  advice: { label: "Advice", color: "text-amber-500" },
-  review: { label: "Review", color: "text-sky-500" },
-  challenge: { label: "Challenge", color: "text-violet-500" },
+  encourager: { label: "Encourager", color: "text-[var(--color-danger)]" },
+  accountability: { label: "Accountability", color: "text-[var(--color-success-text)]" },
+  advice: { label: "Advice", color: "text-[var(--color-gold)]" },
+  review: { label: "Review", color: "text-[var(--color-primary)]" },
+  challenge: { label: "Challenge", color: "text-[var(--color-primary)]" },
 };
 
 const FREQ_LABEL: Record<string, string> = {
@@ -83,24 +83,24 @@ export default function ProfilePage() {
 
   if (summary === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg-elev)]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-zinc-900" />
       </div>
     );
   }
 
   if (summary === null) {
     return (
-      <div className="min-h-screen bg-zinc-50">
+      <div className="min-h-screen bg-[var(--color-bg-elev)]">
         <Header />
         <div className="mx-auto max-w-2xl px-6 py-20 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Profile not found</h1>
-          <p className="mt-3 text-sm text-zinc-600">
+          <h1 className="title-state">Profile not found</h1>
+          <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
             @{handle} hasn't set up a profile yet, or the handle is wrong.
           </p>
           <Link
             href="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-text)] px-4 py-2 text-sm font-semibold text-white"
           >
             Go home
           </Link>
@@ -134,13 +134,13 @@ export default function ProfilePage() {
     .slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[#fffdf8]">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
-      <main className="mx-auto max-w-[80rem] px-5 pb-8 sm:px-8">
+      <main className="shell-content px-5 pb-8 sm:px-8">
         {/* === GoFundMe-style header strip: cover (left) | name + stats + share (right) === */}
         <div className="-mt-px">
-          <div className="mt-8 overflow-hidden rounded-[1.5rem] border border-[#deddd6] bg-white sm:mt-12">
+          <div className="mt-8 overflow-hidden workspace-card sm:mt-12">
             <div className="grid grid-cols-1 md:grid-cols-5">
               {/* Cover photo (left, taller than the text column) */}
               <div className="relative md:col-span-2">
@@ -159,7 +159,7 @@ export default function ProfilePage() {
                   {isMe && (
                     <Link
                       href="/settings"
-                      className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-xs font-semibold text-[#454540] backdrop-blur transition hover:bg-white"
+                      className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] backdrop-blur transition hover:bg-white"
                     >
                       <Camera size={12} />
                       {coverImageUrl ? "Change cover" : "Add cover"}
@@ -180,10 +180,10 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h1 className="font-display text-3xl font-bold tracking-[-0.05em] text-[#292929] sm:text-4xl">
+                    <h1 className="title-page">
                       {displayName}
                     </h1>
-                    <p className="mt-1 text-sm text-[#72736e]">
+                    <p className="mt-1 text-sm text-[var(--color-text-muted)]">
                       @{user.handle ?? "no-handle-yet"}
                     </p>
                   </div>
@@ -199,21 +199,21 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Stats row */}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#e2e1da] pt-4 text-sm text-[#686963]">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[var(--color-border)] pt-4 text-sm text-[var(--color-text-muted)]">
                   <span>
-                    <span className="font-display text-lg font-bold tabular-nums text-zinc-900">
+                    <span className="font-display text-lg font-bold tabular-nums text-[var(--color-text)]">
                       {formatNumber(stats.goalsCount)}
                     </span>{" "}
                     {stats.goalsCount === 1 ? "goal" : "goals"}
                   </span>
                   <span>
-                    <span className="font-display text-lg font-bold tabular-nums text-zinc-900">
+                    <span className="font-display text-lg font-bold tabular-nums text-[var(--color-text)]">
                       {formatNumber(stats.motivatingCount)}
                     </span>{" "}
                     motivating
                   </span>
                   <span>
-                    <span className="font-display text-lg font-bold tabular-nums text-zinc-900">
+                    <span className="font-display text-lg font-bold tabular-nums text-[var(--color-text)]">
                       {formatNumber(stats.supportersCount)}
                     </span>{" "}
                     supporters
@@ -227,7 +227,7 @@ export default function ProfilePage() {
                     {isMe && (
                       <Link
                         href="/settings"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#bebeb7] bg-white px-4 py-2 text-sm font-semibold text-[#4a4b46] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                       >
                         <Edit3 size={12} />
                         Edit profile
@@ -246,7 +246,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.05 }}
-            className="mt-8 border-y border-[#deddd6] bg-[#f4f5ef] p-5 sm:px-7"
+            className="mt-8 border-y border-[var(--color-border)] bg-[var(--color-bg-elev)] p-5 sm:px-7"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -254,10 +254,10 @@ export default function ProfilePage() {
                   <Sparkles size={18} className="text-[var(--color-primary)]" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-zinc-900">
+                  <div className="text-sm font-semibold text-[var(--color-text)]">
                     Let's set up your profile
                   </div>
-                  <div className="text-[11px] text-zinc-600">
+                  <div className="text-[11px] text-[var(--color-text-secondary)]">
                     <span className="font-mono tabular-nums">{setupDone}/3</span>{" "}
                     complete · {3 - setupDone} more to go
                   </div>
@@ -280,9 +280,9 @@ export default function ProfilePage() {
         )}
 
         {/* === "What I care about" — bio card === */}
-        <section className="mt-12 max-w-3xl border-b border-[#deddd6] pb-9">
+        <section className="mt-12 max-w-3xl border-b border-[var(--color-border)] pb-9">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-[#292929]">
+            <h2 className="font-display text-2xl font-bold tracking-[-0.04em] text-[var(--color-text)]">
               What I’m working toward
             </h2>
             {isMe && (
@@ -296,11 +296,11 @@ export default function ProfilePage() {
             )}
           </div>
           {user.bio ? (
-            <p className="mt-3 max-w-2xl text-base leading-7 text-[#5f605b]">
+            <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--color-text-secondary)]">
               {user.bio}
             </p>
           ) : (
-            <p className="mt-3 text-base italic text-[#777872]">
+            <p className="mt-3 text-base italic text-[var(--color-text-muted)]">
               {isMe
                 ? "Add a short intro so people know what you're working on and why."
                 : `${displayName} hasn't added an intro yet.`}
@@ -311,7 +311,7 @@ export default function ProfilePage() {
         {/* === Tabs + sidebar === */}
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-14">
           <div>
-            <div className="border-b border-[#deddd6]">
+            <div className="border-b border-[var(--color-border)]">
               <div className="flex gap-6">
                 <TabButton
                   active={tab === "activity"}
@@ -345,7 +345,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <aside className="border-t border-[#deddd6] pt-7 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+          <aside className="border-t border-[var(--color-border)] pt-7 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
             <DiscoverSidebar motivators={otherMotivators} />
           </aside>
         </div>
@@ -393,8 +393,8 @@ function SetupPill({ done, label }: { done: boolean; label: string }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
         done
-          ? "border-[#b8d8c4] bg-[#edf7f0] text-[#248451]"
-          : "border-[#deddd6] bg-white text-[#676862]"
+          ? "border-[var(--color-success-soft)] bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
+          : "border-[var(--color-border)] bg-white text-[var(--color-text-muted)]"
       }`}
     >
       {done ? <Check size={11} /> : <Plus size={11} />}
@@ -466,12 +466,12 @@ function TabButton({
       className={`relative -mb-px flex items-center border-b-2 px-4 py-2.5 text-sm font-medium transition ${
         active
           ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-          : "border-transparent text-[#777872] hover:text-[#33332f]"
+          : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
       }`}
     >
       {label}
       {typeof count === "number" && count > 0 && (
-        <span className="ml-2 inline-flex items-center justify-center rounded-full bg-zinc-100 px-1.5 text-[10px] font-medium text-zinc-600">
+        <span className="ml-2 inline-flex items-center justify-center rounded-full bg-[var(--color-bg-elev)] px-1.5 text-[10px] font-medium text-[var(--color-text-secondary)]">
           {count}
         </span>
       )}
@@ -490,9 +490,9 @@ function ActivityTab({
 }) {
   if (goals.length === 0 && motivations.length === 0) {
     return (
-      <div className="border-y border-dashed border-[#c9c8c0] py-12 text-center">
-        <Sparkles size={20} className="mx-auto mb-3 text-zinc-400" />
-        <p className="text-sm text-zinc-600">
+      <div className="border-y border-dashed border-[var(--color-border-strong)] py-12 text-center">
+        <Sparkles size={20} className="mx-auto mb-3 text-[var(--color-text-dim)]" />
+        <p className="text-sm text-[var(--color-text-secondary)]">
           No public activity yet. {displayName} will appear here as they
           start goals and motivate others.
         </p>
@@ -504,7 +504,7 @@ function ActivityTab({
     <div className="space-y-10">
       {goals.length > 0 && (
         <div>
-          <h3 className="mb-4 flex items-center gap-1.5 text-sm font-bold text-[#3b3b37]">
+          <h3 className="mb-4 flex items-center gap-1.5 text-sm font-bold text-[var(--color-text)]">
             <Target size={11} />
             Public goals
           </h3>
@@ -513,7 +513,7 @@ function ActivityTab({
       )}
       {motivations.length > 0 && (
         <div>
-          <h3 className="mb-4 flex items-center gap-1.5 text-sm font-bold text-[#3b3b37]">
+          <h3 className="mb-4 flex items-center gap-1.5 text-sm font-bold text-[var(--color-text)]">
             <Heart size={11} />
             Currently motivating
           </h3>
@@ -540,15 +540,15 @@ function AboutTab({
   isMe: boolean;
 }) {
   return (
-    <div className="divide-y divide-[#deddd6] border-y border-[#deddd6]">
+    <div className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
       <section className="py-6">
-        <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[#292929]">About</h3>
+        <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[var(--color-text)]">About</h3>
         {user.bio ? (
-          <p className="mt-2 text-sm leading-relaxed text-zinc-700">
+          <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
             {user.bio}
           </p>
         ) : (
-          <p className="mt-2 text-sm italic text-zinc-500">
+          <p className="mt-2 text-sm italic text-[var(--color-text-muted)]">
             {isMe
               ? "Add a short bio on the settings page."
               : "No intro yet."}
@@ -557,7 +557,7 @@ function AboutTab({
       </section>
 
       <section className="py-6">
-        <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[#292929]">Stats</h3>
+        <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[var(--color-text)]">Stats</h3>
         <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
           <StatPill label="Goals" value={stats.goalsCount} />
           <StatPill label="Motivating" value={stats.motivatingCount} />
@@ -567,10 +567,10 @@ function AboutTab({
 
       {isMe && (
         <section className="py-6">
-          <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[#292929]">
+          <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[var(--color-text)]">
             Edit your profile
           </h3>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
             Cover photo, avatar, bio, and handle all live in settings.
           </p>
           <Link
@@ -589,10 +589,10 @@ function AboutTab({
 function StatPill({ label, value }: { label: string; value: number }) {
   return (
     <div className="px-2 py-2.5">
-      <div className="font-display text-2xl font-bold tabular-nums text-[#292929]">
+      <div className="font-display text-2xl font-bold tabular-nums text-[var(--color-text)]">
         {formatNumber(value)}
       </div>
-      <div className="mt-0.5 text-[10px] uppercase tracking-wider text-[#777872]">
+      <div className="mt-0.5 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
         {label}
       </div>
     </div>
@@ -614,15 +614,15 @@ function DiscoverSidebar({
 }) {
   return (
     <div>
-      <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[#292929]">
+      <h3 className="font-display text-xl font-bold tracking-[-0.035em] text-[var(--color-text)]">
         People to meet
       </h3>
-      <p className="mt-2 text-sm leading-6 text-[#686963]">
+      <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">
         Active motivators finding their rhythm here.
       </p>
       <ul className="mt-6 space-y-4">
         {motivators.length === 0 ? (
-          <li className="border-y border-dashed border-[#deddd6] py-5 text-center text-xs text-[#777872]">
+          <li className="border-y border-dashed border-[var(--color-border)] py-5 text-center text-xs text-[var(--color-text-muted)]">
             New motivators show up here as the community grows.
           </li>
         ) : (
@@ -647,10 +647,10 @@ function DiscoverSidebar({
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-zinc-900 group-hover:text-[var(--color-primary)]">
+                    <div className="truncate text-sm font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
                       {m.name ?? `@${m.handle}`}
                     </div>
-                    <div className="truncate text-[10px] text-zinc-500">
+                    <div className="truncate text-[10px] text-[var(--color-text-muted)]">
                       {m.goalsCount} {m.goalsCount === 1 ? "goal" : "goals"} ·{" "}
                       {m.motivatingCount} motivating
                     </div>
@@ -712,7 +712,7 @@ function GoalsGrid({
             href={`/o/${g.ownerHandle ?? ""}/${g.slug}`}
             className="group block"
           >
-            <div className="relative aspect-[1.45/1] w-full overflow-hidden rounded-[1rem] bg-[#e8edf9]">
+            <div className="relative aspect-[1.45/1] w-full overflow-hidden rounded-[1rem] bg-[var(--color-primary-soft)]">
               {coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -721,30 +721,30 @@ function GoalsGrid({
                   className="h-full w-full object-cover transition group-hover:scale-105"
                 />
               ) : null}
-              <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#4d4e49] backdrop-blur">
+              <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] backdrop-blur">
                 <CategoryIcon category={g.category} size={10} />
                 {g.category}
               </div>
             </div>
             <div className="px-1 pt-3">
-              <h4 className="line-clamp-2 font-display text-lg font-bold leading-snug tracking-[-0.035em] text-[#292929]">
+              <h4 className="line-clamp-2 font-display text-lg font-bold leading-snug tracking-[-0.035em] text-[var(--color-text)]">
                 {g.title}
               </h4>
               <div className="mt-3 space-y-1.5">
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#dce5ff]">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-primary-soft)]">
                   <div
                     className="h-full rounded-full bg-[var(--color-primary)]"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <div className="flex items-baseline justify-between text-[11px] text-zinc-600">
+                <div className="flex items-baseline justify-between text-[11px] text-[var(--color-text-secondary)]">
                   <span>
-                    <span className="font-semibold text-zinc-900">
+                    <span className="font-semibold text-[var(--color-text)]">
                       {formatNumber(g.currentValue)}
                     </span>{" "}
                     / {formatNumber(g.targetValue)} {g.unit}
                   </span>
-                  <span className="text-zinc-500">
+                  <span className="text-[var(--color-text-muted)]">
                     {Math.round(progress)}%
                   </span>
                 </div>
@@ -793,7 +793,7 @@ function MotivationsList({
   );
 
   return (
-    <ul className="divide-y divide-[#e2e1da] border-y border-[#e2e1da]">
+    <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
       {motivations.map((m) => {
         const meta = ROLE_META[m.role] ?? ROLE_META.encourager;
         const coverUrl = m.goal.coverImageId
@@ -813,13 +813,13 @@ function MotivationsList({
                   className="h-14 w-14 shrink-0 rounded-[0.9rem] object-cover"
                 />
               ) : (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[0.9rem] bg-[#e8edf9]">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[0.9rem] bg-[var(--color-primary-soft)]">
                   <CategoryIcon category={m.goal.category} size={20} />
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                  <div className="truncate text-sm font-semibold text-zinc-900">
+                  <div className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {m.goal.title}
                   </div>
                   {m.isCoreMotivator && (
@@ -829,7 +829,7 @@ function MotivationsList({
                     </span>
                   )}
                 </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-500">
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--color-text-muted)]">
                   <span className={`font-medium ${meta.color}`}>{meta.label}</span>
                   <span>·</span>
                   <span>{FREQ_LABEL[m.checkInFrequency] ?? m.checkInFrequency}</span>
@@ -839,7 +839,7 @@ function MotivationsList({
                   <span>joined {relativeTime(m.acceptedAt)}</span>
                 </div>
                 {m.pledgeText && (
-                  <div className="mt-1 line-clamp-1 text-[11px] italic text-zinc-600">
+                  <div className="mt-1 line-clamp-1 text-[11px] italic text-[var(--color-text-secondary)]">
                     "{m.pledgeText}"
                   </div>
                 )}

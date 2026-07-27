@@ -386,7 +386,7 @@ export function StructuredSupportComposer({
               ← Change support type
             </button>
 
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3">
+            <div className="workspace-card-soft p-3">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 {(() => {
                   const Icon = SUPPORT_META[supportType].icon;
@@ -453,7 +453,7 @@ export function StructuredSupportComposer({
             <div className="flex gap-2 pt-1">
               <button
                 onClick={() => setOpen(false)}
-                className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-4 py-2.5 text-sm font-medium transition hover:border-[var(--color-border-strong)]"
+                className="flex-1 workspace-card-soft px-4 py-2.5 text-sm font-medium transition hover:border-[var(--color-border-strong)]"
               >
                 Cancel
               </button>

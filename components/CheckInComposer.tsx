@@ -50,7 +50,7 @@ export function CheckInComposer({
 
   if (done) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--color-success-soft)] bg-[var(--color-success-soft)] px-4 py-3 text-sm text-[var(--color-success-text)]">
         <Check size={16} />
         Check-in sent
       </div>
@@ -69,7 +69,7 @@ export function CheckInComposer({
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 type === t.id
                   ? "bg-[var(--color-primary)] text-white"
-                  : "bg-[#f0efe9] text-[#686963] hover:bg-[#e8e7e0]"
+                  : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-sunken)]"
               }`}
             >
               {t.label}
@@ -85,16 +85,16 @@ export function CheckInComposer({
         }
         rows={3}
         maxLength={1000}
-        className="w-full resize-none rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+        className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
       />
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-[#888983]">{body.length}/1000</span>
+        <span className="text-[10px] text-[var(--color-text-dim)]">{body.length}/1000</span>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onDone}
             disabled={busy}
-            className="text-xs text-[#888983] transition hover:text-[#292929]"
+            className="text-xs text-[var(--color-text-dim)] transition hover:text-[var(--color-text)]"
           >
             Cancel
           </button>
@@ -109,7 +109,7 @@ export function CheckInComposer({
         </div>
       </div>
       {err && (
-        <div className="flex items-center gap-1.5 text-xs text-red-600">
+        <div className="flex items-center gap-1.5 text-xs text-[var(--color-danger-text)]">
           <X size={12} />
           {err}
         </div>

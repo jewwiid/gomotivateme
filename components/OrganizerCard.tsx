@@ -29,7 +29,7 @@ export function OrganizerCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4"
+      className="workspace-card p-4"
     >
       <div className="flex items-center gap-3">
         {image ? (

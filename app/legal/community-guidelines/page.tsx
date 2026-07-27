@@ -12,26 +12,26 @@ const LAST_UPDATED = "July 22, 2026";
 export default function CommunityGuidelinesPage() {
   return (
     <article className="space-y-10">
-      <header className="border-b border-[#e9e7df] pb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#888983]">
+      <header className="border-b border-[var(--color-border)] pb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-dim)]">
           Legal
         </p>
-        <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+        <h1 className="mt-2 title-page">
           Community Guidelines
         </h1>
-        <p className="mt-3 text-sm text-[#74756f]">
+        <p className="mt-3 text-sm text-[var(--color-text-muted)]">
           Last updated {LAST_UPDATED}
         </p>
       </header>
 
-      <p className="rounded-2xl border border-[#e9e7df] bg-[#f6f4ec] p-5 text-sm leading-6 text-[#3b3b37]">
+      <p className="workspace-card-soft p-5 text-sm leading-6 text-[var(--color-text)]">
         <strong>The short version.</strong> GoMotivateMe is a place for real
         encouragement, not performance. Show up. Be honest. Be kind. Don't
         pretend to be someone you're not. Report what feels wrong. We'll
         handle it.
       </p>
 
-      <div className="space-y-10 text-[15px] leading-7 text-[#3b3b37]">
+      <div className="space-y-10 text-[15px] leading-7 text-[var(--color-text)]">
         <Section title="1. What this place is">
           <p>
             gomotivateme.com is a place to set real goals, build a small
@@ -47,7 +47,7 @@ export default function CommunityGuidelinesPage() {
         </Section>
 
         <Section title="2. The basics">
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>
               <strong>Show up for people.</strong> A 3-word check-in beats a
               perfect post you never send. Be the friend who actually
@@ -83,7 +83,7 @@ export default function CommunityGuidelinesPage() {
           <p>
             We remove content and may restrict accounts that post:
           </p>
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>Harassment, threats, or hate speech.</li>
             <li>Sexual content involving real people without consent.</li>
             <li>
@@ -125,7 +125,7 @@ export default function CommunityGuidelinesPage() {
             these categories, we'll show you a brief prompt asking you to
             read the in-app guidance before you post:
           </p>
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>
               <strong>Weight and body image</strong>: encouragement should
               support the person's actual goal, not push an eating disorder
@@ -168,7 +168,7 @@ export default function CommunityGuidelinesPage() {
             Our approach is graduated: first time mistakes get a warning,
             patterns get removed:
           </p>
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>
               <strong>First violation</strong>: content removed, you get a
               written warning with what was wrong and why.
@@ -226,7 +226,7 @@ export default function CommunityGuidelinesPage() {
         </Section>
       </div>
 
-      <p className="text-sm text-[#74756f]">
+      <p className="text-sm text-[var(--color-text-muted)]">
         These Community Guidelines are paired with our{" "}
         <Link
           href="/legal/terms"
@@ -256,7 +256,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[#1f1f1c]">
+      <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[var(--color-text)]">
         {title}
       </h2>
       <div className="mt-3 space-y-3">{children}</div>

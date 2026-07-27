@@ -21,15 +21,15 @@ const ROLE_META: Record<
   string,
   { label: string; icon: typeof Heart; color: string }
 > = {
-  encourager: { label: "Encourager", icon: Heart, color: "text-rose-500" },
+  encourager: { label: "Encourager", icon: Heart, color: "text-[var(--color-danger)]" },
   accountability: {
     label: "Accountability",
     icon: Calendar,
-    color: "text-emerald-600",
+    color: "text-[var(--color-success-text)]",
   },
-  advice: { label: "Advice", icon: Lightbulb, color: "text-amber-500" },
-  review: { label: "Review", icon: Target, color: "text-sky-600" },
-  challenge: { label: "Challenge", icon: Users, color: "text-violet-500" },
+  advice: { label: "Advice", icon: Lightbulb, color: "text-[var(--color-gold)]" },
+  review: { label: "Review", icon: Target, color: "text-[var(--color-primary)]" },
+  challenge: { label: "Challenge", icon: Users, color: "text-[var(--color-primary)]" },
 };
 
 function timeAgo(ts: number) {
@@ -56,7 +56,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
 
   if (count === 0) {
     return (
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5">
+      <div className="workspace-card p-5">
         <div className="flex items-center gap-2">
           <Sparkles size={14} className="text-[var(--color-text-dim)]" />
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-dim)]">
@@ -96,15 +96,15 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
   };
 
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5">
+    <div className="workspace-card p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Clock size={14} className="text-amber-400" />
+          <Clock size={14} className="text-[var(--color-gold)]" />
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-dim)]">
             Public motivator applications
           </div>
         </div>
-        <span className="inline-flex items-center justify-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+        <span className="inline-flex items-center justify-center rounded-full bg-[var(--color-gold-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-gold)]">
           {count} pending
         </span>
       </div>
@@ -126,7 +126,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: 8 }}
-                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3"
+                className="workspace-card-soft p-3"
               >
                 <div className="flex items-start gap-3">
                   {app.applicant?.image ? (
@@ -161,7 +161,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
                       <button
                         onClick={() => onApprove(app._id)}
                         disabled={busyId === app._id}
-                        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-medium text-emerald-300 transition hover:bg-emerald-500/25 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-full bg-[var(--color-success-soft)] px-2.5 py-1 text-[10px] font-medium text-[var(--color-success)] transition hover:bg-[var(--color-success-soft)] disabled:opacity-50"
                       >
                         <Check size={10} />
                         Accept
@@ -169,7 +169,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
                       <button
                         onClick={() => onDecline(app._id)}
                         disabled={busyId === app._id}
-                        className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-transparent px-2.5 py-1 text-[10px] font-medium text-[var(--color-text-muted)] transition hover:border-red-500/40 hover:text-red-300 disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-transparent px-2.5 py-1 text-[10px] font-medium text-[var(--color-text-muted)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger)] disabled:opacity-50"
                       >
                         <X size={10} />
                         Decline
@@ -183,7 +183,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
         </AnimatePresence>
       </div>
 
-      {err && <p className="mt-2 text-[10px] text-red-400">{err}</p>}
+      {err && <p className="mt-2 text-[10px] text-[var(--color-danger)]">{err}</p>}
     </div>
   );
 }

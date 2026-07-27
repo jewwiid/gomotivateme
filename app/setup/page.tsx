@@ -87,7 +87,7 @@ function SetupHandleForm() {
   const firstName = user?.name?.split(" ")[0];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fffdf8] text-[#292929]">
+    <div className="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
       <main className="flex flex-1 items-center justify-center px-5 py-16 sm:px-8 sm:py-24">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -111,23 +111,23 @@ function SetupHandleForm() {
             )}
             <div>
               <p className="brand-kicker">Almost there</p>
-              <p className="text-sm text-[#686963]">
+              <p className="text-sm text-[var(--color-text-muted)]">
                 Welcome{firstName ? `, ${firstName}` : ""}.
               </p>
             </div>
           </div>
 
-          <h1 className="font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">
+          <h1 className="title-page">
             Claim your handle
           </h1>
-          <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
+          <p className="mb-8 mt-3 text-base leading-7 text-[var(--color-text-muted)]">
             This is your identity on gomotivateme. It&apos;s how people find and tag
             you. You can change it once after this, then it&apos;s locked.
           </p>
 
           <form onSubmit={onSubmit} className="space-y-3" noValidate>
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+              <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
                 Handle
               </label>
               <div
@@ -135,8 +135,8 @@ function SetupHandleForm() {
                   handleErr
                     ? "border-[var(--color-danger)]/50"
                     : handleValid
-                    ? "border-emerald-500/40"
-                    : "border-[#c9c8c0] focus-within:border-[var(--color-primary)]"
+                    ? "border-[var(--color-success)]"
+                    : "border-[var(--color-border-strong)] focus-within:border-[var(--color-primary)]"
                 }`}
               >
                 <span className="ml-3 select-none text-sm text-[var(--color-text-dim)]">
@@ -151,7 +151,7 @@ function SetupHandleForm() {
                   className="w-full bg-transparent px-2 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:outline-none"
                   placeholder="your-handle"
                 />
-                {handleValid && <Check size={14} className="text-emerald-400" />}
+                {handleValid && <Check size={14} className="text-[var(--color-success-text)]" />}
                 {handleErr && <X size={14} className="text-[var(--color-danger)]" />}
               </div>
               <div className="mt-1 text-[10px] text-[var(--color-text-dim)]">

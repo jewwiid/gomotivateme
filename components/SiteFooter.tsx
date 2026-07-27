@@ -55,11 +55,11 @@ const socials = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-20 bg-[#fffdf8] px-5 pt-16 sm:px-8 sm:pt-20">
-      <div className="mx-auto grid max-w-[80rem] gap-10 border-b border-[#e3e1d8] pb-14 md:grid-cols-[1.35fr_repeat(3,1fr)]">
+    <footer className="mt-20 bg-[var(--color-bg)] px-5 pt-16 sm:px-8 sm:pt-20">
+      <div className="shell-content grid gap-10 border-b border-[var(--color-border)] pb-14 md:grid-cols-[1.35fr_repeat(3,1fr)]">
         <div>
           <Wordmark href="/" size="2xl" />
-          <p className="mt-4 max-w-xs text-sm leading-6 text-[#676862]">
+          <p className="mt-4 max-w-xs text-sm leading-6 text-[var(--color-text-muted)]">
             Real goals. Real people. Together.
           </p>
           {/* Social icons right under the tagline — the "above the
@@ -73,7 +73,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.label}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#656660] transition hover:bg-[#f0eee5] hover:text-[var(--color-primary)]"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-primary)]"
                 >
                   <span className="block h-[18px] w-[18px]">{s.icon}</span>
                 </a>
@@ -83,8 +83,8 @@ export function SiteFooter() {
         </div>
         {columns.map((column) => (
           <div key={column.title}>
-            <h2 className="text-sm font-bold text-[#33332f]">{column.title}</h2>
-            <ul className="mt-4 space-y-2.5 text-sm text-[#656660]">
+            <h2 className="text-sm font-bold text-[var(--color-text)]">{column.title}</h2>
+            <ul className="mt-4 space-y-2.5 text-sm text-[var(--color-text-muted)]">
               {column.links.map(([label, href]) => (
                 <li key={label}>
                   <Link href={href} className="transition hover:text-[var(--color-primary)]">
@@ -96,7 +96,7 @@ export function SiteFooter() {
           </div>
         ))}
       </div>
-      <div className="mx-auto flex max-w-[80rem] flex-col gap-4 py-7 text-xs text-[#74756f] sm:flex-row sm:items-center sm:justify-between">
+      <div className="shell-content flex flex-col gap-4 py-7 text-xs text-[var(--color-text-muted)] sm:flex-row sm:items-center sm:justify-between">
         <p>© {new Date().getFullYear()} GoMotivateMe</p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/legal/privacy" className="transition hover:text-[var(--color-primary)]">

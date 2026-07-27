@@ -188,24 +188,24 @@ function SignupForm() {
       transition={{ duration: 0.4 }}
     >
       <p className="brand-kicker">A goal is better with company</p>
-      <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">
+      <h1 className="mt-3 title-page">
         Set your first goal
       </h1>
-      <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
+      <p className="mb-8 mt-3 text-base leading-7 text-[var(--color-text-muted)]">
         Set up an account in 30 seconds.
       </p>
 
       <GoogleSignInButton mode="signUp" redirectTo={redirect || "/dashboard"} />
 
-      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
-        <span className="h-px flex-1 bg-[#deddd6]" />
+      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[var(--color-text-dim)]">
+        <span className="h-px flex-1 bg-[var(--color-bg-sunken)]" />
         or
-        <span className="h-px flex-1 bg-[#deddd6]" />
+        <span className="h-px flex-1 bg-[var(--color-bg-sunken)]" />
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3" noValidate>
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Name
           </label>
           <input
@@ -213,13 +213,13 @@ function SignupForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="Your name"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Handle <span className="text-[var(--color-text-dim)]">(optional)</span>
           </label>
           <div
@@ -227,8 +227,8 @@ function SignupForm() {
               handleErr
                 ? "border-[var(--color-danger)]/50"
                 : handleValid
-                ? "border-emerald-500/40"
-                : "border-[#c9c8c0] focus-within:border-[var(--color-primary)]"
+                ? "border-[var(--color-success)]"
+                : "border-[var(--color-border-strong)] focus-within:border-[var(--color-primary)]"
             }`}
           >
             <span className="ml-3 select-none text-sm text-[var(--color-text-dim)]">
@@ -244,7 +244,7 @@ function SignupForm() {
               placeholder="your-handle"
             />
             {handleValid && (
-              <Check size={14} className="text-emerald-400" />
+              <Check size={14} className="text-[var(--color-success-text)]" />
             )}
             {handleErr && (
               <X size={14} className="text-[var(--color-danger)]" />
@@ -264,7 +264,7 @@ function SignupForm() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Email
           </label>
           <input
@@ -273,12 +273,12 @@ function SignupForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="you@example.com"
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Password
           </label>
           <input
@@ -287,7 +287,7 @@ function SignupForm() {
             value={password}
             onChange={(e) => onPasswordChange(e.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="At least 8 characters"
           />
           {passwordHint === "short" && (
@@ -296,7 +296,7 @@ function SignupForm() {
             </div>
           )}
           {passwordHint === "ok" && (
-            <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-emerald-400">
+            <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-[var(--color-success-text)]">
               <Check size={10} />
               Looks good
             </div>
@@ -304,7 +304,7 @@ function SignupForm() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Confirm password
           </label>
           <input
@@ -313,7 +313,7 @@ function SignupForm() {
             value={confirmPassword}
             onChange={(e) => onConfirmPasswordChange(e.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="Type your password again"
           />
           {confirmHint === "mismatch" && (
@@ -322,7 +322,7 @@ function SignupForm() {
             </div>
           )}
           {confirmHint === "ok" && (
-            <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-emerald-400">
+            <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-[var(--color-success-text)]">
               <Check size={10} />
               Matches
             </div>
@@ -344,7 +344,7 @@ function SignupForm() {
         </button>
       </form>
 
-      <p className="mt-7 text-center text-sm text-[#686963]">
+      <p className="mt-7 text-center text-sm text-[var(--color-text-muted)]">
         Already have an account?{" "}
         <Link
           href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"}

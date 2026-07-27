@@ -24,8 +24,8 @@ export function CampaignStatusBanner({
       body: pausedReason ?? "Taking a break. They'll be back.",
     },
     completed: {
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/30",
+      bg: "bg-[var(--color-success-soft)]",
+      border: "border-[var(--color-success)]",
       icon: CheckCircle2,
       title: "Completed",
       body: completedAt
@@ -33,15 +33,15 @@ export function CampaignStatusBanner({
         : "They did it. Take a look at the full timeline below.",
     },
     closed: {
-      bg: "bg-zinc-500/10",
-      border: "border-zinc-500/30",
+      bg: "bg-[var(--color-text-dim)]",
+      border: "border-[var(--color-border-strong)]",
       icon: Archive,
       title: "Closed",
       body: "This campaign is no longer active.",
     },
     draft: {
-      bg: "bg-zinc-500/10",
-      border: "border-zinc-500/30",
+      bg: "bg-[var(--color-text-dim)]",
+      border: "border-[var(--color-border-strong)]",
       icon: Archive,
       title: "Draft",
       body: "Not published yet.",

@@ -14,9 +14,9 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  encouragement: "bg-emerald-50 text-emerald-700",
-  accountability: "bg-amber-50 text-amber-700",
-  advice: "bg-blue-50 text-blue-700",
+  encouragement: "bg-[var(--color-success-soft)] text-[var(--color-success-text)]",
+  accountability: "bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]",
+  advice: "bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]",
   reflection: "bg-purple-50 text-purple-700",
   milestone: "bg-pink-50 text-pink-700",
 };
@@ -45,15 +45,15 @@ export function CheckInList({ goalId }: { goalId: Id<"goals"> }) {
 
   if (checkIns === undefined) {
     return (
-      <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
-        <div className="h-4 w-32 animate-pulse rounded bg-[#f0efe9]" />
+      <div className="workspace-card p-5">
+        <div className="h-4 w-32 animate-pulse rounded bg-[var(--color-bg-elev)]" />
       </div>
     );
   }
 
   if (checkIns.length === 0) {
     return (
-      <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
+      <div className="workspace-card p-5">
         <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
           <MessageCircle size={16} />
           No check-ins yet. Your motivators will show up here.
@@ -63,7 +63,7 @@ export function CheckInList({ goalId }: { goalId: Id<"goals"> }) {
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
+    <div className="workspace-card p-5">
       <h3 className="mb-4 text-sm font-bold text-[var(--color-text)]">
         Check-ins from your circle
       </h3>
@@ -82,7 +82,7 @@ export function CheckInList({ goalId }: { goalId: Id<"goals"> }) {
                 className="h-8 w-8 shrink-0 rounded-full object-cover"
               />
             ) : (
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f0efe9] text-xs font-semibold text-[#4d4e48]">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-bg-elev)] text-xs font-semibold text-[var(--color-text-secondary)]">
                 {(c.motivator.name ?? "?")[0]}
               </div>
             )}
@@ -93,7 +93,7 @@ export function CheckInList({ goalId }: { goalId: Id<"goals"> }) {
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    TYPE_COLORS[c.type] ?? "bg-gray-50 text-gray-700"
+                    TYPE_COLORS[c.type] ?? "bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]"
                   }`}
                 >
                   {TYPE_LABELS[c.type] ?? c.type}

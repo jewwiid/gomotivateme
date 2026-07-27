@@ -131,13 +131,13 @@ export function Header({
 
   return (
     <motion.header
-      className="sticky top-0 z-40 border-b border-[#e9e7df] bg-[#fffdf8]/95 backdrop-blur"
+      className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur"
     >
-      <div className="relative mx-auto flex h-[4.25rem] max-w-[96rem] items-center px-5 sm:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
+      <div className="relative shell-app flex h-[4.25rem] items-center px-5 sm:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
         {/* Primary nav (public, hidden on mobile) — left column */}
         <nav
           aria-label="Primary navigation"
-          className="hidden items-center gap-5 text-sm font-medium text-[#31312e] md:flex"
+          className="hidden items-center gap-5 text-sm font-medium text-[var(--color-text)] md:flex"
         >
           <Link
             href="/explore"
@@ -170,7 +170,7 @@ export function Header({
         {/* Account / avatar nav — right column, pushed to the right edge */}
         <nav
           aria-label="Account navigation"
-          className="flex shrink-0 items-center justify-end gap-4 text-sm font-medium text-[#31312e]"
+          className="flex shrink-0 items-center justify-end gap-4 text-sm font-medium text-[var(--color-text)]"
         >
           {hasAccount && visibleUser ? (
             <div className="relative">
@@ -181,7 +181,7 @@ export function Header({
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 aria-label={`Open account menu for ${accountLabel}`}
-                className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-1 transition hover:bg-[#f0eee5] hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
+                className="inline-flex items-center gap-1.5 rounded-full px-1.5 py-1 transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
               >
                 <AvatarBubble
                   image={visibleUser.image ?? null}
@@ -208,23 +208,23 @@ export function Header({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.98 }}
                     transition={{ duration: 0.14, ease: "easeOut" }}
-                    className="absolute right-0 top-full z-50 mt-2 w-60 origin-top-right overflow-hidden rounded-2xl border border-[#e9e7df] bg-white shadow-[0_18px_40px_-12px_rgba(31,31,27,0.18),0_4px_10px_-2px_rgba(31,31,27,0.08)]"
+                    className="absolute right-0 top-full z-50 mt-2 w-60 origin-top-right overflow-hidden workspace-card shadow-[0_18px_40px_-12px_rgba(31,31,27,0.18),0_4px_10px_-2px_rgba(31,31,27,0.08)]"
                   >
                     {/* User identity strip — small, so the menu still works on
                         narrow viewports where the name next to the avatar is
                         hidden. */}
-                    <div className="flex items-center gap-2.5 border-b border-[#efeee7] bg-[#fafaf6] px-3.5 py-3">
+                    <div className="flex items-center gap-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg)] px-3.5 py-3">
                       <AvatarBubble
                         image={visibleUser.image ?? null}
                         name={visibleUser.name ?? visibleUser.handle ?? "?"}
                         size={9}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[#1f1f1c]">
+                        <p className="truncate text-sm font-semibold text-[var(--color-text)]">
                           {visibleUser.name ?? accountLabel}
                         </p>
                         {visibleUser.handle ? (
-                          <p className="truncate text-xs text-[#7a7c75]">
+                          <p className="truncate text-xs text-[var(--color-text-muted)]">
                             @{visibleUser.handle}
                           </p>
                         ) : null}
@@ -242,14 +242,14 @@ export function Header({
                               className={`group flex items-center gap-3 px-3.5 py-2.5 text-sm transition ${
                                 active
                                   ? "bg-[var(--color-primary-soft)]/60 text-[var(--color-primary)]"
-                                  : "text-[#2d2e29] hover:bg-[#f4f2ea]"
+                                  : "text-[var(--color-text)] hover:bg-[var(--color-bg-elev)]"
                               }`}
                             >
                               <span
                                 className={`grid h-7 w-7 place-items-center rounded-lg ${
                                   active
                                     ? "bg-[var(--color-primary)] text-white"
-                                    : "bg-[#f4f2ea] text-[#5d5e58] group-hover:bg-[#ecead8]"
+                                    : "bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)] group-hover:bg-[var(--color-gold-soft)]"
                                 }`}
                               >
                                 <Icon size={15} strokeWidth={1.8} aria-hidden />
@@ -263,14 +263,14 @@ export function Header({
                         ))}
                     </ul>
 
-                    <div className="border-t border-[#efeee7] py-1.5">
+                    <div className="border-t border-[var(--color-border-subtle)] py-1.5">
                       <button
                         type="button"
                         role="menuitem"
                         onClick={handleSignOut}
-                        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm text-[#2d2e29] transition hover:bg-[#fdecec] hover:text-[#c44343]"
+                        className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-danger-soft)] hover:text-[var(--color-danger-text)]"
                       >
-                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#f4f2ea] text-[#5d5e58] group-hover:bg-[#fdecec]">
+                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)] group-hover:bg-[var(--color-danger-soft)]">
                           <LogOut size={15} strokeWidth={1.8} aria-hidden />
                         </span>
                         <span className="flex-1 text-left font-medium">
@@ -342,7 +342,7 @@ function AvatarBubble({
   if (!showImage) {
     return (
       <span
-        className={`grid place-items-center rounded-full bg-[#f0efe9] font-bold text-[#4d4e48] ${dim}`}
+        className={`grid place-items-center rounded-full bg-[var(--color-bg-elev)] font-bold text-[var(--color-text-secondary)] ${dim}`}
       >
         {initials}
       </span>

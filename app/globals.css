@@ -1,6 +1,20 @@
 @import "tailwindcss";
 
 /*
+  `font-display` is used on ~66 headings across the app but was never defined,
+  so in Tailwind v4 the utility emitted nothing and every heading silently fell
+  back to the body face. Declaring it here makes those usages real.
+
+  Note: Manrope is loaded in layout.tsx but only ever sits behind Jakarta in the
+  body fallback chain, so it never actually renders. Either assign it to body
+  text or drop the import — see the note in the handover.
+*/
+@theme {
+  --font-display:
+    var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
   gomotivateme design system.
 
   Light surface (public site, landing, goal pages) is the primary brand surface —
@@ -15,12 +29,25 @@
     /* === Light surface (primary brand) === */
     --color-bg: #fffdf8;
     --color-bg-elev: #f3f1ea;
+    --color-bg-sunken: #edece6;
     --color-surface: #ffffff;
+
+    /* Border ramp — subtle (inner dividers), default (cards), strong (inputs). */
+    --color-border-subtle: #f0efe9;
     --color-border: #e9e7df;
     --color-border-strong: #c9c8c0;
-    --color-text: #202124;
-    --color-text-muted: #6c706f;
-    --color-text-dim: #9aa0a0;
+
+    /* Warm neutral text ramp. Every grey in the product resolves to one of
+       these four steps. They share a hue with the warm canvas, so no text
+       ever reads cool against #fffdf8.
+         text       14.2:1  body + headings
+         secondary   8.3:1  supporting copy
+         muted       5.5:1  metadata (AA normal)
+         dim         3.5:1  labels only (AA large) — never body copy */
+    --color-text: #292a26;
+    --color-text-secondary: #4d4e48;
+    --color-text-muted: #686963;
+    --color-text-dim: #888983;
 
     /* Primary = brand blue (#044dfc from the official wordmark).
        Gold = brand gold (#feb604 from the official wordmark).
@@ -37,6 +64,14 @@
     --color-warning: #f0a91e;
     --color-warning-soft: #fcecc8;
     --color-danger: #e85a5a;
+    --color-danger-soft: #fdecec;
+
+    /* On-soft text. The base status colours above are tuned for fills and
+       icons and are too light to sit as text on their own -soft chip.
+       These darker pairs carry the same hue at AA contrast. */
+    --color-success-text: #188451;
+    --color-gold-text: #9a6b00;
+    --color-danger-text: #a53b3b;
 
     /* Surfaces for the campaign/landing */
     --color-card: #ffffff;
@@ -47,23 +82,14 @@
     /* Shared workspace geometry. */
     --workspace-radius: 1.1rem;
     --workspace-shadow: 0 1px 2px rgba(32, 33, 36, 0.025);
-  }
 
-  .dark-surface {
-    /* === Dark surface (dashboard, login) === */
-    --color-bg: #0d1117;
-    --color-bg-elev: #161b22;
-    --color-surface: #1a2030;
-    --color-border: #2a2f3e;
-    --color-border-strong: #3a4154;
-    --color-text: #f5f5f7;
-    --color-text-muted: #9a9aab;
-    --color-text-dim: #6b6b7a;
-    --color-card: #1a2030;
-    --color-card-elev: #222940;
-    --color-bg-card: var(--color-card);
-    /* Brand gold reads well on navy unchanged. */
-    --color-gold: #feb604;
+    /* Page shell widths. Four documented widths — no ad-hoc max-w values.
+       Header and workspace share --shell-app so the app chrome always
+       aligns with the content beneath it. */
+    --shell-app: 96rem;
+    --shell-bleed: 88rem;
+    --shell-content: 80rem;
+    --shell-prose: 42rem;
   }
 
   html,
@@ -115,11 +141,72 @@
 }
 
 @layer components {
+  /* Page shells. Use these instead of a bare max-w-[..] on any page wrapper. */
+  .shell-app,
+  .shell-bleed,
+  .shell-content,
+  .shell-prose {
+    margin-inline: auto;
+    width: 100%;
+  }
+  .shell-app { max-width: var(--shell-app); }
+  .shell-bleed { max-width: var(--shell-bleed); }
+  .shell-content { max-width: var(--shell-content); }
+  .shell-prose { max-width: var(--shell-prose); }
+
   .workspace-card {
     border: 1px solid var(--color-border);
     border-radius: var(--workspace-radius);
     background: var(--color-surface);
     box-shadow: var(--workspace-shadow);
+  }
+
+  /* Nested panel inside a card. Same geometry, no elevation — keeps cards
+     from visually stacking inside cards. */
+  .workspace-card-soft {
+    border: 1px solid var(--color-border);
+    border-radius: var(--workspace-radius);
+    background: var(--color-bg-elev);
+  }
+
+  /* Heading tiers. Page titles were previously written 24 different ways
+     across 3 sizes, 6 tracking values and 4 leading values — and the small
+     state titles were missing font-display entirely. These are the three
+     tiers that were actually intended. */
+  .title-hero,
+  .title-page,
+  .title-state {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-text);
+    text-wrap: balance;
+  }
+  .title-hero {
+    font-size: clamp(2.75rem, 6vw, 4rem);
+    line-height: 0.93;
+    letter-spacing: -0.06em;
+  }
+  .title-page {
+    font-size: 2.25rem;
+    line-height: 0.96;
+    letter-spacing: -0.05em;
+  }
+  @media (min-width: 640px) {
+    .title-page { font-size: 3rem; }
+  }
+  .title-state {
+    font-size: 1.875rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  /* The small uppercase metadata label used across every surface. */
+  .workspace-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
   }
 
   .workspace-button-primary,

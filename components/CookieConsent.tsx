@@ -87,10 +87,10 @@ export function CookieConsent() {
           transition={{ duration: 0.3 }}
           className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4 sm:px-6 sm:pb-6"
         >
-          <div className="mx-auto max-w-2xl rounded-2xl border border-[#deddd6] bg-[#fffdf8] p-5 shadow-lg sm:p-6">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 shadow-lg sm:p-6">
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm leading-6 text-[#292929]">
+                <p className="text-sm leading-6 text-[var(--color-text)]">
                   We use <strong>essential cookies</strong> to keep you signed in and
                   the site working. No tracking, no analytics, no ads.{" "}
                   <Link
@@ -119,7 +119,7 @@ export function CookieConsent() {
                     >
                       <table className="mt-3 w-full text-left text-xs">
                         <thead>
-                          <tr className="border-b border-[#deddd6] text-[#888983]">
+                          <tr className="border-b border-[var(--color-border)] text-[var(--color-text-dim)]">
                             <th className="py-1.5 pr-2 font-semibold">Cookie</th>
                             <th className="py-1.5 pr-2 font-semibold">Purpose</th>
                             <th className="py-1.5 font-semibold">Type</th>
@@ -127,12 +127,12 @@ export function CookieConsent() {
                         </thead>
                         <tbody>
                           {COOKIES.map((c) => (
-                            <tr key={c.name} className="border-b border-[#f0efe9] last:border-0">
-                              <td className="break-all py-1.5 pr-2 font-mono text-[10px] text-[#686963]">
+                            <tr key={c.name} className="border-b border-[var(--color-border-subtle)] last:border-0">
+                              <td className="break-all py-1.5 pr-2 font-mono text-[10px] text-[var(--color-text-muted)]">
                                 {c.name}
                               </td>
-                              <td className="py-1.5 pr-2 text-[#686963]">{c.purpose}</td>
-                              <td className="py-1.5 text-[#686963]">{c.type}</td>
+                              <td className="py-1.5 pr-2 text-[var(--color-text-muted)]">{c.purpose}</td>
+                              <td className="py-1.5 text-[var(--color-text-muted)]">{c.type}</td>
                             </tr>
                           ))}
                         </tbody>

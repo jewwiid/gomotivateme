@@ -66,8 +66,8 @@ export function MomentumStats({
       value: String(cheerTotal),
       sub: cheerTotal > 0 ? "People rooting for them" : "Be the first",
       icon: Heart,
-      color: "text-rose-500",
-      bg: "bg-rose-50",
+      color: "text-[var(--color-danger)]",
+      bg: "bg-[var(--color-danger-soft)]",
     },
     {
       label: "Accountability",
@@ -100,9 +100,9 @@ export function MomentumStats({
   ];
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-      <h2 className="text-base font-semibold text-zinc-900">Progress</h2>
-      <p className="mt-1 text-xs text-zinc-500">
+    <section className="workspace-card p-5 sm:p-6">
+      <h2 className="text-base font-semibold text-[var(--color-text)]">Progress</h2>
+      <p className="mt-1 text-xs text-[var(--color-text-muted)]">
         The real human actions behind this goal.
       </p>
 
@@ -116,18 +116,18 @@ export function MomentumStats({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-30px" }}
               transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+              className="workspace-card-soft p-3"
             >
               <div className={`mb-2 inline-flex h-7 w-7 items-center justify-center rounded-lg ${it.bg} ${it.color}`}>
                 <Icon size={13} />
               </div>
-              <div className="text-xl font-bold tabular-nums text-zinc-900">
+              <div className="text-xl font-bold tabular-nums text-[var(--color-text)]">
                 {it.value}
               </div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
                 {it.label}
               </div>
-              <div className="mt-0.5 text-[10px] text-zinc-400">{it.sub}</div>
+              <div className="mt-0.5 text-[10px] text-[var(--color-text-dim)]">{it.sub}</div>
             </motion.div>
           );
         })}

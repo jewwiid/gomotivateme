@@ -182,14 +182,14 @@ export function OwnerGoalWorkspace({
     <WorkspaceShell
       items={navItems}
       asideFooter={
-        <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-          <p className="text-sm font-bold text-[#282925]">Your public link</p>
-          <p className="mt-2 break-all text-xs leading-5 text-[#6c706f]">{publicLabel}</p>
+        <div className="workspace-card p-4">
+          <p className="text-sm font-bold text-[var(--color-text)]">Your public link</p>
+          <p className="mt-2 break-all text-xs leading-5 text-[var(--color-text-muted)]">{publicLabel}</p>
           <a
             href={publicUrl || "#public-page"}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-3 text-xs font-semibold text-[#30312d] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
           >
             View public page
             <ArrowUpRight size={14} aria-hidden />
@@ -197,7 +197,7 @@ export function OwnerGoalWorkspace({
           <button
             type="button"
             onClick={onCopyLink}
-            className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-3 text-xs font-semibold text-[#30312d] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
           >
             {linkCopied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
             {linkCopied ? "Copied" : "Copy link"}
@@ -207,7 +207,7 @@ export function OwnerGoalWorkspace({
     >
       <div id="overview" className="scroll-mt-24 space-y-4">
         <section className="workspace-card grid min-h-[11rem] gap-5 p-4 md:grid-cols-[17.5rem_minmax(0,1fr)] xl:grid-cols-[17.5rem_minmax(0,1fr)_14rem]">
-          <div className="relative min-h-40 overflow-hidden rounded-[0.95rem] bg-[#eceae1] md:min-h-0">
+          <div className="relative min-h-40 overflow-hidden rounded-[0.95rem] bg-[var(--color-bg-sunken)] md:min-h-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={coverUrl || "/illustrations/hero-community-v3.webp"}
@@ -218,17 +218,17 @@ export function OwnerGoalWorkspace({
 
           <div className="flex min-w-0 flex-col justify-center py-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-[#d9f5e4] px-3 py-1 text-xs font-bold text-[#188451]">
+              <span className="rounded-full bg-[var(--color-success-soft)] px-3 py-1 text-xs font-bold text-[var(--color-success-text)]">
                 {titleCase(goal.status)}
               </span>
-              <span className="text-xs font-medium text-[#777872]">
+              <span className="text-xs font-medium text-[var(--color-text-muted)]">
                 {titleCase(goal.category || "Goal")}
               </span>
             </div>
-            <h1 className="mt-5 font-display text-[clamp(2rem,3vw,2.65rem)] font-bold leading-[0.96] tracking-[-0.055em] text-[#242421]">
+            <h1 className="mt-5 font-display text-[clamp(2rem,3vw,2.65rem)] font-bold leading-[0.96] tracking-[-0.055em] text-[var(--color-text)]">
               {goal.title}
             </h1>
-            <p className="mt-3 max-w-[42rem] text-sm leading-6 text-[#6c706f]">
+            <p className="mt-3 max-w-[42rem] text-sm leading-6 text-[var(--color-text-muted)]">
               {goal.summary || "A public goal made stronger by the people behind it."}
             </p>
           </div>
@@ -295,7 +295,7 @@ export function OwnerGoalWorkspace({
         <div className="!mt-[1.3125rem] grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,0.94fr)]">
           <div className="space-y-3">
             <form onSubmit={postNote} className="workspace-card p-4">
-              <h2 className="text-base font-bold text-[#262723]">Share an update</h2>
+              <h2 className="text-base font-bold text-[var(--color-text)]">Share an update</h2>
               <div className="mt-2 flex items-start gap-3">
                 <Avatar name={owner.name} image={owner.image} size="md" />
                 <textarea
@@ -303,7 +303,7 @@ export function OwnerGoalWorkspace({
                   onChange={(event) => setNote(event.target.value)}
                   rows={2}
                   placeholder="What progress have you made?"
-                  className="min-h-16 flex-1 resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2.5 text-base leading-6 text-[#292929] placeholder:text-[#93958e] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                  className="min-h-16 flex-1 resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2.5 text-base leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/10"
                 />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 pl-0 sm:pl-12">
@@ -341,7 +341,7 @@ export function OwnerGoalWorkspace({
             <section id="milestones" className="workspace-card scroll-mt-24 p-4 pb-3">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-base font-bold text-[#262723]">Milestone path</h2>
+                  <h2 className="text-base font-bold text-[var(--color-text)]">Milestone path</h2>
                 </div>
                 <a
                   href="#milestone-editor"
@@ -362,31 +362,31 @@ export function OwnerGoalWorkspace({
                       <span
                         aria-hidden
                         className={`absolute left-9 right-[-1rem] top-[1.125rem] hidden h-px sm:block ${
-                          milestone.done ? "bg-[#39a96b]" : "bg-[#deddd6]"
+                          milestone.done ? "bg-[var(--color-success)]" : "bg-[var(--color-bg-sunken)]"
                         }`}
                       />
                     ) : null}
                     <span
                       className={`relative z-10 grid h-9 w-9 place-items-center rounded-full border-2 bg-white text-sm font-bold transition ${
                         milestone.done
-                          ? "border-[#25a85f] bg-[#e9f8ef] text-[#168046]"
+                          ? "border-[var(--color-success)] bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
                           : index === milestones.findIndex((item) => !item.done)
                           ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-                          : "border-[#deddd6] text-[#777872] group-hover:border-[var(--color-primary)]"
+                          : "border-[var(--color-border)] text-[var(--color-text-muted)] group-hover:border-[var(--color-primary)]"
                       }`}
                     >
                       {milestone.done ? <Check size={18} aria-hidden /> : index + 1}
                     </span>
-                    <span className="mt-2 block truncate text-sm font-bold text-[#30312d]">
+                    <span className="mt-2 block truncate text-sm font-bold text-[var(--color-text)]">
                       {milestone.title}
                     </span>
                     <span
                       className={`mt-1 block text-xs ${
                         milestone.done
-                          ? "text-[#1f8d51]"
+                          ? "text-[var(--color-success-text)]"
                           : index === milestones.findIndex((item) => !item.done)
                           ? "text-[var(--color-primary)]"
-                          : "text-[#8b8d86]"
+                          : "text-[var(--color-text-dim)]"
                       }`}
                     >
                       {milestone.done ? "Complete" : index === milestones.findIndex((item) => !item.done) ? "Next" : "Upcoming"}
@@ -398,7 +398,7 @@ export function OwnerGoalWorkspace({
 
             <section id="updates" className="workspace-card scroll-mt-24 p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-[#262723]">Recent activity</h2>
+                <h2 className="text-base font-bold text-[var(--color-text)]">Recent activity</h2>
                 <a href="#all-updates" className="text-xs font-bold text-[var(--color-primary)] hover:underline">
                   View all updates
                 </a>
@@ -406,13 +406,13 @@ export function OwnerGoalWorkspace({
               <div className="mt-4 space-y-3 sm:space-y-4">
                 {updates === undefined ? (
                   <>
-                    <div className="h-14 animate-pulse rounded-xl bg-[#f2f0e9]" />
-                    <div className="h-14 animate-pulse rounded-xl bg-[#f2f0e9]" />
+                    <div className="h-14 animate-pulse rounded-xl bg-[var(--color-bg-elev)]" />
+                    <div className="h-14 animate-pulse rounded-xl bg-[var(--color-bg-elev)]" />
                   </>
                 ) : updates.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-[var(--color-border-strong)] px-4 py-7 text-center">
                     <Sparkles className="mx-auto text-[var(--color-primary)]" size={22} aria-hidden />
-                    <p className="mt-2 text-sm font-semibold text-[#33342f]">Your first update starts the story.</p>
+                    <p className="mt-2 text-sm font-semibold text-[var(--color-text)]">Your first update starts the story.</p>
                   </div>
                 ) : (
                   updates.slice(0, 3).map((update) => (
@@ -422,12 +422,12 @@ export function OwnerGoalWorkspace({
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <p className="text-sm font-bold text-[#2e2f2a]">
+                          <p className="text-sm font-bold text-[var(--color-text)]">
                             {update.type === "milestone" ? "Milestone updated" : "Update posted"}
                           </p>
-                          <time className="text-xs text-[#92948e]">{timeAgo(update.createdAt)}</time>
+                          <time className="text-xs text-[var(--color-text-dim)]">{timeAgo(update.createdAt)}</time>
                         </div>
-                        <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#6c706f]">
+                        <p className="mt-1 line-clamp-2 text-sm leading-5 text-[var(--color-text-muted)]">
                           {update.note || "Progress shared with your support circle."}
                         </p>
                       </div>
@@ -441,14 +441,14 @@ export function OwnerGoalWorkspace({
           <aside className="space-y-4">
             <section className="workspace-card p-3">
               <div className="flex items-start gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[#9a6b00]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]">
                   <Sparkles size={18} aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[#292a26]">Next best action</p>
-                  <div className="mt-2 rounded-xl border border-[var(--color-border)] bg-[#fbfaf5] p-2.5">
-                    <p className="font-bold text-[#292a26]">{nextAction}</p>
-                    <p className="mt-1.5 text-xs leading-5 text-[#6c706f]">
+                  <p className="text-sm font-bold text-[var(--color-text)]">Next best action</p>
+                  <div className="mt-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5">
+                    <p className="font-bold text-[var(--color-text)]">{nextAction}</p>
+                    <p className="mt-1.5 text-xs leading-5 text-[var(--color-text-muted)]">
                       Clarify the outcome, success metrics, and the next concrete step.
                     </p>
                     <button
@@ -465,7 +465,7 @@ export function OwnerGoalWorkspace({
 
             <section className="workspace-card p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-[#292a26]">Top supporter</h2>
+                <h2 className="text-sm font-bold text-[var(--color-text)]">Top supporter</h2>
                 <a href="#supporters" className="text-xs font-bold text-[var(--color-primary)] hover:underline">
                   View all
                 </a>
@@ -473,8 +473,8 @@ export function OwnerGoalWorkspace({
               <div className="mt-3 flex items-center gap-3">
                 <Avatar name={resolvedSupporterName} size="md" />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-[#292a26]">{resolvedSupporterName}</p>
-                  <p className="mt-0.5 truncate text-xs text-[#777872]">
+                  <p className="truncate text-sm font-bold text-[var(--color-text)]">{resolvedSupporterName}</p>
+                  <p className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">
                     Encourager · Regular check-ins
                   </p>
                 </div>
@@ -482,7 +482,7 @@ export function OwnerGoalWorkspace({
               <button
                 type="button"
                 onClick={() => document.getElementById("supporters")?.scrollIntoView({ behavior: "smooth" })}
-                className="mt-3 min-h-10 w-full rounded-xl bg-[#f2f0e9] px-3 text-xs font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
+                className="mt-3 min-h-10 w-full rounded-xl bg-[var(--color-bg-elev)] px-3 text-xs font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
               >
                 Send thank you
               </button>
@@ -490,12 +490,12 @@ export function OwnerGoalWorkspace({
 
             <section id="support-circle" className="workspace-card scroll-mt-24 p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-[#292a26]">Motivation circle</h2>
+                <h2 className="text-sm font-bold text-[var(--color-text)]">Motivation circle</h2>
                 <a href="#circle-manager" className="text-xs font-bold text-[var(--color-primary)] hover:underline">
                   View all
                 </a>
               </div>
-              <p className="mt-1 text-xs font-semibold text-[#4f514b]">
+              <p className="mt-1 text-xs font-semibold text-[var(--color-text-secondary)]">
                 {coreMotivators.length} of 6 core motivators
               </p>
               <div className="mt-4 grid grid-cols-6 gap-2">
@@ -510,13 +510,13 @@ export function OwnerGoalWorkspace({
                     <span
                       key={index}
                       aria-label="Open motivator spot"
-                      className="aspect-square rounded-full border border-dashed border-[#c9c8c0] bg-[#faf9f5]"
+                      className="aspect-square rounded-full border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg)]"
                     />
                   );
                 })}
               </div>
-              <div className="mt-4 rounded-xl border border-[#d7e6ff] bg-[#eef6ff] p-3">
-                <p className="text-xs leading-5 text-[#53616f]">
+              <div className="mt-4 rounded-xl border border-[var(--color-primary-soft)] bg-[var(--color-accent-soft)] p-3">
+                <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
                   Add the people and reasons that keep you going when momentum dips.
                 </p>
                 <a
@@ -559,12 +559,12 @@ export function OwnerGoalWorkspace({
           </section>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] py-5 text-xs text-[#85877f] lg:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] py-5 text-xs text-[var(--color-text-dim)] lg:hidden">
           <span>{publicLabel}</span>
           <button
             type="button"
             onClick={onCopyLink}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-4 font-bold text-[#33342f]"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-4 font-bold text-[var(--color-text)]"
           >
             {linkCopied ? <Check size={14} /> : <Copy size={14} />}
             {linkCopied ? "Copied" : "Copy public link"}
@@ -599,22 +599,22 @@ export function MomentumStat({
         className={
           progress !== undefined
             ? "h-7 w-7 shrink-0 text-[var(--color-primary)] sm:h-8 sm:w-8"
-            : "h-7 w-7 shrink-0 text-[#4d4f49] sm:h-8 sm:w-8"
+            : "h-7 w-7 shrink-0 text-[var(--color-text-secondary)] sm:h-8 sm:w-8"
         }
       />
       <div className="min-w-0">
-        <p className="truncate text-[0.67rem] font-bold uppercase tracking-[0.12em] text-[#858780]">
+        <p className="truncate text-[0.67rem] font-bold uppercase tracking-[0.12em] text-[var(--color-text-dim)]">
           {label}
         </p>
         <div className="mt-1 flex items-baseline gap-2">
-          <strong className="truncate text-lg tracking-[-0.035em] text-[#242521] sm:text-xl">{value}</strong>
+          <strong className="truncate text-lg tracking-[-0.035em] text-[var(--color-text)] sm:text-xl">{value}</strong>
           {progress !== undefined ? (
             <span className="text-xs font-bold text-[var(--color-primary)]">On track</span>
           ) : null}
         </div>
-        <p className="mt-0.5 truncate text-xs text-[#7b7d76]">{detail}</p>
+        <p className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">{detail}</p>
         {progress !== undefined ? (
-          <div className="mt-2 h-1 w-24 overflow-hidden rounded-full bg-[#e4e3dc]">
+          <div className="mt-2 h-1 w-24 overflow-hidden rounded-full bg-[var(--color-bg-sunken)]">
             <div
               className="h-full rounded-full bg-[var(--color-primary)]"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
@@ -639,7 +639,7 @@ function ComposerAction({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 text-xs font-semibold text-[#33342f] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+      className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
     >
       <Icon size={15} strokeWidth={1.8} aria-hidden />
       {label}
@@ -678,7 +678,7 @@ export function Avatar({
   return (
     <span
       aria-hidden
-      className={`grid shrink-0 place-items-center rounded-full bg-[#5865c7] font-bold text-white ${dimensions}`}
+      className={`grid shrink-0 place-items-center rounded-full bg-[var(--color-primary)] font-bold text-white ${dimensions}`}
     >
       {initials}
     </span>

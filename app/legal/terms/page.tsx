@@ -13,19 +13,19 @@ const EFFECTIVE = "July 22, 2026";
 export default function TermsPage() {
   return (
     <article className="space-y-10">
-      <header className="border-b border-[#e9e7df] pb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#888983]">
+      <header className="border-b border-[var(--color-border)] pb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-dim)]">
           Legal
         </p>
-        <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+        <h1 className="mt-2 title-page">
           Terms of Service
         </h1>
-        <p className="mt-3 text-sm text-[#74756f]">
+        <p className="mt-3 text-sm text-[var(--color-text-muted)]">
           Effective {EFFECTIVE} · Last updated {LAST_UPDATED}
         </p>
       </header>
 
-      <div className="prose-gmm space-y-10 text-[15px] leading-7 text-[#3b3b37]">
+      <div className="prose-gmm space-y-10 text-[15px] leading-7 text-[var(--color-text)]">
         <Section title="1. Welcome">
           <p>
             These Terms of Service ("Terms") govern your use of{" "}
@@ -66,7 +66,7 @@ export default function TermsPage() {
 
         <Section title="4. Acceptable use">
           <p>The Service is for real encouragement, not abuse. You agree not to:</p>
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>Harass, threaten, or impersonate another person.</li>
             <li>
               Post content that is hateful, violent, sexually explicit, or
@@ -268,7 +268,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[#1f1f1c]">
+      <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[var(--color-text)]">
         {title}
       </h2>
       <div className="mt-3 space-y-3">{children}</div>
@@ -278,7 +278,7 @@ function Section({
 
 function Footnote({ children }: { children: React.ReactNode }) {
   return (
-    <aside className="rounded-2xl border border-[#e9e7df] bg-[#f6f4ec] p-5 text-sm leading-6 text-[#656660]">
+    <aside className="workspace-card-soft p-5 text-sm leading-6 text-[var(--color-text-muted)]">
       {children}
     </aside>
   );

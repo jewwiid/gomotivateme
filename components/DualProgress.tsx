@@ -99,7 +99,7 @@ export function DualProgress({
         pctRef={supLabelRef}
         initialPct={supporterPct ?? 0}
         width={supWidth}
-        color="from-emerald-500 to-emerald-300"
+        color="from-[var(--color-success)] to-[var(--color-success-soft)]"
         icon={<Users size={11} />}
       />
     </div>

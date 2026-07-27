@@ -75,7 +75,7 @@ export function WelcomeModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-text)] p-4 backdrop-blur-sm"
           onClick={dismiss}
           role="dialog"
           aria-modal="true"
@@ -96,7 +96,7 @@ export function WelcomeModal() {
             <button
               onClick={dismiss}
               aria-label="Close"
-              className="absolute right-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
+              className="absolute right-4 top-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
             >
               <X size={16} />
             </button>
@@ -109,7 +109,7 @@ export function WelcomeModal() {
                   src="/illustrations/motivation-circle-v3.webp"
                   alt=""
                   aria-hidden
-                  className="h-44 w-44 rotate-[-4deg] rounded-2xl object-cover shadow-lg ring-1 ring-zinc-200/60"
+                  className="h-44 w-44 rotate-[-4deg] rounded-2xl object-cover shadow-lg ring-1 ring-[var(--color-border)]"
                 />
               </div>
               {/* Soft fade at the bottom so the cover melts into the white card body */}
@@ -120,12 +120,12 @@ export function WelcomeModal() {
             <div className="px-7 pb-7 pt-2 text-center">
               <h2
                 id="welcome-modal-title"
-                className="font-display text-2xl font-bold tracking-tight text-zinc-900 sm:text-[26px]"
+                className="font-display text-2xl font-bold tracking-tight text-[var(--color-text)] sm:text-[26px]"
                 style={{ letterSpacing: "-0.02em" }}
               >
                 Welcome to GoMotivateMe
               </h2>
-              <p className="mx-auto mt-3 max-w-sm text-sm text-zinc-600">
+              <p className="mx-auto mt-3 max-w-sm text-sm text-[var(--color-text-secondary)]">
                 Set a goal, share progress, and let a circle of
                 people keep you going. No payments. No performative likes.
                 just honest progress.
@@ -140,7 +140,7 @@ export function WelcomeModal() {
               </Link>
               <button
                 onClick={dismiss}
-                className="mt-3 inline-flex w-full items-center justify-center rounded-full px-6 py-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-900"
+                className="mt-3 inline-flex w-full items-center justify-center rounded-full px-6 py-2 text-sm font-medium text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
               >
                 I&apos;ll just look around
               </button>

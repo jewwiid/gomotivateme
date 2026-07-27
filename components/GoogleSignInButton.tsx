@@ -63,7 +63,7 @@ export function GoogleSignInButton({ mode, redirectTo = "/dashboard" }: { mode: 
         type="button"
         onClick={onClick}
         disabled={busy}
-        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[#deddd6] bg-white py-3 text-sm font-semibold text-[#292929] transition hover:bg-[#f7f6ef] disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2.5 workspace-card py-3 text-sm font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-bg-elev)] disabled:opacity-50"
       >
         <GoogleLogo />
         {busy

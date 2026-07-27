@@ -23,7 +23,7 @@ export function WorkspaceShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-[96rem] lg:grid lg:grid-cols-[17.5rem_minmax(0,1fr)]">
+    <div className="shell-app lg:grid lg:grid-cols-[17.5rem_minmax(0,1fr)]">
       <aside className="border-b border-[var(--color-border)] bg-[var(--color-bg)] lg:sticky lg:top-[4.25rem] lg:flex lg:h-[calc(100vh-4.25rem)] lg:flex-col lg:border-b-0 lg:border-r">
         <nav
           aria-label={ariaLabel}
@@ -38,14 +38,14 @@ export function WorkspaceShell({
               className={`group inline-flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
                 active
                   ? "bg-[var(--color-primary-soft)]/55 text-[var(--color-primary)]"
-                  : "text-[#33342f] hover:bg-[#f2f0e8] hover:text-[var(--color-primary)]"
+                  : "text-[var(--color-text)] hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-primary)]"
               }`}
             >
               <Icon
                 size={18}
                 strokeWidth={1.8}
                 aria-hidden
-                className={active ? "text-[var(--color-primary)]" : "text-[#474944]"}
+                className={active ? "text-[var(--color-primary)]" : "text-[var(--color-text-secondary)]"}
               />
               <span>{label}</span>
             </a>

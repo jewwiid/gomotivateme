@@ -87,13 +87,13 @@ function PublicEmbed({ embed }: { embed: UpdateMediaItem & { canonicalUrl: strin
       <button
         type="button"
         onClick={() => setLoaded(true)}
-        className="group flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-700 transition hover:border-zinc-300 hover:from-zinc-50 hover:to-zinc-100"
+        className="group flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-bg-elev)] to-[var(--color-bg-sunken)] text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)] hover:from-[var(--color-bg-elev)] hover:to-[var(--color-bg-sunken)]"
       >
-        <span className="flex size-11 items-center justify-center rounded-full bg-white text-zinc-800 shadow-sm transition group-hover:scale-105">
+        <span className="flex size-11 items-center justify-center rounded-full bg-white text-[var(--color-text)] shadow-sm transition group-hover:scale-105">
           <Play size={18} fill="currentColor" />
         </span>
         <span className="text-sm font-semibold">Play {providerName} video</span>
-        <span className="text-xs text-zinc-500">Loads from {providerName} when played</span>
+        <span className="text-xs text-[var(--color-text-muted)]">Loads from {providerName} when played</span>
       </button>
     );
   }
@@ -101,7 +101,7 @@ function PublicEmbed({ embed }: { embed: UpdateMediaItem & { canonicalUrl: strin
   if (embed.provider === "youtube" || embed.provider === "tiktok") {
     if (!embed.embedUrl) return <PublicLink embed={embed} />;
     return (
-      <div className="aspect-video overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+      <div className="aspect-video overflow-hidden workspace-card-soft">
         <iframe
           src={embed.embedUrl}
           title={`${embed.provider === "youtube" ? "YouTube" : "TikTok"} progress update`}
@@ -145,13 +145,13 @@ function InstagramEmbed({ permalink }: { permalink: string }) {
   }, [permalink]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white p-2">
+    <div className="overflow-hidden workspace-card p-2">
       <blockquote
         className="instagram-media !m-0 !min-w-0 !w-full"
         data-instgrm-permalink={permalink}
         data-instgrm-version="14"
       >
-        <a href={permalink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-zinc-700">
+        <a href={permalink} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-[var(--color-text-secondary)]">
           View this Instagram post
         </a>
       </blockquote>
@@ -165,15 +165,15 @@ function PublicLink({ embed }: { embed: UpdateMediaItem & { canonicalUrl: string
       href={embed.canonicalUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-700 transition hover:border-zinc-300"
+      className="flex items-center gap-3 workspace-card-soft px-3 py-3 text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)]"
     >
-      <span className="flex size-8 items-center justify-center rounded-full bg-white text-zinc-500 shadow-sm">
+      <span className="flex size-8 items-center justify-center rounded-full bg-white text-[var(--color-text-muted)] shadow-sm">
         {embed.provider ? <Play size={14} /> : <ImageIcon size={14} />}
       </span>
       <span className="min-w-0 flex-1 truncate font-medium">
         {embed.provider ? `${embed.provider[0].toUpperCase()}${embed.provider.slice(1)} video` : "View shared media"}
       </span>
-      <ExternalLink size={14} className="shrink-0 text-zinc-400" />
+      <ExternalLink size={14} className="shrink-0 text-[var(--color-text-dim)]" />
     </a>
   );
 }

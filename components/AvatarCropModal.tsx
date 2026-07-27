@@ -303,14 +303,14 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#e9e7df] bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.4)]"
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--color-border)] bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.4)]"
             onMouseDown={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#efeee7] px-5 py-3.5">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-3.5">
               <h2
                 id="avatar-crop-title"
-                className="text-sm font-semibold text-[#1f1f1c]"
+                className="text-sm font-semibold text-[var(--color-text)]"
               >
                 Adjust your photo
               </h2>
@@ -319,14 +319,14 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
                 type="button"
                 onClick={onCancel}
                 aria-label="Close"
-                className="grid h-7 w-7 place-items-center rounded-full text-[#777872] transition hover:bg-[#f4f2ea] hover:text-[#1f1f1c]"
+                className="grid h-7 w-7 place-items-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
               >
                 <X size={15} />
               </button>
             </div>
 
             {/* Crop viewport */}
-            <div className="flex justify-center bg-[#fafaf6] px-6 py-7">
+            <div className="flex justify-center bg-[var(--color-bg)] px-6 py-7">
               <div
                 ref={viewportRef}
                 onPointerDown={onPointerDown}
@@ -357,7 +357,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
                   />
                 ) : null}
                 {!natural ? (
-                  <div className="grid h-full w-full place-items-center text-xs text-[#9a9a93]">
+                  <div className="grid h-full w-full place-items-center text-xs text-[var(--color-text-dim)]">
                     Loading…
                   </div>
                 ) : null}
@@ -365,7 +365,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
             </div>
 
             {/* Zoom controls */}
-            <div className="flex items-center gap-3 border-t border-[#efeee7] px-5 py-3.5">
+            <div className="flex items-center gap-3 border-t border-[var(--color-border-subtle)] px-5 py-3.5">
               <button
                 type="button"
                 onClick={() =>
@@ -373,7 +373,7 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
                 }
                 aria-label="Zoom out"
                 disabled={zoom <= MIN_ZOOM}
-                className="grid h-8 w-8 place-items-center rounded-full border border-[#e3e1d8] text-[#5d5e58] transition hover:bg-[#f4f2ea] disabled:opacity-40"
+                className="grid h-8 w-8 place-items-center rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-bg-elev)] disabled:opacity-40"
               >
                 <ZoomOut size={14} />
               </button>
@@ -394,28 +394,28 @@ export function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
                 }
                 aria-label="Zoom in"
                 disabled={zoom >= MAX_ZOOM}
-                className="grid h-8 w-8 place-items-center rounded-full border border-[#e3e1d8] text-[#5d5e58] transition hover:bg-[#f4f2ea] disabled:opacity-40"
+                className="grid h-8 w-8 place-items-center rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-bg-elev)] disabled:opacity-40"
               >
                 <ZoomIn size={14} />
               </button>
-              <span className="ml-1 w-10 text-right text-xs tabular-nums text-[#7a7c75]">
+              <span className="ml-1 w-10 text-right text-xs tabular-nums text-[var(--color-text-muted)]">
                 {Math.round(zoom * 100)}%
               </span>
             </div>
 
             {/* Error */}
             {err ? (
-              <div className="mx-5 mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              <div className="mx-5 mb-3 rounded-lg border border-[var(--color-danger-soft)] bg-[var(--color-danger-soft)] px-3 py-2 text-xs text-[var(--color-danger-text)]">
                 {err}
               </div>
             ) : null}
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 border-t border-[#efeee7] bg-[#fafaf6] px-5 py-3.5">
+            <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg)] px-5 py-3.5">
               <button
                 type="button"
                 onClick={onCancel}
-                className="rounded-xl px-4 py-2 text-sm font-medium text-[#5d5e58] transition hover:bg-[#efeee7] hover:text-[#1f1f1c]"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
               >
                 Cancel
               </button>

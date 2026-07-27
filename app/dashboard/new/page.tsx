@@ -275,21 +275,21 @@ function NewGoalContent() {
   };
 
   return (
-    <div className="min-h-dvh bg-[#f3f3f1] text-[#292929] lg:grid lg:grid-cols-[minmax(20rem,33%)_1fr]">
+    <div className="min-h-dvh bg-[var(--color-bg-elev)] text-[var(--color-text)] lg:grid lg:grid-cols-[minmax(20rem,33%)_1fr]">
       <aside className="hidden min-h-dvh flex-col justify-between px-14 py-12 lg:flex xl:px-20">
         <Wordmark href="/dashboard" size="xl" />
         <div className="max-w-xs pb-16">
           <p className="text-sm font-semibold text-[var(--color-primary)]">Step {step + 1} of {totalSteps}</p>
-          <h1 className="mt-5 font-display text-5xl font-bold leading-[0.95] tracking-[-0.065em] xl:text-6xl">{stepCopy.title}</h1>
-          <p className="mt-8 text-base leading-7 text-[#5f615d]">{stepCopy.detail}</p>
+          <h1 className="mt-5 title-hero">{stepCopy.title}</h1>
+          <p className="mt-8 text-base leading-7 text-[var(--color-text-secondary)]">{stepCopy.detail}</p>
         </div>
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[#686963] transition hover:text-[var(--color-primary)]">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]">
           <ArrowLeft size={15} /> Leave setup
         </Link>
       </aside>
 
       <section className="flow-form flex min-h-dvh flex-col rounded-tl-[0] bg-white lg:rounded-tl-[4rem]">
-        <div className="flex items-center justify-between border-b border-[#ebeae5] px-5 py-5 lg:hidden">
+        <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-5 lg:hidden">
           <Wordmark href="/dashboard" size="md" />
           <span className="text-xs font-semibold text-[var(--color-primary)]">{step + 1} / {totalSteps}</span>
         </div>
@@ -305,8 +305,8 @@ function NewGoalContent() {
                     onClick={() => onCategoryChange(c.id)}
                     className={`flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition ${
                       category === c.id
-                        ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                        : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                        : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                     }`}
                   >
                     <CategoryIcon
@@ -336,14 +336,14 @@ function NewGoalContent() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={getCategory(category).titlePlaceholder ?? "e.g. Write my first novel"}
                 autoFocus
-                className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
               <input
                 type="text"
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
                 placeholder={getCategory(category).summaryPlaceholder ?? "One-line summary (optional)"}
-                className="mt-3 w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="mt-3 w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
             </Step>
           )}
@@ -369,14 +369,14 @@ function NewGoalContent() {
                       }}
                       className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
                         progressType === t.id
-                          ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                          : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                          : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                       }`}
                     >
                       <span
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                           progressType === t.id
-                            ? "bg-[#d9e3ff] text-[var(--color-primary)]"
+                            ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
                             : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
                         }`}
                       >
@@ -433,7 +433,7 @@ function NewGoalContent() {
                           setUnit(e.target.value);
                         }
                       }}
-                      className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                      className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                     >
                       {getCategory(category).unitOptions.map((u) => (
                         <option key={u} value={u}>
@@ -452,7 +452,7 @@ function NewGoalContent() {
                         onChange={(e) => setUnit(e.target.value)}
                         placeholder="Type your unit…"
                         autoFocus
-                        className="mt-2 w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                        className="mt-2 w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
                       />
                     )}
                   </div>
@@ -484,7 +484,7 @@ function NewGoalContent() {
                               arr.map((x) => (x.id === m.id ? { ...x, title: v } : x))
                             );
                           }}
-                          className="flex-1 rounded-xl border border-[#c9c8c0] bg-white px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                          className="flex-1 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                         />
                         <button
                           type="button"
@@ -522,7 +522,7 @@ function NewGoalContent() {
                 type="date"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3.5 text-base text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               />
               <p className="mt-3 text-sm text-[var(--color-text-muted)]">
                 We'll show a countdown and award badges as you pass 25, 50, 75, and 100%.
@@ -532,7 +532,7 @@ function NewGoalContent() {
 
           {step === 5 && (
             <Step title="Tell your story">
-              <p className="mb-5 max-w-lg text-sm leading-6 text-[#686963]">
+              <p className="mb-5 max-w-lg text-sm leading-6 text-[var(--color-text-muted)]">
                 {getCategory(category).storyPrompt ?? "Share what this goal means to you and what support could change."}
               </p>
               <textarea
@@ -540,7 +540,7 @@ function NewGoalContent() {
                 onChange={(e) => setStory(e.target.value)}
                 placeholder="Write your story…"
                 rows={9}
-                className="w-full resize-none rounded-xl border border-[#c9c8c0] bg-white px-4 py-4 text-sm leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-4 text-sm leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
             </Step>
           )}
@@ -565,13 +565,13 @@ function NewGoalContent() {
                       }}
                       className={`flex items-start gap-3 rounded-xl border p-3 text-left transition ${
                         active
-                          ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                          : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                          : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                       }`}
                     >
                       <div
                         className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                          active ? "bg-[#d9e3ff] text-[var(--color-primary)]" : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
+                          active ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)]" : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
                         }`}
                       >
                         <Icon size={14} />
@@ -595,7 +595,7 @@ function NewGoalContent() {
                   onChange={(e) => setSupporterTarget(e.target.value)}
                   placeholder="e.g. 50"
                   min={0}
-                  className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                 />
                 <p className="mt-1.5 text-xs text-[var(--color-text-dim)]">
                   Shown alongside goal progress. We wait until three people join your circle before showing the target.
@@ -612,8 +612,8 @@ function NewGoalContent() {
                   onClick={() => setVisibility("public")}
                   className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
                     visibility === "public"
-                      ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                      : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                      : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                   }`}
                 >
                   <Globe
@@ -632,8 +632,8 @@ function NewGoalContent() {
                   onClick={() => setVisibility("unlisted")}
                   className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
                     visibility === "unlisted"
-                      ? "border-[var(--color-primary)] bg-[#eef3ff]"
-                      : "border-[#deddd6] bg-white hover:border-[var(--color-primary)]"
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                      : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                   }`}
                 >
                   <Lock
@@ -655,7 +655,7 @@ function NewGoalContent() {
             <Step title="Everything looks good?">
               <label
                 htmlFor="goal-cover"
-                className="block cursor-pointer rounded-2xl border border-dashed border-[#c9c8c0] bg-[#fffefa] px-6 py-10 text-center transition hover:border-[var(--color-primary)] hover:bg-[#f8faff]"
+                className="block cursor-pointer rounded-2xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg)] px-6 py-10 text-center transition hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
               >
                 <input
                   id="goal-cover"
@@ -666,14 +666,14 @@ function NewGoalContent() {
                 />
                 <ImagePlus className="mx-auto text-[var(--color-primary)]" size={24} />
                 <p className="mt-3 text-sm font-semibold">{coverFile ? coverFile.name : "Add a cover photo"}</p>
-                <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[#777872]">
+                <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[var(--color-text-muted)]">
                   {coverFile ? "Your cover will be added when you create the goal." : "A bright, clear image helps people connect with your goal. You can change it later."}
                 </p>
-                <span className="mt-5 inline-flex rounded-full border border-[#c9c8c0] bg-white px-4 py-2 text-xs font-semibold text-[#292929]">
+                <span className="mt-5 inline-flex rounded-full border border-[var(--color-border-strong)] bg-white px-4 py-2 text-xs font-semibold text-[var(--color-text)]">
                   {coverFile ? "Choose another" : "Choose a photo"}
                 </span>
               </label>
-              <div className="mt-8 divide-y divide-[#e4e2da] border-y border-[#deddd6]">
+              <div className="mt-8 divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
                 <ReviewItem label="Goal" value={title || "Untitled goal"} onEdit={() => setStep(1)} />
                 <ReviewItem label="Category" value={CATEGORIES.find((item) => item.id === category)?.label ?? category} onEdit={() => setStep(0)} />
                 <ReviewItem label="Progress" value={PROGRESS_TEMPLATES.find((item) => item.id === progressType)?.label ?? progressType} onEdit={() => setStep(2)} />
@@ -700,8 +700,8 @@ function NewGoalContent() {
           {err && <p className="mx-auto mt-4 w-full max-w-[42rem] text-sm text-[var(--color-danger)]">{err}</p>}
         </div>
 
-        <footer className="relative mt-auto border-t border-[#e5e4df] bg-white px-5 py-5 sm:px-12 sm:py-7 lg:px-[4.5rem]">
-          <div className="absolute inset-x-0 top-0 h-px bg-[#e5e4df]">
+        <footer className="relative mt-auto border-t border-[var(--color-border)] bg-white px-5 py-5 sm:px-12 sm:py-7 lg:px-[4.5rem]">
+          <div className="absolute inset-x-0 top-0 h-px bg-[var(--color-bg-sunken)]">
             <div className={`h-px bg-[var(--color-primary)] transition-[width] duration-300 ${PROGRESS_WIDTHS[step]}`} />
           </div>
           <div className="flex items-center justify-between">
@@ -709,7 +709,7 @@ function NewGoalContent() {
             type="button"
             onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[#c9c8c0] bg-white text-[#292929] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-30"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-border-strong)] bg-white text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Go back"
           >
             <ArrowLeft size={19} />
@@ -756,8 +756,8 @@ function ReviewItem({
   return (
     <div className="flex items-center justify-between gap-6 py-4">
       <div className="min-w-0">
-        <p className="text-sm font-bold text-[#292929]">{label}</p>
-        <p className="mt-1 truncate text-sm text-[#686963]">{value}</p>
+        <p className="text-sm font-bold text-[var(--color-text)]">{label}</p>
+        <p className="mt-1 truncate text-sm text-[var(--color-text-muted)]">{value}</p>
       </div>
       <button
         type="button"
@@ -807,7 +807,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         step={step}
-        className="w-full rounded-xl border border-[#c9c8c0] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+        className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
       />
     </div>
   );

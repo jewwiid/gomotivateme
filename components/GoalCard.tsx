@@ -50,28 +50,28 @@ export function GoalCard({ goal }: { goal: GoalDoc }) {
         href={`/dashboard/${goal._id}`}
         className="group grid gap-4 py-5 sm:grid-cols-[10rem_minmax(0,1fr)_10rem_9rem_1.4rem] sm:items-center sm:gap-6"
       >
-        <div className="relative aspect-[1.65/1] overflow-hidden rounded-xl bg-[#e5eaf8]">
+        <div className="relative aspect-[1.65/1] overflow-hidden rounded-xl bg-[var(--color-primary-soft)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={media} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#777872]">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
             <CategoryIcon category={goal.category} size={12} />
             {goal.category}
           </div>
-          <h3 className="mt-1.5 line-clamp-2 font-display text-xl font-bold leading-tight tracking-[-0.035em] text-[#2b2b28]">
+          <h3 className="mt-1.5 line-clamp-2 font-display text-xl font-bold leading-tight tracking-[-0.035em] text-[var(--color-text)]">
             {goal.title}
           </h3>
-          {goal.summary && <p className="mt-1 line-clamp-1 text-sm text-[#72736e]">{goal.summary}</p>}
+          {goal.summary && <p className="mt-1 line-clamp-1 text-sm text-[var(--color-text-muted)]">{goal.summary}</p>}
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-[#777872]">Progress</p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#dce5ff]">
+          <p className="text-xs font-medium text-[var(--color-text-muted)]">Progress</p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-primary-soft)]">
             <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${progress}%` }} />
           </div>
-          <p className="mt-2 text-sm font-bold tabular-nums text-[#33332f]">{Math.round(progress)}% complete</p>
+          <p className="mt-2 text-sm font-bold tabular-nums text-[var(--color-text)]">{Math.round(progress)}% complete</p>
         </div>
-        <div className="text-sm text-[#666762] sm:text-right">
+        <div className="text-sm text-[var(--color-text-muted)] sm:text-right">
           {goal.targetDate && (
             <div className="inline-flex items-center gap-1.5 sm:justify-end">
               <Calendar size={13} />
@@ -88,7 +88,7 @@ export function GoalCard({ goal }: { goal: GoalDoc }) {
               : `${daysLeft}d left`}
           </p>
         </div>
-        <ArrowRight size={19} className="hidden text-[#555650] transition group-hover:translate-x-1 group-hover:text-[var(--color-primary)] sm:block" />
+        <ArrowRight size={19} className="hidden text-[var(--color-text-secondary)] transition group-hover:translate-x-1 group-hover:text-[var(--color-primary)] sm:block" />
       </Link>
     </motion.div>
   );

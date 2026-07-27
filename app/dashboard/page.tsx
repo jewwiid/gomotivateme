@@ -36,10 +36,10 @@ function DashboardContent() {
             <p className="brand-kicker">My goals</p>
             <div className="mt-2 flex flex-wrap items-end justify-between gap-5">
               <div>
-                <h1 className="font-display text-balance text-4xl font-bold leading-[0.96] tracking-[-0.055em] sm:text-5xl">
+                <h1 className="title-page">
                   Your goals, your pace.
                 </h1>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-[#686963]">
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--color-text-muted)]">
                   See what's next and let your people know how to help.
                 </p>
               </div>
@@ -65,14 +65,14 @@ function DashboardContent() {
                 <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.04em]">All goals</h2>
               </div>
               {goals && goals.length > 3 && (
-                <span className="text-sm text-[#777872]">{goals.length} in total</span>
+                <span className="text-sm text-[var(--color-text-muted)]">{goals.length} in total</span>
               )}
             </div>
 
             {goals === undefined ? (
               <div className="workspace-card mt-5 divide-y divide-[var(--color-border)] overflow-hidden">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-36 animate-pulse bg-[#f4f3ed]" />
+                  <div key={i} className="h-36 animate-pulse bg-[var(--color-bg-elev)]" />
                 ))}
               </div>
             ) : goals.length === 0 ? (
@@ -100,7 +100,7 @@ function DashboardContent() {
             <h2 className="font-display text-xl font-bold tracking-[-0.035em]">Your circle</h2>
             <Users size={18} className="text-[var(--color-primary)]" />
             </div>
-            <p className="mt-3 text-sm leading-6 text-[#686963]">
+            <p className="mt-3 text-sm leading-6 text-[var(--color-text-muted)]">
               The people you show up for, and the people showing up for you.
             </p>
             <Link
@@ -119,10 +119,10 @@ function DashboardContent() {
 
           <section className="workspace-card p-5">
             <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-[#c68d00]" />
+              <Sparkles size={16} className="text-[var(--color-gold-text)]" />
               <h2 className="font-display text-xl font-bold tracking-[-0.035em]">Post an update</h2>
             </div>
-            <p className="mt-3 text-sm leading-6 text-[#686963]">
+            <p className="mt-3 text-sm leading-6 text-[var(--color-text-muted)]">
               Even a quick update gives your supporters something to rally around.
             </p>
             {user?.handle && (
@@ -143,7 +143,7 @@ function DashboardContent() {
 function DashboardStat({ value, label, loading }: { value: number; label: string; loading: boolean }) {
   return (
     <div className="px-5 py-5 sm:px-6">
-      <dt className="text-sm text-[#686963]">{label}</dt>
+      <dt className="text-sm text-[var(--color-text-muted)]">{label}</dt>
       <dd className="mt-1 font-display text-4xl font-bold tracking-[-0.05em] tabular-nums">
         {loading ? "—" : value}
       </dd>
@@ -164,7 +164,7 @@ function EmptyState() {
         className="mb-5 w-48 select-none object-contain"
       />
       <h3 className="font-display text-2xl font-bold tracking-[-0.035em]">Start where you are.</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#686963]">
+      <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--color-text-muted)]">
         Pick something you want to achieve, decide what progress looks like, and invite the people you want beside you.
       </p>
       <Link

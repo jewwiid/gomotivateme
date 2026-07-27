@@ -65,10 +65,10 @@ export default function PublicGoalPage() {
     return (
       <LightShell>
         <div className="py-20 text-center">
-          <h1 className="font-display text-3xl font-bold tracking-tight text-zinc-900">
+          <h1 className="title-state">
             Goal not found
           </h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             This link might be wrong, or the goal is unlisted.
           </p>
           <Link href="/explore" className="workspace-button-primary mx-auto mt-6 w-auto px-5">
@@ -181,17 +181,17 @@ function PublicGoalView({
     : "Support this goal";
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
       <WorkspaceShell
         items={navItems}
         ariaLabel="Public goal navigation"
         asideFooter={
-          <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-            <p className="text-sm font-bold text-[#282925]">
+          <div className="workspace-card p-4">
+            <p className="text-sm font-bold text-[var(--color-text)]">
               {isOwner ? "Your public goal" : `Show up for ${ownerName.split(" ")[0]}`}
             </p>
-            <p className="mt-2 text-xs leading-5 text-[#6c706f]">
+            <p className="mt-2 text-xs leading-5 text-[var(--color-text-muted)]">
               {isOwner
                 ? "Keep the story current from your management workspace."
                 : "Encouragement and thoughtful check-ins turn intention into momentum."}
@@ -223,7 +223,7 @@ function PublicGoalView({
       >
         <div id="overview" className="scroll-mt-24 space-y-4">
           <section className="workspace-card grid min-h-[11rem] gap-5 p-4 md:grid-cols-[17.5rem_minmax(0,1fr)] xl:grid-cols-[17.5rem_minmax(0,1fr)_14rem]">
-            <div className="relative min-h-40 overflow-hidden rounded-[0.95rem] bg-[#eceae1] md:min-h-0">
+            <div className="relative min-h-40 overflow-hidden rounded-[0.95rem] bg-[var(--color-bg-sunken)] md:min-h-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={coverUrl || "/illustrations/hero-community-v3.webp"}
@@ -237,27 +237,27 @@ function PublicGoalView({
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-bold ${
                     isCompleted
-                      ? "bg-[var(--color-success-soft)] text-[#188451]"
+                      ? "bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
                       : isPaused
-                      ? "bg-[var(--color-warning-soft)] text-[#986900]"
-                      : "bg-[#d9f5e4] text-[#188451]"
+                      ? "bg-[var(--color-warning-soft)] text-[var(--color-gold-text)]"
+                      : "bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
                   }`}
                 >
                   {titleCase(goal.status)}
                 </span>
-                <span className="text-xs font-medium text-[#777872]">
+                <span className="text-xs font-medium text-[var(--color-text-muted)]">
                   {titleCase(goal.category || "Goal")}
                 </span>
               </div>
-              <h1 className="mt-5 font-display text-[clamp(2rem,3vw,2.65rem)] font-bold leading-[0.96] tracking-[-0.055em] text-[#242421]">
+              <h1 className="mt-5 title-page">
                 {goal.title}
               </h1>
-              <p className="mt-3 max-w-[42rem] text-sm leading-6 text-[#6c706f]">
+              <p className="mt-3 max-w-[42rem] text-sm leading-6 text-[var(--color-text-muted)]">
                 {goal.summary || "A public goal made stronger by the people behind it."}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#777872]">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-muted)]">
                 <Avatar name={ownerName} image={ownerImage} size="md" />
-                <span className="font-semibold text-[#30312d]">{ownerName}</span>
+                <span className="font-semibold text-[var(--color-text)]">{ownerName}</span>
                 <span aria-hidden>·</span>
                 <span>Started {formatDate(goal.createdAt)}</span>
                 {goal.targetDate ? (
@@ -299,7 +299,7 @@ function PublicGoalView({
                   ? "border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)]"
                   : isCompleted
                   ? "border-[var(--color-success)]/30 bg-[var(--color-success-soft)]"
-                  : "border-zinc-300 bg-zinc-100"
+                  : "border-[var(--color-border-strong)] bg-[var(--color-bg-elev)]"
               }`}
             >
               <strong>
@@ -395,14 +395,14 @@ function PublicGoalView({
                 className="workspace-card scroll-mt-24 p-5"
               >
                 <div className="flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[#9a6b00]">
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]">
                     <Sparkles size={18} aria-hidden />
                   </span>
                   <div>
-                    <h2 className="text-base font-bold text-[#262723]">
+                    <h2 className="text-base font-bold text-[var(--color-text)]">
                       Choose how to show up
                     </h2>
-                    <p className="mt-1 text-xs leading-5 text-[#6c706f]">
+                    <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
                       Support here is practical, personal, and never financial.
                     </p>
                   </div>
@@ -414,11 +414,11 @@ function PublicGoalView({
                       allowedTypes={(goal.supportTypes ?? []) as any}
                     />
                   ) : isOwner ? (
-                    <div className="rounded-xl border border-dashed border-[var(--color-border-strong)] p-5 text-center text-sm text-[#6c706f]">
+                    <div className="rounded-xl border border-dashed border-[var(--color-border-strong)] p-5 text-center text-sm text-[var(--color-text-muted)]">
                       This is what visitors use to join your support team.
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-dashed border-[var(--color-border-strong)] p-5 text-center text-sm text-[#6c706f]">
+                    <div className="rounded-xl border border-dashed border-[var(--color-border-strong)] p-5 text-center text-sm text-[var(--color-text-muted)]">
                       {isCompleted
                         ? "This goal is complete. Leave a cheer to celebrate."
                         : "This goal is not accepting new supporters right now."}
@@ -487,7 +487,7 @@ function PublicGoalView({
 
           <section
             id="creator"
-            className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--color-border)] py-5 text-xs text-[#777872]"
+            className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--color-border)] py-5 text-xs text-[var(--color-text-muted)]"
           >
             <span>
               Started {formatDate(goal.createdAt)}
@@ -496,7 +496,7 @@ function PublicGoalView({
             </span>
             <ReportButton
               goalId={goalId}
-              className="inline-flex min-h-11 items-center text-xs text-[#777872] hover:text-[#30312d]"
+              className="inline-flex min-h-11 items-center text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
             />
           </section>
         </div>
@@ -530,7 +530,7 @@ function PublicMilestonePath({
       className="workspace-card scroll-mt-24 p-4 pb-3"
     >
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-base font-bold text-[#262723]">Milestone path</h2>
+        <h2 className="text-base font-bold text-[var(--color-text)]">Milestone path</h2>
         <span className="text-xs font-bold text-[var(--color-primary)]">
           {milestones.filter((milestone) => milestone.done).length} of{" "}
           {milestones.length} complete
@@ -543,31 +543,31 @@ function PublicMilestonePath({
               <span
                 aria-hidden
                 className={`absolute left-9 right-[-1rem] top-[1.125rem] hidden h-px sm:block ${
-                  milestone.done ? "bg-[#39a96b]" : "bg-[#deddd6]"
+                  milestone.done ? "bg-[var(--color-success)]" : "bg-[var(--color-bg-sunken)]"
                 }`}
               />
             ) : null}
             <span
               className={`relative z-10 grid h-9 w-9 place-items-center rounded-full border-2 bg-white text-sm font-bold ${
                 milestone.done
-                  ? "border-[#25a85f] bg-[#e9f8ef] text-[#168046]"
+                  ? "border-[var(--color-success)] bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
                   : index === nextIndex
                   ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-                  : "border-[#deddd6] text-[#777872]"
+                  : "border-[var(--color-border)] text-[var(--color-text-muted)]"
               }`}
             >
               {milestone.done ? <Check size={18} aria-hidden /> : index + 1}
             </span>
-            <span className="mt-2 block truncate text-sm font-bold text-[#30312d]">
+            <span className="mt-2 block truncate text-sm font-bold text-[var(--color-text)]">
               {milestone.title}
             </span>
             <span
               className={`mt-1 block text-xs ${
                 milestone.done
-                  ? "text-[#1f8d51]"
+                  ? "text-[var(--color-success-text)]"
                   : index === nextIndex
                   ? "text-[var(--color-primary)]"
-                  : "text-[#8b8d86]"
+                  : "text-[var(--color-text-dim)]"
               }`}
             >
               {milestone.done
@@ -601,27 +601,27 @@ function PublicSupportCard({
   return (
     <section className="workspace-card p-3">
       <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[#9a6b00]">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]">
           <Heart size={18} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#292a26]">
+          <p className="text-sm font-bold text-[var(--color-text)]">
             {isOwner ? "Your public goal" : `Show up for ${ownerName.split(" ")[0]}`}
           </p>
-          <div className="mt-2 rounded-xl border border-[var(--color-border)] bg-[#fbfaf5] p-3">
+          <div className="mt-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="font-bold text-[#292a26]">{goalLabel}</p>
+              <p className="font-bold text-[var(--color-text)]">{goalLabel}</p>
               <span className="text-xs font-bold text-[var(--color-primary)]">
                 {Math.round(goalPct)}%
               </span>
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#dce5ff]">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-primary-soft)]">
               <div
                 className="h-full rounded-full bg-[var(--color-primary)]"
                 style={{ width: `${Math.max(0, Math.min(100, goalPct))}%` }}
               />
             </div>
-            <p className="mt-3 text-xs leading-5 text-[#6c706f]">
+            <p className="mt-3 text-xs leading-5 text-[var(--color-text-muted)]">
               {supporterCount}
               {supporterTarget ? ` of ${supporterTarget}` : ""}{" "}
               {supporterCount === 1 ? "supporter is" : "supporters are"} already
@@ -650,7 +650,7 @@ function PublicSupportCard({
 
       {badges && badges.length > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] pt-3">
-          <span className="mr-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#777872]">
+          <span className="mr-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
             <Trophy size={11} aria-hidden />
             Milestones
           </span>
@@ -669,7 +669,7 @@ function PublicSupportCard({
       <button
         type="button"
         onClick={onShare}
-        className="mt-3 min-h-10 w-full rounded-xl bg-[#f2f0e9] px-3 text-xs font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
+        className="mt-3 min-h-10 w-full rounded-xl bg-[var(--color-bg-elev)] px-3 text-xs font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
       >
         <span className="inline-flex items-center gap-2">
           {copied ? <Check size={14} aria-hidden /> : <Share2 size={14} aria-hidden />}
@@ -692,17 +692,17 @@ function OrganiserMini({
   return (
     <section className="workspace-card p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-[#292a26]">Goal creator</h2>
+        <h2 className="text-sm font-bold text-[var(--color-text)]">Goal creator</h2>
         <ReportButton
           goalId={goalId}
-          className="text-xs text-[#8a8c85] hover:text-[#30312d]"
+          className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
         />
       </div>
       <div className="mt-3 flex items-center gap-3">
         <Avatar name={ownerName} image={ownerImage} size="lg" />
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-[#292a26]">{ownerName}</p>
-          <p className="mt-0.5 text-xs text-[#777872]">Organising this goal</p>
+          <p className="truncate text-sm font-bold text-[var(--color-text)]">{ownerName}</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Organising this goal</p>
         </div>
       </div>
     </section>
@@ -711,7 +711,7 @@ function OrganiserMini({
 
 function LightShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-zinc-900">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
       <main className="mx-auto max-w-3xl px-6 py-16 text-center">{children}</main>
     </div>
@@ -721,9 +721,9 @@ function LightShell({ children }: { children: React.ReactNode }) {
 function LoadingState() {
   return (
     <div className="mx-auto max-w-3xl py-10">
-      <div className="h-10 w-3/4 animate-pulse rounded bg-zinc-200" />
-      <div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-zinc-200" />
-      <div className="mt-8 h-3 w-full animate-pulse rounded bg-zinc-200" />
+      <div className="h-10 w-3/4 animate-pulse rounded bg-[var(--color-bg-sunken)]" />
+      <div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-[var(--color-bg-sunken)]" />
+      <div className="mt-8 h-3 w-full animate-pulse rounded bg-[var(--color-bg-sunken)]" />
     </div>
   );
 }

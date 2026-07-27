@@ -13,19 +13,19 @@ const EFFECTIVE = "July 22, 2026";
 export default function PrivacyPage() {
   return (
     <article className="space-y-10">
-      <header className="border-b border-[#e9e7df] pb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#888983]">
+      <header className="border-b border-[var(--color-border)] pb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-dim)]">
           Legal
         </p>
-        <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+        <h1 className="mt-2 title-page">
           Privacy Policy
         </h1>
-        <p className="mt-3 text-sm text-[#74756f]">
+        <p className="mt-3 text-sm text-[var(--color-text-muted)]">
           Effective {EFFECTIVE} · Last updated {LAST_UPDATED}
         </p>
       </header>
 
-      <p className="rounded-2xl border border-[#e9e7df] bg-[#f6f4ec] p-5 text-sm leading-6 text-[#3b3b37]">
+      <p className="workspace-card-soft p-5 text-sm leading-6 text-[var(--color-text)]">
         <strong>The short version.</strong> We collect the minimum data we
         need to run gomotivateme.com: an email, a password (hashed), the
         goals and messages you create, and basic usage data to keep the
@@ -33,12 +33,12 @@ export default function PrivacyPage() {
         You can export or delete your account anytime.
       </p>
 
-      <div className="space-y-10 text-[15px] leading-7 text-[#3b3b37]">
+      <div className="space-y-10 text-[15px] leading-7 text-[var(--color-text)]">
         <Section title="1. What we collect">
           <p>We collect the following categories of information:</p>
 
           <SubSection title="Account information">
-            <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+            <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
               <li>
                 <strong>Email address</strong>: used for sign-in and
                 important service notifications (password reset, security
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
           </SubSection>
 
           <SubSection title="Content you create">
-            <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+            <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
               <li>Goals (title, summary, target, category, cover image)</li>
               <li>Progress updates and milestone toggles</li>
               <li>
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
           </SubSection>
 
           <SubSection title="Usage data">
-            <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+            <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
               <li>
                 <strong>Authentication logs</strong>: sign-in times, IP
                 addresses, user agent strings. Used for security and abuse
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
           </SubSection>
 
           <SubSection title="Data we do NOT collect">
-            <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+            <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
               <li>
                 <strong>No advertising trackers.</strong> No Facebook pixel,
                 no Google Analytics with cross-site tracking, no ad
@@ -122,7 +122,7 @@ export default function PrivacyPage() {
 
         <Section title="2. How we use your data">
           <p>We use the data we collect to:</p>
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>Operate, secure, and improve the Service.</li>
             <li>
               Send you transactional emails (password reset, security
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
           </p>
 
           <SubSection title="Service providers (data processors)">
-            <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+            <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
               <li>
                 <strong>Convex</strong>: our database and authentication
                 provider. They store your account data, your content, and
@@ -249,7 +249,7 @@ export default function PrivacyPage() {
             We keep your account data for as long as your account is active.
             When you delete your account:
           </p>
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>
               Account profile, goals, updates, and messages are deleted
               from our primary database within 30 days.
@@ -273,7 +273,7 @@ export default function PrivacyPage() {
             </Link>
             ):
           </p>
-          <ul className="list-disc space-y-2 pl-6 marker:text-[#888983]">
+          <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>
               <strong>Access</strong>: request a copy of your data (we'll
               email you a JSON + CSV export within 7 days).
@@ -372,7 +372,7 @@ export default function PrivacyPage() {
             </a>
             . We respond within 7 days.
           </p>
-          <p className="text-sm text-[#74756f]">
+          <p className="text-sm text-[var(--color-text-muted)]">
             For data protection requests specifically (access, deletion,
             portability), please use{" "}
             <a
@@ -398,7 +398,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[#1f1f1c]">
+      <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-[var(--color-text)]">
         {title}
       </h2>
       <div className="mt-3 space-y-3">{children}</div>
@@ -415,7 +415,7 @@ function SubSection({
 }) {
   return (
     <div className="mt-5">
-      <h3 className="text-base font-semibold text-[#1f1f1c]">{title}</h3>
+      <h3 className="text-base font-semibold text-[var(--color-text)]">{title}</h3>
       <div className="mt-2 space-y-3">{children}</div>
     </div>
   );

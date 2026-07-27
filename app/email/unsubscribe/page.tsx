@@ -58,7 +58,7 @@ function Result({
               : "animate-spin text-[var(--color-primary)]"
         }
       />
-      <h1 className="mt-6 text-2xl font-bold tracking-tight text-[var(--color-text)]">
+      <h1 className="mt-6 title-state">
         {title}
       </h1>
       <p className="mt-3 max-w-sm text-sm text-[var(--color-text-muted)]">{body}</p>

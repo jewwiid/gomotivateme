@@ -100,22 +100,22 @@ function LoginForm() {
       transition={{ duration: 0.4 }}
     >
       <p className="brand-kicker">Welcome back</p>
-      <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">Sign in</h1>
-      <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
+      <h1 className="mt-3 title-page">Sign in</h1>
+      <p className="mb-8 mt-3 text-base leading-7 text-[var(--color-text-muted)]">
         Pick up where you left off.
       </p>
 
       <GoogleSignInButton mode="signIn" redirectTo={redirect || "/dashboard"} />
 
-      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[#888983]">
-        <span className="h-px flex-1 bg-[#deddd6]" />
+      <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[var(--color-text-dim)]">
+        <span className="h-px flex-1 bg-[var(--color-bg-sunken)]" />
         or
-        <span className="h-px flex-1 bg-[#deddd6]" />
+        <span className="h-px flex-1 bg-[var(--color-bg-sunken)]" />
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3" noValidate>
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Email
           </label>
           <input
@@ -124,12 +124,12 @@ function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="you@example.com"
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Password
           </label>
           <input
@@ -138,7 +138,7 @@ function LoginForm() {
             value={password}
             onChange={(e) => onPasswordChange(e.target.value)}
             autoComplete="current-password"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="••••••••"
           />
           {passwordHint === "short" && (
@@ -147,7 +147,7 @@ function LoginForm() {
             </div>
           )}
           {passwordHint === "ok" && (
-            <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-emerald-400">
+            <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-[var(--color-success-text)]">
               <Check size={10} />
               Looks good
             </div>
@@ -177,7 +177,7 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="mt-7 text-center text-sm text-[#686963]">
+      <p className="mt-7 text-center text-sm text-[var(--color-text-muted)]">
         New here?{" "}
         <Link
           href={redirect ? `/signup?redirect=${encodeURIComponent(redirect)}` : "/signup"}

@@ -97,7 +97,7 @@ function GoalDetailDesignPreview() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header previewUser={{ name: "Jude Okun", handle: "jude" }} />
       <OwnerGoalWorkspace
         goal={previewGoal}
@@ -220,17 +220,17 @@ function GoalDetailContent() {
 
   if (goal === undefined) {
     return (
-      <div className="min-h-screen bg-[#fffdf8]">
+      <div className="min-h-screen bg-[var(--color-bg)]">
         <Header />
-        <main className="mx-auto max-w-[80rem] px-5 py-12 sm:px-8">
-          <div className="h-40 animate-pulse rounded-[1rem] bg-[#f0efe9]" />
+        <main className="shell-app px-5 py-12 sm:px-8">
+          <div className="h-40 animate-pulse rounded-[1rem] bg-[var(--color-bg-elev)]" />
         </main>
       </div>
     );
   }
   if (goal === null) {
     return (
-      <div className="min-h-screen bg-[#fffdf8]">
+      <div className="min-h-screen bg-[var(--color-bg)]">
         <Header />
         <main className="mx-auto max-w-[48rem] px-5 py-20 text-center sm:px-8">
           <p className="text-[var(--color-text-muted)]">Goal not found.</p>
@@ -257,16 +257,16 @@ function GoalDetailContent() {
     undefined;
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
 
       {goal.moderationStatus && goal.moderationStatus !== "approved" ? (
-        <div className="mx-auto mt-4 max-w-[92rem] px-4 sm:px-6">
+        <div className="shell-app mt-4 px-4 sm:px-6">
           <div
             className={`rounded-xl border px-4 py-3 text-sm ${
               goal.moderationStatus === "rejected"
-                ? "border-red-200 bg-red-50 text-red-800"
-                : "border-amber-200 bg-amber-50 text-amber-800"
+                ? "border-[var(--color-danger-soft)] bg-[var(--color-danger-soft)] text-[var(--color-danger-text)]"
+                : "border-[var(--color-gold-soft)] bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]"
             }`}
           >
             <span className="font-semibold">
@@ -314,9 +314,9 @@ function GoalDetailContent() {
         }
         updatesArchive={
           <div className="workspace-card p-5">
-            <h2 className="text-lg font-bold text-[#292a26]">All updates</h2>
+            <h2 className="text-lg font-bold text-[var(--color-text)]">All updates</h2>
             {updates === undefined ? (
-              <div className="mt-4 h-32 animate-pulse rounded-2xl bg-[#f2f0e9]" />
+              <div className="mt-4 h-32 animate-pulse rounded-2xl bg-[var(--color-bg-elev)]" />
             ) : updates.length === 0 ? (
               <div className="mt-4 rounded-2xl border border-dashed border-[var(--color-border-strong)] p-6 text-center text-sm text-[var(--color-text-muted)]">
                 No updates yet. Share what moved forward to start the timeline.
@@ -363,7 +363,7 @@ function GoalDetailContent() {
           <>
             <div className="workspace-card flex flex-wrap items-center justify-between gap-4 p-5">
               <div>
-                <p className="text-sm font-bold text-[#292a26]">Goal status</p>
+                <p className="text-sm font-bold text-[var(--color-text)]">Goal status</p>
                 <div className="mt-2 flex items-center gap-2">
                   <StatusPill status={goal.status} />
                   {goal.status === "paused" && goal.pausedReason ? (
@@ -434,11 +434,11 @@ function GoalDetailContent() {
 
 function StatusPill({ status }: { status: string }) {
   const meta: Record<string, { label: string; color: string; icon: any }> = {
-    active: { label: "Active", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", icon: PlayCircle },
+    active: { label: "Active", color: "bg-[var(--color-success-soft)] text-[var(--color-success-text)] border-[var(--color-success)]", icon: PlayCircle },
     paused: { label: "Paused", color: "bg-[var(--color-warning)] 500/15 text-[var(--color-warning)] 400 border-[var(--color-warning)] 500/30", icon: Pause },
-    completed: { label: "Completed", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", icon: CheckCircle2 },
-    closed: { label: "Closed", color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: Archive },
-    draft: { label: "Draft", color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: Archive },
+    completed: { label: "Completed", color: "bg-[var(--color-success-soft)] text-[var(--color-success-text)] border-[var(--color-success)]", icon: CheckCircle2 },
+    closed: { label: "Closed", color: "bg-[var(--color-text-dim)] text-[var(--color-text-dim)] border-[var(--color-border-strong)]", icon: Archive },
+    draft: { label: "Draft", color: "bg-[var(--color-text-dim)] text-[var(--color-text-dim)] border-[var(--color-border-strong)]", icon: Archive },
   };
   const m = meta[status] ?? meta.active;
   const Icon = m.icon;
@@ -485,7 +485,7 @@ function StatusModal({
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 30, opacity: 0 }}
-        className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"
+        className="w-full max-w-md workspace-card p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -503,9 +503,9 @@ function StatusModal({
           <button
             onClick={() => transition("active")}
             disabled={busy}
-            className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-left text-sm font-medium transition hover:bg-emerald-500/20 disabled:opacity-50"
+            className="w-full rounded-xl border border-[var(--color-success)] bg-[var(--color-success-soft)] p-3 text-left text-sm font-medium transition hover:bg-[var(--color-success-soft)] disabled:opacity-50"
           >
-            <PlayCircle size={14} className="mr-2 inline text-emerald-400" />
+            <PlayCircle size={14} className="mr-2 inline text-[var(--color-success-text)]" />
             Resume the campaign
           </button>
         ) : currentStatus === "completed" ? (
@@ -515,7 +515,7 @@ function StatusModal({
             <button
               onClick={() => transition("paused", reason || "Taking a break")}
               disabled={busy}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium transition hover:border-[var(--color-warning)] 500/40 disabled:opacity-50"
+              className="w-full workspace-card-soft p-3 text-left text-sm font-medium transition hover:border-[var(--color-warning)] 500/40 disabled:opacity-50"
             >
               <Pause size={14} className="mr-2 inline text-[var(--color-warning)] 400" />
               Pause the campaign
@@ -529,15 +529,15 @@ function StatusModal({
             <button
               onClick={() => transition("completed")}
               disabled={busy}
-              className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-left text-sm font-medium transition hover:bg-emerald-500/20 disabled:opacity-50"
+              className="w-full rounded-xl border border-[var(--color-success)] bg-[var(--color-success-soft)] p-3 text-left text-sm font-medium transition hover:bg-[var(--color-success-soft)] disabled:opacity-50"
             >
-              <CheckCircle2 size={14} className="mr-2 inline text-emerald-400" />
+              <CheckCircle2 size={14} className="mr-2 inline text-[var(--color-success-text)]" />
               Mark as completed
             </button>
             <button
               onClick={() => transition("closed")}
               disabled={busy}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium text-[var(--color-text-muted)] transition hover:border-[var(--color-text-muted)] disabled:opacity-50"
+              className="w-full workspace-card-soft p-3 text-left text-sm font-medium text-[var(--color-text-muted)] transition hover:border-[var(--color-text-muted)] disabled:opacity-50"
             >
               <Archive size={14} className="mr-2 inline" />
               Close the campaign
@@ -578,7 +578,7 @@ function SupporterInbox({
     <div className="workspace-card p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-[#292a26]">Supporter inbox</h2>
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Supporter inbox</h2>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
             Encouragement and check-ins from the people behind this goal.
           </p>
@@ -597,10 +597,10 @@ function SupporterInbox({
           return (
             <div
               key={supporter._id}
-              className="rounded-xl border border-[var(--color-border)] bg-[#fbfaf6] p-4"
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4"
             >
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-bold text-[#30312d]">
+                <span className="font-bold text-[var(--color-text)]">
                   {supportTypeLabel(supporter.supportType)}
                 </span>
                 <span className="text-xs text-[var(--color-text-muted)]">
@@ -713,7 +713,7 @@ function UpdateModal({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 30, opacity: 0 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
-        className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"
+        className="w-full max-w-md workspace-card p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -1149,7 +1149,7 @@ function MilestoneForm({
                 setBusy(null);
               }
             }}
-            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3 text-left text-sm font-medium transition hover:border-emerald-500/40 disabled:opacity-50"
+            className="w-full workspace-card-soft p-3 text-left text-sm font-medium transition hover:border-[var(--color-success)] disabled:opacity-50"
           >
             {m.title}
             <span className="ml-2 text-xs text-[var(--color-text-dim)]">
@@ -1329,7 +1329,7 @@ function GoalSettings({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.05 }}
-      className="mt-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-5"
+      className="mt-6 workspace-card p-5"
     >
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
@@ -1495,7 +1495,7 @@ function GoalSettings({
       {canEditTargetFields && (
         <div className="mb-3">
           {targetFieldsLocked && (
-            <div className="mb-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-xs text-amber-800">
+            <div className="mb-2 flex items-start gap-2 rounded-lg border border-[var(--color-gold-soft)] bg-[var(--color-gold-soft)] px-3 py-2 text-xs text-[var(--color-gold-text)]">
               <LockIcon size={12} className="mt-0.5 shrink-0" />
               <span>
                 Target value, start value, unit, and direction are locked because this goal
@@ -1593,17 +1593,17 @@ function GoalSettings({
         {!confirmingDelete ? (
           <button
             onClick={() => setConfirmingDelete(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-red-300/60 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-danger)] px-4 py-2 text-xs font-semibold text-[var(--color-danger-text)] transition hover:bg-[var(--color-danger-soft)]"
           >
             <Trash2 size={12} />
             Delete goal
           </button>
         ) : (
-          <div className="rounded-xl border border-red-300/60 bg-red-50/50 p-4">
-            <p className="text-sm font-medium text-red-700">
+          <div className="rounded-xl border border-[var(--color-danger)] bg-[var(--color-danger-soft)] p-4">
+            <p className="text-sm font-medium text-[var(--color-danger-text)]">
               Delete this goal? This cannot be undone.
             </p>
-            <p className="mt-1 text-xs text-red-600/80">
+            <p className="mt-1 text-xs text-[var(--color-danger-text)]">
               Type the goal title to confirm:
             </p>
             <input
@@ -1611,7 +1611,7 @@ function GoalSettings({
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder={title}
-              className="mt-2 w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm text-[var(--color-text)] focus:border-red-500 focus:outline-none"
+              className="mt-2 w-full rounded-lg border border-[var(--color-danger)] bg-white px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-danger)] focus:outline-none"
             />
             <div className="mt-3 flex items-center gap-2">
               <button
@@ -1627,7 +1627,7 @@ function GoalSettings({
               <button
                 onClick={onDelete}
                 disabled={deleting || deleteConfirmText.trim() !== title.trim()}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                className="rounded-md bg-[var(--color-danger)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-danger)] disabled:opacity-50"
               >
                 <Trash2 size={12} className="mr-1 inline" />
                 {deleting ? "Deleting..." : "Delete forever"}

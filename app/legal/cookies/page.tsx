@@ -9,7 +9,7 @@ export default function CookiePolicyPage() {
   return (
     <article className="prose-custom">
       <p className="brand-kicker">Legal</p>
-      <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+      <h1 className="mt-2 title-page">
         Cookie Policy
       </h1>
       <p className="mt-3 text-sm text-[var(--color-text-dim)]">Last updated: 23 July 2026</p>
@@ -62,9 +62,9 @@ export default function CookiePolicyPage() {
           </table>
         </div>
         <p className="mt-3 text-xs text-[var(--color-text-dim)]">
-          All auth cookies are <code className="rounded bg-[#f0efe9] px-1">httpOnly</code>,
-          <code className="rounded bg-[#f0efe9] px-1">secure</code>, and
-          <code className="rounded bg-[#f0efe9] px-1">sameSite=lax</code>: they can&apos;t
+          All auth cookies are <code className="rounded bg-[var(--color-bg-elev)] px-1">httpOnly</code>,
+          <code className="rounded bg-[var(--color-bg-elev)] px-1">secure</code>, and
+          <code className="rounded bg-[var(--color-bg-elev)] px-1">sameSite=lax</code>: they can&apos;t
           be read by JavaScript or sent cross-site.
         </p>
       </section>

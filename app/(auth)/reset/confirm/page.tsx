@@ -26,10 +26,10 @@ function ResetConfirmContent() {
   if (!code || !email) {
     return (
       <div className="text-center">
-        <h1 className="font-display text-3xl font-bold text-[#292929]">
+        <h1 className="title-state">
           Invalid link
         </h1>
-        <p className="mt-3 text-sm text-[#686963]">
+        <p className="mt-3 text-sm text-[var(--color-text-muted)]">
           This reset link is incomplete or expired.
         </p>
         <p className="mt-6">
@@ -83,12 +83,12 @@ function ResetConfirmContent() {
       <div className="text-center">
         <Check
           size={48}
-          className="mx-auto text-emerald-500"
+          className="mx-auto text-[var(--color-success-text)]"
         />
-        <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-[#292929]">
+        <h1 className="mt-6 title-state">
           Password reset
         </h1>
-        <p className="mt-3 text-sm text-[#686963]">
+        <p className="mt-3 text-sm text-[var(--color-text-muted)]">
           Your password has been updated. Taking you to sign in…
         </p>
         <Loader2 size={16} className="mx-auto mt-4 animate-spin text-[var(--color-primary)]" />
@@ -103,16 +103,16 @@ function ResetConfirmContent() {
       transition={{ duration: 0.4 }}
     >
       <p className="brand-kicker">Almost there</p>
-      <h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.05em] sm:text-5xl">
+      <h1 className="mt-3 title-page">
         New password
       </h1>
-      <p className="mb-8 mt-3 text-base leading-7 text-[#686963]">
+      <p className="mb-8 mt-3 text-base leading-7 text-[var(--color-text-muted)]">
         Choose a new password for your account.
       </p>
 
       <form onSubmit={onSubmit} className="space-y-3" noValidate>
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             New password
           </label>
           <input
@@ -121,12 +121,12 @@ function ResetConfirmContent() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-semibold text-[#3b3b37]">
+          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
             Confirm password
           </label>
           <input
@@ -135,7 +135,7 @@ function ResetConfirmContent() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-xl border border-[#c9c8c0] bg-white px-4 py-3 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
             placeholder="Type your password again"
           />
         </div>
@@ -160,7 +160,7 @@ function ResetConfirmContent() {
 
 export default function ResetConfirmPage() {
   return (
-    <Suspense fallback={<div className="text-center text-sm text-[#686963]">Loading…</div>}>
+    <Suspense fallback={<div className="text-center text-sm text-[var(--color-text-muted)]">Loading…</div>}>
       <ResetConfirmContent />
     </Suspense>
   );

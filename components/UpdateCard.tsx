@@ -45,7 +45,7 @@ export function UpdateCard({
       transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.4) }}
       className="relative"
     >
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 sm:p-5">
+      <div className="workspace-card p-4 sm:p-5">
         <div className="mb-2.5 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
           <UpdateIcon type={update.type} />
           <span className="font-mono tabular-nums">{relativeTime(update.createdAt)}</span>
@@ -79,7 +79,7 @@ export function UpdateCard({
             href={update.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm transition hover:border-[var(--color-accent)]"
+            className="mb-3 flex items-center gap-2 workspace-card-soft px-3 py-2.5 text-sm transition hover:border-[var(--color-accent)]"
           >
             <LinkIcon size={14} className="shrink-0 text-[var(--color-text-muted)]" />
             <span className="truncate font-medium">
@@ -108,10 +108,10 @@ function ModerationPill({ status }: { status: NonNullable<UpdateDoc["moderationS
   }[status];
   const tone =
     status === "rejected"
-      ? "bg-red-500/10 text-red-600"
+      ? "bg-[var(--color-danger-soft)] text-[var(--color-danger-text)]"
       : status === "review"
-        ? "bg-amber-500/10 text-amber-700"
-        : "bg-sky-500/10 text-sky-700";
+        ? "bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]"
+        : "bg-[var(--color-accent-soft)] text-[var(--color-primary-dark)]";
   return <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tone}`}>{copy}</span>;
 }
 

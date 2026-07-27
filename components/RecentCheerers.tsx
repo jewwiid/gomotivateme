@@ -25,7 +25,7 @@ export function RecentCheerers({ goalId }: { goalId: Id<"goals"> }) {
         <Sparkles size={14} className="text-[var(--color-accent)]" />
         Recent cheerers
       </h2>
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
+      <div className="workspace-card p-4">
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
           {recent.map((r: any, i: number) => (
             <motion.div
@@ -33,7 +33,7 @@ export function RecentCheerers({ goalId }: { goalId: Id<"goals"> }) {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.4) }}
-              className="flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-2.5 py-2"
+              className="flex items-center gap-2 workspace-card-soft px-2.5 py-2"
             >
               <span className="text-xl leading-none" aria-hidden>
                 {r.emoji ? EMOJI_GLYPH[r.emoji] : "👍"}

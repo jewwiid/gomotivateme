@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#fffdf8]">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
       <main className="mx-auto flex max-w-2xl flex-col items-center justify-center px-5 py-16 text-center sm:px-8 sm:py-24">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -16,8 +16,8 @@ export default function NotFound() {
           className="mb-0 h-56 w-56 select-none object-contain sm:h-72 sm:w-72"
         />
         <span className="brand-kicker">404</span>
-        <h1 className="mt-3 font-display text-5xl font-bold tracking-[-0.06em] sm:text-6xl">This path isn’t here.</h1>
-        <p className="mt-4 max-w-md text-base leading-7 text-[#686963]">
+        <h1 className="mt-3 title-hero">This path isn’t here.</h1>
+        <p className="mt-4 max-w-md text-base leading-7 text-[var(--color-text-muted)]">
           The page you’re looking for may have moved, or the link may be incomplete.
         </p>
         <Link

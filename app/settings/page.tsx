@@ -39,11 +39,11 @@ function SettingsContent() {
     <DashboardWorkspaceShell active="settings">
       <main className="mx-auto max-w-[52rem]">
         <p className="brand-kicker">Account workspace</p>
-        <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.055em] sm:text-5xl">Settings</h1>
+        <h1 className="mt-2 title-page">Settings</h1>
 
         {/* Tabs */}
         <div className="workspace-card mt-7 overflow-hidden">
-          <div className="border-b border-[#d9d8d1] px-5 pt-2">
+          <div className="border-b border-[var(--color-border)] px-5 pt-2">
             <div className="flex gap-8">
               <TabButton
                 active={tab === "account"}
@@ -104,7 +104,7 @@ function TabButton({
       className={`relative -mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition ${
         active
           ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-          : "border-transparent text-[#777872] hover:text-[#33332f]"
+          : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
       }`}
     >
       {children}
@@ -241,7 +241,7 @@ function AccountTab() {
       {/* Cover photo + Avatar row */}
       <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
         <Section title="Cover photo" className="!mt-0 !border-0 !pt-0">
-          <div className="relative h-36 w-full overflow-hidden rounded-[1rem] border border-[#deddd6] bg-[var(--color-primary)]">
+          <div className="relative h-36 w-full overflow-hidden rounded-[1rem] border border-[var(--color-border)] bg-[var(--color-primary)]">
             {coverImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -255,7 +255,7 @@ function AccountTab() {
                 type="button"
                 onClick={onPickCover}
                 disabled={busy}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#3d3d39] backdrop-blur hover:bg-white"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] backdrop-blur hover:bg-white"
               >
                 <Camera size={11} />
                 {coverImageUrl ? "Change" : "Add cover"}
@@ -265,7 +265,7 @@ function AccountTab() {
                   type="button"
                   onClick={() => removeCoverImage({})}
                   disabled={busy}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#3d3d39] backdrop-blur hover:bg-white"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] backdrop-blur hover:bg-white"
                 >
                   <X size={11} />
                   Remove
@@ -283,7 +283,7 @@ function AccountTab() {
               }}
             />
           </div>
-          <p className="mt-2 text-[11px] text-zinc-500">
+          <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
             Shown at the top of your public profile. 16:9 works best.
           </p>
         </Section>
@@ -294,7 +294,7 @@ function AccountTab() {
               type="button"
               onClick={onPickAvatar}
               disabled={busy}
-              className="group relative h-28 w-28 overflow-hidden rounded-[1.25rem] border-2 border-dashed border-[#c9c8c0] transition hover:border-[var(--color-primary)]"
+              className="group relative h-28 w-28 overflow-hidden rounded-[1.25rem] border-2 border-dashed border-[var(--color-border-strong)] transition hover:border-[var(--color-primary)]"
             >
               {me?.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -317,7 +317,7 @@ function AccountTab() {
                 type="button"
                 onClick={() => removeAvatar({})}
                 disabled={busy}
-                className="text-[10px] text-zinc-500 hover:text-red-600"
+                className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-danger-text)]"
               >
                 Remove
               </button>
@@ -383,14 +383,14 @@ function AccountTab() {
           />
 
           {err && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            <div className="rounded-lg border border-[var(--color-danger-soft)] bg-[var(--color-danger-soft)] px-3 py-2 text-xs text-[var(--color-danger-text)]">
               {err}
             </div>
           )}
 
           <div className="flex items-center justify-end gap-2">
             {savedFlash && (
-              <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+              <span className="inline-flex items-center gap-1 text-xs text-[var(--color-success-text)]">
                 <Check size={12} />
                 Saved
               </span>
@@ -413,12 +413,12 @@ function AccountTab() {
 
       {/* Email (read-only) */}
       <Section title="Email">
-        <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-700">
+        <div className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-text-secondary)]">
           {me?.email ?? (
-            <span className="text-zinc-400">No email on file</span>
+            <span className="text-[var(--color-text-dim)]">No email on file</span>
           )}
         </div>
-        <p className="mt-2 text-[11px] text-zinc-500">
+        <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
           Email is managed by your sign-in method. Reach out if you need to
           change it.
         </p>
@@ -457,14 +457,14 @@ function DeactivateSection() {
 
   return (
     <Section title="Delete account">
-      <p className="mb-3 text-xs text-zinc-600">
+      <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
         Permanently deletes your account, all your goals, updates, messages,
         and notifications. This cannot be undone.
       </p>
       {confirming ? (
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
               Type DELETE to confirm
             </label>
             <input
@@ -473,12 +473,12 @@ function DeactivateSection() {
               onChange={(e) => setConfirmText(e.target.value)}
               autoComplete="off"
               disabled={busy}
-              className="w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-red-500 focus:outline-none"
+              className="w-full rounded-lg border border-[var(--color-danger)] bg-white px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-danger)] focus:outline-none"
               placeholder="DELETE"
             />
           </div>
           {err && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            <div className="rounded-lg border border-[var(--color-danger-soft)] bg-[var(--color-danger-soft)] px-3 py-2 text-xs text-[var(--color-danger-text)]">
               {err}
             </div>
           )}
@@ -486,7 +486,7 @@ function DeactivateSection() {
             <button
               onClick={onDelete}
               disabled={busy || !canDelete}
-              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-danger)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--color-danger)] disabled:opacity-50"
             >
               {busy ? (
                 <>
@@ -504,7 +504,7 @@ function DeactivateSection() {
                 setErr(null);
               }}
               disabled={busy}
-              className="text-xs text-zinc-500 transition hover:text-zinc-900"
+              className="text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
             >
               Cancel
             </button>
@@ -513,7 +513,7 @@ function DeactivateSection() {
       ) : (
         <button
           onClick={() => setConfirming(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-danger-soft)] bg-white px-3 py-2 text-xs font-semibold text-[var(--color-danger-text)] transition hover:bg-[var(--color-danger-soft)]"
         >
           Delete account
         </button>
@@ -548,7 +548,7 @@ function NotificationsTab() {
             to resubscribe.
           </p>
         )}
-        <div className="divide-y divide-zinc-100">
+        <div className="divide-y divide-[var(--color-border-subtle)]">
           <Toggle
             label="Updates on goals you motivate"
             description="Reactions, milestone posts, replies from the goal owner"
@@ -605,14 +605,14 @@ function Toggle({
   return (
     <div className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
       <div>
-        <div className="text-sm font-medium text-zinc-900">{label}</div>
-        <div className="mt-0.5 text-[11px] text-zinc-500">{description}</div>
+        <div className="text-sm font-medium text-[var(--color-text)]">{label}</div>
+        <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">{description}</div>
       </div>
       <button
         type="button"
         onClick={onChange}
         className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          on ? "bg-[var(--color-primary)]" : "bg-[#ddddd6]"
+          on ? "bg-[var(--color-primary)]" : "bg-[var(--color-bg-sunken)]"
         }`}
         aria-pressed={on}
       >
@@ -640,8 +640,8 @@ function Section({
   className?: string;
 }) {
   return (
-    <section className={`border-t border-[#deddd6] py-8 first:border-t-0 ${className}`}>
-      <h2 className="text-sm font-bold text-[#33332f]">
+    <section className={`border-t border-[var(--color-border)] py-8 first:border-t-0 ${className}`}>
+      <h2 className="text-sm font-bold text-[var(--color-text)]">
         {title}
       </h2>
       <div className="mt-3">{children}</div>
@@ -674,18 +674,18 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
         {label}
       </label>
       <div
         className={`flex items-center rounded-lg border bg-white transition ${
           error
-            ? "border-red-300 focus-within:border-red-500"
-            : "border-zinc-200 focus-within:border-zinc-900"
+            ? "border-[var(--color-danger)] focus-within:border-[var(--color-danger)]"
+            : "border-[var(--color-border)] focus-within:border-[var(--color-text)]"
         } ${multiline ? "" : "px-3"}`}
       >
         {prefix && !multiline && (
-          <span className="mr-1 select-none text-sm text-zinc-400">
+          <span className="mr-1 select-none text-sm text-[var(--color-text-dim)]">
             {prefix}
           </span>
         )}
@@ -696,7 +696,7 @@ function Field({
             placeholder={placeholder}
             rows={rows}
             maxLength={maxLength}
-            className="w-full resize-none rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none"
+            className="w-full resize-none rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-text)] focus:outline-none"
           />
         ) : (
           <input
@@ -704,14 +704,14 @@ function Field({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             maxLength={maxLength}
-            className="w-full bg-transparent py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+            className="w-full bg-transparent py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:outline-none"
           />
         )}
       </div>
       {error ? (
-        <div className="mt-1 text-right text-[10px] text-red-600">{error}</div>
+        <div className="mt-1 text-right text-[10px] text-[var(--color-danger-text)]">{error}</div>
       ) : hint ? (
-        <div className="mt-1 text-right text-[10px] text-zinc-500">{hint}</div>
+        <div className="mt-1 text-right text-[10px] text-[var(--color-text-muted)]">{hint}</div>
       ) : null}
     </div>
   );

@@ -78,7 +78,7 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
       : "/";
 
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
+    <div className="workspace-card p-4">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[var(--color-text)]">
           Cheer them on

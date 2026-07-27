@@ -101,9 +101,9 @@ export function RecentActivity({
 
   if (items.length === 0) {
     return (
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-zinc-900">Recent activity</h2>
-        <p className="mt-3 text-sm text-zinc-500">
+      <section className="workspace-card p-6">
+        <h2 className="text-base font-semibold text-[var(--color-text)]">Recent activity</h2>
+        <p className="mt-3 text-sm text-[var(--color-text-muted)]">
           Nothing yet. Be the first to show up.
         </p>
       </section>
@@ -111,8 +111,8 @@ export function RecentActivity({
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-      <h2 className="text-base font-semibold text-zinc-900">Recent activity</h2>
+    <section className="workspace-card p-6">
+      <h2 className="text-base font-semibold text-[var(--color-text)]">Recent activity</h2>
       <ul className="mt-4 space-y-3">
         {items.map((it, i) => (
           <motion.li
@@ -129,7 +129,7 @@ export function RecentActivity({
             </div>
             <Link
               href="#"
-              className="shrink-0 text-[10px] text-zinc-400 hover:text-zinc-600"
+              className="shrink-0 text-[10px] text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)]"
             >
               {relativeTime(it.at)}
             </Link>
@@ -180,27 +180,27 @@ function ActivityIcon({ item }: { item: ActivityItem }) {
   }
   if (item.type === "image") {
     return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
         <ImageIcon size={13} />
       </span>
     );
   }
   if (item.type === "media") {
     return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
         <Images size={13} />
       </span>
     );
   }
   if (item.type === "link") {
     return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
         <LinkIcon size={13} />
       </span>
     );
   }
   return (
-    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
       <Heart size={13} />
     </span>
   );
@@ -209,34 +209,34 @@ function ActivityIcon({ item }: { item: ActivityItem }) {
 function ActivityBody({ item }: { item: ActivityItem }) {
   if (item.kind === "supporter") {
     return (
-      <p className="text-zinc-700">
-        <span className="font-medium text-zinc-900">{item.name ?? "Someone"}</span> joined
+      <p className="text-[var(--color-text-secondary)]">
+        <span className="font-medium text-[var(--color-text)]">{item.name ?? "Someone"}</span> joined
         with {SUPPORT_LABEL[item.supportType] ?? item.supportType}
       </p>
     );
   }
   if (item.kind === "message") {
     return (
-      <p className="text-zinc-700">
-        <span className="font-medium text-zinc-900">{item.name ?? "Someone"}</span> sent{" "}
+      <p className="text-[var(--color-text-secondary)]">
+        <span className="font-medium text-[var(--color-text)]">{item.name ?? "Someone"}</span> sent{" "}
         {SUPPORT_LABEL[item.supportType] ?? "a note"}
-        {item.body && <span className="text-zinc-500"> — "{item.body.slice(0, 80)}{item.body.length > 80 ? "…" : ""}"</span>}
+        {item.body && <span className="text-[var(--color-text-muted)]"> — "{item.body.slice(0, 80)}{item.body.length > 80 ? "…" : ""}"</span>}
       </p>
     );
   }
   if (item.kind === "cheer") {
     const cheerLabel = (CHEER_META[item.emoji] ?? CHEER_META.thumbsup).label;
     return (
-      <p className="text-zinc-700">
-        <span className="font-medium text-zinc-900">{item.name ?? "Someone"}</span> sent{" "}
+      <p className="text-[var(--color-text-secondary)]">
+        <span className="font-medium text-[var(--color-text)]">{item.name ?? "Someone"}</span> sent{" "}
         {cheerLabel}
       </p>
     );
   }
   // update
   return (
-    <p className="text-zinc-700">
-      <span className="font-medium text-zinc-900">You</span> {item.body}
+    <p className="text-[var(--color-text-secondary)]">
+      <span className="font-medium text-[var(--color-text)]">You</span> {item.body}
     </p>
   );
 }

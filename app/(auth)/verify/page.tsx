@@ -84,17 +84,17 @@ function Result({
         size={48}
         className={
           icon === "check"
-            ? "mx-auto text-emerald-500"
+            ? "mx-auto text-[var(--color-success-text)]"
             : icon === "alert"
-              ? "mx-auto text-red-500"
+              ? "mx-auto text-[var(--color-danger)]"
               : "mx-auto animate-spin text-[var(--color-primary)]"
         }
       />
-      <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-[#292929]">
+      <h1 className="mt-6 title-state">
         {title}
       </h1>
       {body && (
-        <p className="mt-3 text-sm text-[#686963]">{body}</p>
+        <p className="mt-3 text-sm text-[var(--color-text-muted)]">{body}</p>
       )}
     </div>
   );

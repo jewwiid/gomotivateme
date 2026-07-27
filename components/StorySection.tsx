@@ -29,7 +29,7 @@ export function StorySection({
       <h2
         className={
           embedded
-            ? "text-base font-bold text-[#262723]"
+            ? "text-base font-bold text-[var(--color-text)]"
             : "mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]"
         }
       >
@@ -39,7 +39,7 @@ export function StorySection({
         className={
           embedded
             ? "relative mt-4"
-            : "relative rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-6 sm:p-7"
+            : "relative workspace-card p-6 sm:p-7"
         }
       >
         <Quote

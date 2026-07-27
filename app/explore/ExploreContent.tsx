@@ -64,12 +64,12 @@ export function ExploreContent() {
   }, [tab, activeCategory, debouncedQ]);
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] text-[#292929]">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
 
       {/* Page hero — title, subtitle, search bar */}
       <section>
-        <div className="mx-auto max-w-[80rem] px-5 py-14 sm:px-8 sm:py-20">
+        <div className="shell-content px-5 py-14 sm:px-8 sm:py-20">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -78,11 +78,11 @@ export function ExploreContent() {
           >
             <p className="brand-kicker">Find a goal to stand behind</p>
             <h1
-              className="mt-3 font-display text-balance text-5xl font-bold leading-[0.93] tracking-[-0.06em] text-[#292929] sm:text-7xl"
+              className="mt-3 font-display text-balance text-5xl font-bold leading-[0.93] tracking-[-0.06em] text-[var(--color-text)] sm:text-7xl"
             >
               Small steps. Real people.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-[#686963] sm:text-lg">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--color-text-muted)] sm:text-lg">
               Browse public goals, follow motivators, or jump into a category that fits you.
             </p>
           </motion.div>
@@ -91,7 +91,7 @@ export function ExploreContent() {
             <div className="relative">
               <Search
                 size={16}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-dim)]"
               />
               <input
                 value={search}
@@ -103,14 +103,14 @@ export function ExploreContent() {
                     ? "Search by name or handle…"
                     : "Search categories…"
                 }
-                className="w-full rounded-xl border border-[#c9c8c0] bg-transparent py-3.5 pl-11 pr-4 text-sm text-[#292929] placeholder:text-[#888983] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-transparent py-3.5 pl-11 pr-4 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
               />
             </div>
           </div>
 
           {/* Tab bar — pill style, single-select */}
           <div className="mt-10 flex items-center">
-            <div className="inline-flex gap-5 border-b border-[#deddd6]">
+            <div className="inline-flex gap-5 border-b border-[var(--color-border)]">
               {TAB_META.map((t) => {
                 const active = tab === t.id;
                 return (
@@ -120,7 +120,7 @@ export function ExploreContent() {
                     className={`inline-flex items-center gap-1.5 -mb-px border-b-2 px-0 py-2.5 text-sm font-semibold transition ${
                       active
                         ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-                        : "border-transparent text-[#777872] hover:text-[#33332f]"
+                        : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                     }`}
                   >
                     {t.icon}
@@ -133,7 +133,7 @@ export function ExploreContent() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-[80rem] px-5 py-8 sm:px-8 sm:py-12">
+      <main className="shell-content px-5 py-8 sm:px-8 sm:py-12">
         {tab === "goals" && (
           <GoalsTab
             activeCategory={activeCategory}
@@ -203,9 +203,9 @@ function GoalsTab({
       {goals === undefined ? (
         <SkeletonGrid />
       ) : goals.length === 0 ? (
-        <div className="flex flex-col items-center border-y border-dashed border-[#c9c8c0] px-6 py-16 text-center">
-          <Sparkles size={28} className="mb-3 text-zinc-400" />
-          <p className="text-sm text-zinc-600">
+        <div className="flex flex-col items-center border-y border-dashed border-[var(--color-border-strong)] px-6 py-16 text-center">
+          <Sparkles size={28} className="mb-3 text-[var(--color-text-dim)]" />
+          <p className="text-sm text-[var(--color-text-secondary)]">
             {query
               ? `No goals match “${query}”.`
               : activeCategory
@@ -228,7 +228,7 @@ function GoalsTab({
                   href={`/o/${g.ownerHandle}/${g.slug}`}
                   className="group block"
                 >
-                  <div className="relative aspect-[1.4/1] w-full overflow-hidden rounded-[1rem] bg-[#e8edf9]">
+                  <div className="relative aspect-[1.4/1] w-full overflow-hidden rounded-[1rem] bg-[var(--color-primary-soft)]">
                     {coverUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -237,21 +237,21 @@ function GoalsTab({
                         className="h-full w-full object-cover transition group-hover:scale-105"
                       />
                     ) : null}
-                    <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#4d4e49] backdrop-blur">
+                    <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] backdrop-blur">
                       <CategoryIcon category={g.category} size={10} />
                       {g.category}
                     </div>
                   </div>
                   <div className="px-1 pt-3">
-                    <h3 className="line-clamp-2 font-display text-lg font-bold leading-snug tracking-[-0.035em] text-[#292929]">
+                    <h3 className="line-clamp-2 font-display text-lg font-bold leading-snug tracking-[-0.035em] text-[var(--color-text)]">
                       {g.title}
                     </h3>
                     {g.summary && (
-                      <p className="mt-1 line-clamp-2 text-xs text-zinc-600">{g.summary}</p>
+                      <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{g.summary}</p>
                     )}
-                    <div className="mt-2 text-xs text-zinc-500">
+                    <div className="mt-2 text-xs text-[var(--color-text-muted)]">
                       {g.ownerHandle ? (
-                        <span className="font-medium text-zinc-700">@{g.ownerHandle}</span>
+                        <span className="font-medium text-[var(--color-text-secondary)]">@{g.ownerHandle}</span>
                       ) : (
                         <span>{g.ownerName || "Someone"}</span>
                       )}
@@ -271,9 +271,9 @@ function GoalsTab({
                           hint={`${g.supporterCount} / ${g.supporterTarget}`}
                         />
                       ) : (
-                        <div className="flex items-baseline justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+                        <div className="flex items-baseline justify-between text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
                           <span>Supporters</span>
-                          <span className="font-mono tabular-nums text-zinc-700">
+                          <span className="font-mono tabular-nums text-[var(--color-text-secondary)]">
                             {g.supporterCount}
                           </span>
                         </div>
@@ -284,7 +284,7 @@ function GoalsTab({
                         {g.supportTypes.slice(0, 3).map((t: string) => (
                           <span
                             key={t}
-                            className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600"
+                            className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-secondary)]"
                           >
                             {SUPPORT_LABEL[t] ?? t}
                           </span>
@@ -327,9 +327,9 @@ function MotivatorsTab({ query }: { query: string }) {
 
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-16 text-center">
-        <Users size={28} className="mb-3 text-zinc-400" />
-        <p className="text-sm text-zinc-600">
+      <div className="flex flex-col items-center rounded-2xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-6 py-16 text-center">
+        <Users size={28} className="mb-3 text-[var(--color-text-dim)]" />
+        <p className="text-sm text-[var(--color-text-secondary)]">
           {query
             ? `No motivators match “${query}”.`
             : "No motivators yet. Be the first to start a goal."}
@@ -356,7 +356,7 @@ function MotivatorsTab({ query }: { query: string }) {
           >
             <Link
               href={m.handle ? `/@${m.handle}` : "#"}
-              className="group block rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-md"
+              className="group block workspace-card p-5 transition hover:border-[var(--color-border-strong)] hover:shadow-md"
             >
               <div className="flex items-center gap-3">
                 {m.image ? (
@@ -372,29 +372,29 @@ function MotivatorsTab({ query }: { query: string }) {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-zinc-900">
+                  <div className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {m.name ?? `@${m.handle}`}
                   </div>
                   {m.handle && (
-                    <div className="truncate text-[11px] text-zinc-500">@{m.handle}</div>
+                    <div className="truncate text-[11px] text-[var(--color-text-muted)]">@{m.handle}</div>
                   )}
                 </div>
               </div>
               {m.bio && (
-                <p className="mt-3 line-clamp-2 text-xs text-zinc-600">{m.bio}</p>
+                <p className="mt-3 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{m.bio}</p>
               )}
-              <div className="mt-4 flex items-center gap-4 border-t border-zinc-100 pt-3 text-[11px] text-zinc-500">
+              <div className="mt-4 flex items-center gap-4 border-t border-[var(--color-border-subtle)] pt-3 text-[11px] text-[var(--color-text-muted)]">
                 <span>
-                  <span className="font-semibold text-zinc-900">{m.goalsCount}</span>{" "}
+                  <span className="font-semibold text-[var(--color-text)]">{m.goalsCount}</span>{" "}
                   {m.goalsCount === 1 ? "goal" : "goals"}
                 </span>
                 <span>
-                  <span className="font-semibold text-zinc-900">{m.motivatingCount}</span>{" "}
+                  <span className="font-semibold text-[var(--color-text)]">{m.motivatingCount}</span>{" "}
                   motivating
                 </span>
                 {m.supportersCount > 0 && (
                   <span>
-                    <span className="font-semibold text-zinc-900">{m.supportersCount}</span>{" "}
+                    <span className="font-semibold text-[var(--color-text)]">{m.supportersCount}</span>{" "}
                     supporters
                   </span>
                 )}
@@ -433,9 +433,9 @@ function CategoriesTab({ query }: { query: string }) {
 
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-16 text-center">
-        <Grid3X3 size={28} className="mb-3 text-zinc-400" />
-        <p className="text-sm text-zinc-600">No categories match “{query}”.</p>
+      <div className="flex flex-col items-center rounded-2xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-6 py-16 text-center">
+        <Grid3X3 size={28} className="mb-3 text-[var(--color-text-dim)]" />
+        <p className="text-sm text-[var(--color-text-secondary)]">No categories match “{query}”.</p>
       </div>
     );
   }
@@ -453,20 +453,20 @@ function CategoriesTab({ query }: { query: string }) {
           >
             <Link
               href={`/explore?tab=goals&category=${c.id}`}
-              className="group flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
+              className="group flex items-center gap-4 workspace-card p-4 transition hover:border-[var(--color-primary)]/40 hover:shadow-md"
             >
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--color-primary-soft)] to-[var(--color-accent-soft)] text-[var(--color-primary)]">
                 <CategoryIcon category={c.id} size={22} />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="font-semibold text-zinc-900">{c.label}</div>
-                <div className="mt-0.5 text-[11px] text-zinc-500">
+                <div className="font-semibold text-[var(--color-text)]">{c.label}</div>
+                <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
                   {count} {count === 1 ? "goal" : "goals"}
                 </div>
               </div>
               <ArrowRight
                 size={16}
-                className="text-zinc-300 transition group-hover:translate-x-0.5 group-hover:text-[var(--color-primary)]"
+                className="text-[var(--color-text-dim)] transition group-hover:translate-x-0.5 group-hover:text-[var(--color-primary)]"
               />
             </Link>
           </motion.div>
@@ -497,7 +497,7 @@ function CategoryPill({
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
         active
           ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-          : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400"
+          : "border-[var(--color-border-strong)] bg-white text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]"
       }`}
     >
       {icon}
@@ -517,17 +517,17 @@ function MiniProgress({
 }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+      <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
         <span>{label}</span>
-        <span className="font-mono tabular-nums text-zinc-700">{Math.round(pct)}%</span>
+        <span className="font-mono tabular-nums text-[var(--color-text-secondary)]">{Math.round(pct)}%</span>
       </div>
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-sunken)]">
         <div
           className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)]"
           style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
         />
       </div>
-      <div className="mt-0.5 text-[10px] text-zinc-500">{hint}</div>
+      <div className="mt-0.5 text-[10px] text-[var(--color-text-muted)]">{hint}</div>
     </div>
   );
 }
@@ -537,17 +537,17 @@ function SkeletonGrid({ kind = "goal" }: { kind?: "goal" | "avatar" | "category"
     return (
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border border-zinc-200 bg-white p-5">
+          <div key={i} className="workspace-card p-5">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 animate-pulse rounded-full bg-zinc-200" />
+              <div className="h-12 w-12 animate-pulse rounded-full bg-[var(--color-bg-sunken)]" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 w-24 animate-pulse rounded bg-zinc-200" />
-                <div className="h-2 w-16 animate-pulse rounded bg-zinc-100" />
+                <div className="h-3 w-24 animate-pulse rounded bg-[var(--color-bg-sunken)]" />
+                <div className="h-2 w-16 animate-pulse rounded bg-[var(--color-bg-elev)]" />
               </div>
             </div>
             <div className="mt-4 space-y-2">
-              <div className="h-2 w-full animate-pulse rounded bg-zinc-100" />
-              <div className="h-2 w-2/3 animate-pulse rounded bg-zinc-100" />
+              <div className="h-2 w-full animate-pulse rounded bg-[var(--color-bg-elev)]" />
+              <div className="h-2 w-2/3 animate-pulse rounded bg-[var(--color-bg-elev)]" />
             </div>
           </div>
         ))}
@@ -558,7 +558,7 @@ function SkeletonGrid({ kind = "goal" }: { kind?: "goal" | "avatar" | "category"
     return (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="h-[72px] animate-pulse rounded-2xl bg-zinc-100" />
+          <div key={i} className="h-[72px] animate-pulse rounded-2xl bg-[var(--color-bg-elev)]" />
         ))}
       </div>
     );
@@ -566,12 +566,12 @@ function SkeletonGrid({ kind = "goal" }: { kind?: "goal" | "avatar" | "category"
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          <div className="aspect-[16/9] animate-pulse bg-zinc-100" />
+        <div key={i} className="overflow-hidden workspace-card">
+          <div className="aspect-[16/9] animate-pulse bg-[var(--color-bg-elev)]" />
           <div className="space-y-2 p-4">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-100" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-100" />
-            <div className="mt-3 h-1.5 w-full animate-pulse rounded bg-zinc-100" />
+            <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--color-bg-elev)]" />
+            <div className="h-3 w-1/2 animate-pulse rounded bg-[var(--color-bg-elev)]" />
+            <div className="mt-3 h-1.5 w-full animate-pulse rounded bg-[var(--color-bg-elev)]" />
           </div>
         </div>
       ))}

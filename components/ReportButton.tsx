@@ -60,7 +60,7 @@ export function ReportButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={!visitorKey}
-        className={className ?? "inline-flex items-center gap-1 text-xs text-zinc-500 transition hover:text-zinc-800 disabled:opacity-50"}
+        className={className ?? "inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] disabled:opacity-50"}
       >
         <Flag size={12} />
         Report {updateId ? "update" : "goal"}
@@ -75,27 +75,27 @@ export function ReportButton({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-semibold text-zinc-900">Report {updateId ? "this update" : "this goal"}</h3>
-                <p className="mt-1 text-sm text-zinc-500">Reports are reviewed by the GoMotivateMe team.</p>
+                <h3 className="text-base font-semibold text-[var(--color-text)]">Report {updateId ? "this update" : "this goal"}</h3>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">Reports are reviewed by the GoMotivateMe team.</p>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100" aria-label="Close report form">
+              <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-elev)]" aria-label="Close report form">
                 <X size={16} />
               </button>
             </div>
 
             {message ? (
-              <div className="mt-5 rounded-xl bg-zinc-50 p-4 text-sm text-zinc-700">
+              <div className="mt-5 rounded-xl bg-[var(--color-bg-elev)] p-4 text-sm text-[var(--color-text-secondary)]">
                 {message}
                 <button type="button" onClick={() => setOpen(false)} className="mt-3 block font-semibold text-[var(--color-primary)]">Close</button>
               </div>
             ) : (
               <>
-                <label className="mt-5 block text-sm font-medium text-zinc-800">What is the issue?</label>
-                <select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)} className="mt-1.5 w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm text-zinc-800 focus:border-[var(--color-primary)] focus:outline-none">
+                <label className="mt-5 block text-sm font-medium text-[var(--color-text)]">What is the issue?</label>
+                <select value={reason} onChange={(event) => setReason(event.target.value as typeof reason)} className="mt-1.5 w-full rounded-xl border border-[var(--color-border-strong)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none">
                   {reasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
-                <label className="mt-4 block text-sm font-medium text-zinc-800">Details <span className="font-normal text-zinc-400">(optional)</span></label>
-                <textarea value={details} onChange={(event) => setDetails(event.target.value)} maxLength={1000} rows={3} className="mt-1.5 w-full resize-none rounded-xl border border-zinc-300 px-3 py-2.5 text-sm text-zinc-800 focus:border-[var(--color-primary)] focus:outline-none" />
+                <label className="mt-4 block text-sm font-medium text-[var(--color-text)]">Details <span className="font-normal text-[var(--color-text-dim)]">(optional)</span></label>
+                <textarea value={details} onChange={(event) => setDetails(event.target.value)} maxLength={1000} rows={3} className="mt-1.5 w-full resize-none rounded-xl border border-[var(--color-border-strong)] px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none" />
                 <button type="submit" disabled={busy || !visitorKey} className="mt-5 w-full rounded-xl bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50">
                   {busy ? "Sending report..." : "Send report"}
                 </button>

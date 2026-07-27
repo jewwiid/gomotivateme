@@ -66,7 +66,7 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.4) }}
-              className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4"
+              className="workspace-card p-4"
             >
               <div className="flex items-center gap-3">
                 {profile?.image ? (

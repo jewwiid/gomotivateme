@@ -58,14 +58,14 @@ export function UpdateReactions({
             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs transition disabled:opacity-40 ${
               active
                 ? "bg-[var(--color-primary-soft)] ring-1 ring-[var(--color-primary)]/30"
-                : "hover:bg-zinc-100"
+                : "hover:bg-[var(--color-bg-elev)]"
             }`}
             aria-label={label}
             aria-pressed={active}
           >
             <Icon size={14} strokeWidth={1.8} aria-hidden />
             {count > 0 && (
-              <span className="font-mono text-[10px] tabular-nums text-zinc-500">
+              <span className="font-mono text-[10px] tabular-nums text-[var(--color-text-muted)]">
                 {count}
               </span>
             )}
@@ -73,7 +73,7 @@ export function UpdateReactions({
         );
       })}
       {total > 0 && (
-        <span className="ml-1 text-[10px] text-zinc-400">
+        <span className="ml-1 text-[10px] text-[var(--color-text-dim)]">
           {total} {total === 1 ? "cheer" : "cheers"}
         </span>
       )}

@@ -19,7 +19,7 @@ export function MessageBubble({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.4) }}
-      className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4"
+      className="workspace-card p-4"
     >
       <p className="text-sm leading-relaxed text-[var(--color-text)]">"{message}"</p>
       <div className="mt-2.5 flex items-center justify-between text-xs text-[var(--color-text-dim)]">

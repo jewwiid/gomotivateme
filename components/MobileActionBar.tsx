@@ -47,7 +47,7 @@ export function MobileActionBar({
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3, type: "spring", stiffness: 240, damping: 22 }}
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/95 px-3 py-2.5 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border)] bg-white/95 px-3 py-2.5 backdrop-blur md:hidden"
       >
         <div className="mx-auto flex max-w-2xl items-center gap-2">
           {!isOwner && (
@@ -79,7 +79,7 @@ export function MobileActionBar({
           )}
           <button
             onClick={onShare}
-            className={`flex items-center justify-center gap-1.5 rounded-full border border-zinc-300 bg-white px-3 py-2.5 text-sm font-semibold text-zinc-900 transition hover:border-zinc-400 ${
+            className={`flex items-center justify-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-white px-3 py-2.5 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-border-strong)] ${
               isOwner ? "flex-1" : ""
             }`}
           >
@@ -94,7 +94,7 @@ export function MobileActionBar({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-white shadow-lg md:hidden"
+            className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[var(--color-text)] px-4 py-2 text-xs font-medium text-white shadow-lg md:hidden"
           >
             <span className="inline-flex items-center gap-1.5">
               <Check size={12} />
