@@ -9,14 +9,14 @@ import type { NextRequest } from "next/server";
  * The /u/[handle] route stays as the actual handler — this is a transparent
  * rewrite, not a redirect, so the URL bar keeps showing /@handle.
  *
- * Only single-segment handles are rewritten. Paths with additional segments
- * (e.g. /@handle/photos) are left alone for future expansion.
+ * Multi-segment paths like /@handle/goals are also rewritten to /u/handle
+ * (the profile page shows goals, so the extra segment is dropped).
  */
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Match /@something but not /@something/extra or /@@
-  const match = pathname.match(/^\/@([a-zA-Z0-9_-]+)$/);
+  // Match /@something with optional /extra-segment(s)
+  const match = pathname.match(/^\/@([a-zA-Z0-9_-]+)(\/.*)?$/);
   if (match) {
     const handle = match[1];
     const url = req.nextUrl.clone();
