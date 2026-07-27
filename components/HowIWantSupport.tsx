@@ -59,11 +59,11 @@ export function HowIWantSupport({
   const firstName = ownerName.split(" ")[0] || "them";
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6">
+    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
       <h2 className="text-base font-semibold text-zinc-900">
         How {firstName} wants support
       </h2>
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
         {types.map((t, i) => {
           const meta = SUPPORT_META[t] ?? SUPPORT_META.encourage;
           const Icon = meta.icon;
@@ -74,14 +74,20 @@ export function HowIWantSupport({
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-30px" }}
               transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="flex items-start gap-3"
+              className={`min-w-0 rounded-xl bg-[#fbfaf5] p-3 sm:flex sm:items-start sm:gap-3 ${
+                types.length % 2 === 1 && i === types.length - 1
+                  ? "col-span-2"
+                  : ""
+              }`}
             >
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white sm:mt-0.5">
                 <Check size={12} strokeWidth={3} />
               </span>
-              <div>
-                <div className="text-sm font-semibold text-zinc-900">{meta.label}</div>
-                <div className="text-xs text-zinc-500">{meta.description}</div>
+              <div className="mt-2 min-w-0 sm:mt-0">
+                <div className="text-sm font-semibold leading-5 text-zinc-900">{meta.label}</div>
+                <div className="mt-0.5 hidden text-xs leading-5 text-zinc-500 sm:block">
+                  {meta.description}
+                </div>
               </div>
             </motion.li>
           );

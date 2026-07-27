@@ -310,7 +310,7 @@ export function StructuredSupportComposer({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border-2 border-[var(--color-accent)]/30 bg-[var(--color-bg-card)] p-5"
+      className="rounded-2xl border-2 border-[var(--color-accent)]/30 bg-[var(--color-bg-card)] p-4 sm:p-5"
     >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-base font-semibold">Support this goal</h3>
@@ -330,12 +330,12 @@ export function StructuredSupportComposer({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="space-y-2"
+            className="grid grid-cols-2 gap-2"
           >
-            <p className="mb-3 text-sm text-[var(--color-text-muted)]">
+            <p className="col-span-2 mb-1 text-sm text-[var(--color-text-muted)]">
               How would you like to support {user?.name?.split(" ")[0] || "them"}?
             </p>
-            {typesToShow.map((t) => {
+            {typesToShow.map((t, index) => {
               const meta = SUPPORT_META[t];
               const Icon = meta.icon;
               const active = supportType === t;
@@ -346,7 +346,11 @@ export function StructuredSupportComposer({
                     setSupportType(t);
                     setStep("compose");
                   }}
-                  className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${
+                  className={`flex min-w-0 w-full flex-col items-start gap-2 rounded-xl border p-3 text-left transition sm:flex-row sm:gap-3 ${
+                    typesToShow.length % 2 === 1 && index === typesToShow.length - 1
+                      ? "col-span-2"
+                      : ""
+                  } ${
                     active
                       ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
                       : "border-[var(--color-border)] bg-[var(--color-bg-elev)] hover:border-[var(--color-border-strong)]"
@@ -355,9 +359,9 @@ export function StructuredSupportComposer({
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-bg)] text-[var(--color-primary)]">
                     <Icon size={16} aria-hidden />
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold">{meta.label}</div>
-                    <div className="text-xs text-[var(--color-text-muted)]">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold leading-5">{meta.label}</div>
+                    <div className="mt-0.5 hidden text-xs leading-5 text-[var(--color-text-muted)] min-[480px]:block">
                       {meta.description}
                     </div>
                   </div>

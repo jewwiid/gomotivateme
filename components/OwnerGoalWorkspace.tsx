@@ -233,7 +233,7 @@ export function OwnerGoalWorkspace({
             </p>
           </div>
 
-          <div className="flex flex-col justify-center gap-2 md:col-span-2 xl:col-span-1">
+          <div className="grid grid-cols-2 gap-2 md:col-span-2 xl:col-span-1 xl:flex xl:flex-col">
             <a
               href={publicUrl || "#public-page"}
               target="_blank"
@@ -254,13 +254,14 @@ export function OwnerGoalWorkspace({
           aria-label="Goal momentum"
           className="workspace-card !mt-[1.125rem] overflow-hidden"
         >
-          <div className="grid min-h-[7rem] grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-[1.15fr_repeat(4,1fr)]">
+          <div className="grid min-h-[7rem] grid-cols-2 sm:grid-cols-3 xl:grid-cols-[1.15fr_repeat(4,1fr)]">
             <MomentumStat
               icon={CircleGauge}
               label="Goal progress"
               value={`${Math.round(safeProgress)}%`}
               detail={safeProgress >= 100 ? "Complete" : "On track"}
               progress={safeProgress}
+              className="col-span-2 sm:col-span-1"
             />
             <MomentumStat
               icon={Flag}
@@ -287,7 +288,6 @@ export function OwnerGoalWorkspace({
               label="Updates"
               value={String(updates?.length ?? 0)}
               detail="updates shared"
-              className="min-[420px]:col-span-2 sm:col-span-1"
             />
           </div>
         </section>
@@ -350,7 +350,7 @@ export function OwnerGoalWorkspace({
                   Manage
                 </a>
               </div>
-              <div className="mt-2 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-4 lg:grid-cols-4">
                 {milestones.map((milestone, index) => (
                   <button
                     key={milestone.id}
@@ -396,14 +396,14 @@ export function OwnerGoalWorkspace({
               </div>
             </section>
 
-            <section id="updates" className="workspace-card scroll-mt-24 p-5">
+            <section id="updates" className="workspace-card scroll-mt-24 p-4 sm:p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-[#262723]">Recent activity</h2>
                 <a href="#all-updates" className="text-xs font-bold text-[var(--color-primary)] hover:underline">
                   View all updates
                 </a>
               </div>
-              <div className="mt-4 space-y-4">
+              <div className="mt-4 space-y-3 sm:space-y-4">
                 {updates === undefined ? (
                   <>
                     <div className="h-14 animate-pulse rounded-xl bg-[#f2f0e9]" />
@@ -591,19 +591,23 @@ export function MomentumStat({
   className?: string;
 }) {
   return (
-    <div className={`flex min-w-0 items-center gap-3 border-r border-b border-[var(--color-border)] px-4 py-4 last:border-r-0 xl:border-b-0 ${className}`}>
+    <div className={`flex min-w-0 items-center gap-2.5 border-r border-b border-[var(--color-border)] px-3 py-3 last:border-r-0 sm:gap-3 sm:px-4 sm:py-4 xl:border-b-0 ${className}`}>
       <Icon
         size={32}
         strokeWidth={1.65}
         aria-hidden
-        className={progress !== undefined ? "shrink-0 text-[var(--color-primary)]" : "shrink-0 text-[#4d4f49]"}
+        className={
+          progress !== undefined
+            ? "h-7 w-7 shrink-0 text-[var(--color-primary)] sm:h-8 sm:w-8"
+            : "h-7 w-7 shrink-0 text-[#4d4f49] sm:h-8 sm:w-8"
+        }
       />
       <div className="min-w-0">
         <p className="truncate text-[0.67rem] font-bold uppercase tracking-[0.12em] text-[#858780]">
           {label}
         </p>
         <div className="mt-1 flex items-baseline gap-2">
-          <strong className="truncate text-xl tracking-[-0.035em] text-[#242521]">{value}</strong>
+          <strong className="truncate text-lg tracking-[-0.035em] text-[#242521] sm:text-xl">{value}</strong>
           {progress !== undefined ? (
             <span className="text-xs font-bold text-[var(--color-primary)]">On track</span>
           ) : null}

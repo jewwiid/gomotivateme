@@ -269,7 +269,7 @@ function PublicGoalView({
               </div>
             </div>
 
-            <div className="flex flex-col justify-center gap-2 md:col-span-2 xl:col-span-1">
+            <div className="grid grid-cols-2 gap-2 md:col-span-2 xl:col-span-1 xl:flex xl:flex-col">
               {isOwner ? (
                 <Link href={`/dashboard/${goalId}`} className="workspace-button-primary">
                   Manage this goal
@@ -328,13 +328,14 @@ function PublicGoalView({
           )}
 
           <section aria-label="Goal momentum" className="workspace-card overflow-hidden">
-            <div className="grid min-h-[7rem] grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-[1.15fr_repeat(4,1fr)]">
+            <div className="grid min-h-[7rem] grid-cols-2 sm:grid-cols-3 xl:grid-cols-[1.15fr_repeat(4,1fr)]">
               <MomentumStat
                 icon={CircleGauge}
                 label="Goal progress"
                 value={`${Math.round(goalPct)}%`}
                 detail="On track"
                 progress={goalPct}
+                className="col-span-2 sm:col-span-1"
               />
               <MomentumStat
                 icon={Flag}
@@ -369,7 +370,6 @@ function PublicGoalView({
                 label="Updates"
                 value={String(updatesCount ?? 0)}
                 detail="updates shared"
-                className="min-[420px]:col-span-2 sm:col-span-1"
               />
             </div>
           </section>
@@ -536,7 +536,7 @@ function PublicMilestonePath({
           {milestones.length} complete
         </span>
       </div>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-4 lg:grid-cols-4">
         {milestones.map((milestone, index) => (
           <div key={milestone.id} className="relative min-w-0">
             {index < milestones.length - 1 ? (
