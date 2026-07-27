@@ -16,7 +16,7 @@ export function GoalCreatedEmail({
   goalTitle,
   slug,
   ownerHandle,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: GoalCreatedEmailProps) {
   const greeting = firstName ? `Hi ${firstName}` : "Hi there";

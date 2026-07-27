@@ -17,7 +17,7 @@ export function InviteReceivedEmail({
   inviteMessage,
   roleLabel,
   inviteToken,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
 }: InviteReceivedEmailProps) {
   const excerpt = inviteMessage?.slice(0, 160);
 

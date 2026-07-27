@@ -17,7 +17,7 @@ import { internal } from "./_generated/api";
 
 // Public site URL — used for the List-Unsubscribe header and footer links.
 // Matches the default in the email templates.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gomotivateme.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gomotivateme.com";
 
 export const drainQueue = internalAction({
   args: {},

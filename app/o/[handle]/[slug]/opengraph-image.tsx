@@ -4,7 +4,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 
 export const runtime = "edge";
-export const alt = "Goal on gomotivateme";
+export const alt = "Goal on GoMotivateMe";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -137,7 +137,7 @@ export default async function OpengraphImage({
               m
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.3 }}>
-              gomotivateme
+              GoMotivateMe
             </div>
           </div>
           <div

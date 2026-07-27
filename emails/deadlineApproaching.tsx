@@ -26,7 +26,7 @@ export function DeadlineApproachingEmail({
   targetValue,
   unit,
   progressPct,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: DeadlineApproachingEmailProps) {
   const firstName = ownerName?.split(" ")[0] || "there";

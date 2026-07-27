@@ -22,7 +22,7 @@ export function SupportMessageReceivedEmail({
   ownerHandle,
   messageExcerpt,
   supportTypeLabel,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: SupportMessageReceivedEmailProps) {
   return (

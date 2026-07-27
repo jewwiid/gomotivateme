@@ -22,7 +22,7 @@ export function NewApplicationEmail({
   ownerHandle,
   roleLabel,
   applicationMessage,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: NewApplicationEmailProps) {
   const excerpt = applicationMessage.slice(0, 140);

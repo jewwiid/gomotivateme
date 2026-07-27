@@ -8,7 +8,7 @@ export interface WelcomeEmailProps {
   unsubscribeToken?: string;
 }
 
-export function WelcomeEmail({ firstName, siteUrl = "https://gomotivateme.com", unsubscribeToken }: WelcomeEmailProps) {
+export function WelcomeEmail({ firstName, siteUrl = "https://www.gomotivateme.com", unsubscribeToken }: WelcomeEmailProps) {
   const greeting = firstName ? `Hi ${firstName}` : "Hi there";
 
   return (

@@ -25,7 +25,7 @@ export function NewReactionEmail({
   emojiLabel,
   targetType,
   totalReactions,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: NewReactionEmailProps) {
   return (

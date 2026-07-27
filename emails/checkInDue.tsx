@@ -17,7 +17,7 @@ export function CheckInDueEmail({
   ownerName,
   goalTitle,
   daysSinceLastCheckin,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: CheckInDueEmailProps) {
   const firstName = motivatorName?.split(" ")[0] || "there";

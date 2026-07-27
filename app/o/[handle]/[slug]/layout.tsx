@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://gomotivateme.com";
+
 /**
  * Server component layout for the public goal page.
  *
@@ -21,8 +24,8 @@ export async function generateMetadata({
   const convexUrl = process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL;
   if (!convexUrl) {
     return {
-      title: "Goal on gomotivateme",
-      description: "Support someone's goal on gomotivateme.",
+      title: "Goal on GoMotivateMe",
+      description: "Support someone's goal on GoMotivateMe.",
     };
   }
 
@@ -39,39 +42,47 @@ export async function generateMetadata({
 
   if (!goal) {
     return {
-      title: "Goal not found · gomotivateme",
+      title: "Goal not found · GoMotivateMe",
       description: "This goal may be unlisted or the link is incorrect.",
     };
   }
 
-  // Build an absolute origin for OG image URLs. On Vercel, headers are set; in
-  // other environments fall back to the Convex-safe public URL env var.
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-
-  const title = goal.title ?? "Goal on gomotivateme";
+  const title = goal.title ?? "Goal on GoMotivateMe";
   const description =
     goal.summary ??
-    (goal.story ? truncate(goal.story, 155) : "Support someone's goal on gomotivateme.");
+    (goal.story ? truncate(goal.story, 155) : "Support someone's goal on GoMotivateMe.");
 
   const ogImagePath = `/o/${normalizedHandle}/${slug}/opengraph-image`;
+  const ogImageUrl = new URL(ogImagePath, SITE_URL).toString();
+
   const openGraph = {
     title,
     description,
-    ...(origin ? { images: [`${origin}${ogImagePath}`] } : {}),
+    type: "article" as const,
+    siteName: "GoMotivateMe",
+    images: [
+      {
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: `${title} — on GoMotivateMe`,
+      },
+    ],
+  };
+
+  const twitter = {
+    card: "summary_large_image" as const,
+    title,
+    description,
+    images: [ogImageUrl],
   };
 
   return {
+    metadataBase: new URL(SITE_URL),
     title,
     description,
     openGraph,
-    twitter: {
-      card: "summary_large_image" as const,
-      title,
-      description,
-      ...(origin ? { images: [`${origin}${ogImagePath}`] } : {}),
-    },
+    twitter,
   };
 }
 

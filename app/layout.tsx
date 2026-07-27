@@ -19,14 +19,26 @@ const manrope = Manrope({
   display: "swap",
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://gomotivateme.com";
+
 export const metadata: Metadata = {
-  title: "gomotivateme: where personal goals get done",
+  metadataBase: new URL(SITE_URL),
+  title: "GoMotivateMe — Where personal goals get done",
   description:
     "Set a goal, build a support team, and keep going with encouragement from people who want to see you succeed.",
   openGraph: {
-    title: "gomotivateme",
-    description: "Where personal goals get done.",
+    title: "GoMotivateMe — Where personal goals get done",
+    description:
+      "Set a goal, build a support team, and keep going with encouragement from people who want to see you succeed.",
     type: "website",
+    siteName: "GoMotivateMe",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GoMotivateMe — Where personal goals get done",
+    description:
+      "Set a goal, build a support team, and keep going with encouragement from people who want to see you succeed.",
   },
 };
 

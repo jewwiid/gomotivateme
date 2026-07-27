@@ -20,7 +20,7 @@ export function StaleGoalEmail({
   daysSinceLastUpdate,
   supporterCount,
   motivatorCount,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: StaleGoalEmailProps) {
   const firstName = ownerName?.split(" ")[0] || "there";

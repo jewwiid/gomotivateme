@@ -4,7 +4,7 @@ import { api } from "@/convex/_generated/api";
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Goal on gomotivateme";
+export const alt = "Goal on GoMotivateMe";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

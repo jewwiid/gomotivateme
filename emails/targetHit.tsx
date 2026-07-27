@@ -20,7 +20,7 @@ export function TargetHitEmail({
   ownerHandle,
   unit,
   targetValue,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: TargetHitEmailProps) {
   const firstName = ownerName?.split(" ")[0] || "there";

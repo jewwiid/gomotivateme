@@ -74,7 +74,7 @@ export function EmailLayout({
                   Unsubscribe
                 </Link>{" "}
                 ·{" "}
-                <Link href="https://gomotivateme.com/settings" style={footerLink}>
+                <Link href="https://www.gomotivateme.com/settings" style={footerLink}>
                   Email preferences
                 </Link>
               </Text>

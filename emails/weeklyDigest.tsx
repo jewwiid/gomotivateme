@@ -27,7 +27,7 @@ export interface WeeklyDigestEmailProps {
 export function WeeklyDigestEmail({
   firstName,
   goals,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: WeeklyDigestEmailProps) {
   const greeting = firstName ? `Hi ${firstName}` : "Hi there";

@@ -22,7 +22,7 @@ export function NewUpdateEmail({
   ownerHandle,
   updateExcerpt,
   valueLabel,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: NewUpdateEmailProps) {
   return (

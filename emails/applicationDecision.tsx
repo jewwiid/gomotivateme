@@ -21,7 +21,7 @@ export function ApplicationDecisionEmail({
   ownerHandle,
   decision,
   roleLabel,
-  siteUrl = "https://gomotivateme.com",
+  siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: ApplicationDecisionEmailProps) {
   const approved = decision === "approved";
