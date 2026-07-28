@@ -487,7 +487,7 @@ function PublicGoalView({
 
           <section
             id="creator"
-            className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--color-border)] py-5 text-xs text-[var(--color-text-muted)]"
+            className="scroll-mt-24 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--color-border)] py-5 text-xs text-[var(--color-text-muted)]"
           >
             <span>
               Started {formatDate(goal.createdAt)}

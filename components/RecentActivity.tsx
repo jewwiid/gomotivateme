@@ -3,7 +3,6 @@
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { Dumbbell, Flame, Heart, MessageCircle, Sparkles, ThumbsUp, TrendingUp, CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon } from "lucide-react";
-import Link from "next/link";
 import { useMemo } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -127,12 +126,12 @@ export function RecentActivity({
             <div className="min-w-0 flex-1">
               <ActivityBody item={it} />
             </div>
-            <Link
-              href="#"
-              className="shrink-0 text-[10px] text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)]"
+            <time
+              dateTime={new Date(it.at).toISOString()}
+              className="shrink-0 text-[10px] text-[var(--color-text-dim)]"
             >
               {relativeTime(it.at)}
-            </Link>
+            </time>
           </motion.li>
         ))}
       </ul>
