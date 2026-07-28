@@ -330,21 +330,31 @@ function NewGoalContent() {
 
           {step === 1 && (
             <Step title="What are you trying to achieve?">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={getCategory(category).titlePlaceholder ?? "e.g. Write my first novel"}
-                autoFocus
-                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
-              />
-              <input
-                type="text"
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder={getCategory(category).summaryPlaceholder ?? "One-line summary (optional)"}
-                className="mt-3 w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
-              />
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+                  Goal title
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={getCategory(category).titlePlaceholder ?? "e.g. Write my first novel"}
+                  autoFocus
+                  className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
+              <div className="mt-4">
+                <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+                  Summary <span className="font-normal text-[var(--color-text-dim)]">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder={getCategory(category).summaryPlaceholder ?? "e.g. One-line summary"}
+                  className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
             </Step>
           )}
 
