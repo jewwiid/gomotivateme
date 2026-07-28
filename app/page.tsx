@@ -133,7 +133,7 @@ export default function HomePage() {
           </motion.div>
         </section>
 
-        <section id="how-it-works" className="relative mt-12 overflow-hidden bg-[var(--color-bg-elev)] px-5 py-20 sm:mt-16 sm:px-8 sm:py-28">
+        <section id="how-it-works" className="relative mt-12 scroll-mt-24 overflow-hidden bg-[var(--color-bg-elev)] px-5 py-20 sm:mt-16 sm:px-8 sm:py-28">
           <div className="pointer-events-none absolute inset-x-[-8%] -top-14 h-24 rounded-[50%] bg-[var(--color-bg)]" />
           <div className="relative shell-content grid items-center gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-24">
             <div className="relative mx-auto w-full max-w-xl rounded-[2rem] bg-[#dff2ae] p-7 sm:p-10">
@@ -158,12 +158,12 @@ export default function HomePage() {
                   </li>
                 ))}
               </ol>
-              <a href="#explore" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">See how GoMotivateMe works <ArrowRight size={16} /></a>
+              <a href="#explore" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">Browse goals <ArrowRight size={16} /></a>
             </div>
           </div>
         </section>
 
-        <section id="explore" className="px-5 py-20 sm:px-8 sm:py-28">
+        <section id="explore" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28">
           <div className="shell-content">
             <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
               <div>
