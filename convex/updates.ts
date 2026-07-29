@@ -239,7 +239,7 @@ export const add = mutation({
       goalId: args.goalId,
       ownerId: userId,
       type: args.type,
-      note: args.note,
+      note: cleanNote(args.note),
       imageId: args.imageId,
       linkUrl: args.linkUrl,
       linkTitle: args.linkTitle,

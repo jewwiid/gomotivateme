@@ -9,6 +9,8 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as aiAssistant from "../aiAssistant.js";
+import type * as aiRateLimits from "../aiRateLimits.js";
 import type * as auth from "../auth.js";
 import type * as badges from "../badges.js";
 import type * as crons from "../crons.js";
@@ -38,6 +40,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  aiAssistant: typeof aiAssistant;
+  aiRateLimits: typeof aiRateLimits;
   auth: typeof auth;
   badges: typeof badges;
   crons: typeof crons;
@@ -86,4 +90,7 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};

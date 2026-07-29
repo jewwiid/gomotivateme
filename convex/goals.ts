@@ -125,7 +125,23 @@ export const create = mutation({
     }
     const category = args.category;
 
-    if (args.title.trim().length === 0) throw new Error("Title is required");
+    const cleanTitle = args.title.trim();
+    const cleanSummary = args.summary?.trim() || undefined;
+    const cleanStory = args.story?.trim() || undefined;
+    if (cleanTitle.length === 0) throw new Error("Title is required");
+    if (cleanTitle.length > 120) throw new Error("Titles can be up to 120 characters");
+    if (cleanSummary && cleanSummary.length > 280) {
+      throw new Error("Summaries can be up to 280 characters");
+    }
+    if (cleanStory && cleanStory.length > 3_000) {
+      throw new Error("Stories can be up to 3,000 characters");
+    }
+    if ((args.milestones?.length ?? 0) > 8) {
+      throw new Error("Use up to 8 milestones");
+    }
+    if (args.milestones?.some((milestone) => milestone.title.trim().length > 120)) {
+      throw new Error("Milestones can be up to 120 characters");
+    }
     if (args.targetDate && args.targetDate <= Date.now()) {
       throw new Error("Target date must be in the future");
     }
@@ -182,7 +198,7 @@ export const create = mutation({
     // Build initial milestone rows (all undone).
     const milestones = (args.milestones ?? []).map((m) => ({
       id: m.id,
-      title: m.title,
+      title: m.title.trim(),
       done: false,
     }));
 
@@ -201,7 +217,7 @@ export const create = mutation({
     // set, via the ownerHandle sync in users.updateProfile / setHandle).
     const namespaceKey = ownerHandle ?? userId;
 
-    let slug = buildSlug(args.title);
+    let slug = buildSlug(cleanTitle);
     // Per-owner uniqueness: append -2, -3, -4 ... on collision instead of
     // regenerating a random suffix.
     let suffix = 2;
@@ -213,7 +229,7 @@ export const create = mutation({
         )
         .first();
       if (!existing) break;
-      slug = `${buildSlug(args.title)}-${suffix}`;
+      slug = `${buildSlug(cleanTitle)}-${suffix}`;
       suffix++;
       if (suffix > 100) break; // safety valve
     }
@@ -224,9 +240,9 @@ export const create = mutation({
       ownerName,
       ownerImage,
       ownerHandle,
-      title: args.title.trim(),
-      summary: args.summary?.trim() || undefined,
-      story: args.story?.trim() || undefined,
+      title: cleanTitle,
+      summary: cleanSummary,
+      story: cleanStory,
       category,
       unit,
       progressType: args.progressType,
@@ -273,7 +289,7 @@ export const create = mutation({
           personalMessage: inv.personalMessage?.trim() || undefined,
           token,
           status: "pending",
-          goalTitle: args.title.trim(),
+          goalTitle: cleanTitle,
           createdAt: now,
           expiresAt: preLaunchDeadline ?? now + 14 * 24 * 60 * 60 * 1000,
         });
@@ -295,7 +311,7 @@ export const create = mutation({
         category: "transactional",
         payload: JSON.stringify({
           firstName: ownerName?.split(" ")[0],
-          goalTitle: args.title.trim(),
+          goalTitle: cleanTitle,
           slug,
         }),
       });
@@ -414,11 +430,27 @@ export const update = mutation({
       args.story !== undefined ||
       args.coverImageId !== undefined;
     if (args.title !== undefined) {
-      if (args.title.trim().length === 0) throw new Error("Title is required");
-      patch.title = args.title.trim();
+      const cleanTitle = args.title.trim();
+      if (cleanTitle.length === 0) throw new Error("Title is required");
+      if (cleanTitle.length > 120) {
+        throw new Error("Titles can be up to 120 characters");
+      }
+      patch.title = cleanTitle;
     }
-    if (args.summary !== undefined) patch.summary = args.summary.trim() || undefined;
-    if (args.story !== undefined) patch.story = args.story.trim() || undefined;
+    if (args.summary !== undefined) {
+      const cleanSummary = args.summary.trim();
+      if (cleanSummary.length > 280) {
+        throw new Error("Summaries can be up to 280 characters");
+      }
+      patch.summary = cleanSummary || undefined;
+    }
+    if (args.story !== undefined) {
+      const cleanStory = args.story.trim();
+      if (cleanStory.length > 3_000) {
+        throw new Error("Stories can be up to 3,000 characters");
+      }
+      patch.story = cleanStory || undefined;
+    }
     if (args.targetDate !== undefined) patch.targetDate = args.targetDate;
     if (args.supporterTarget !== undefined) patch.supporterTarget = args.supporterTarget;
     if (args.supportTypes !== undefined) {

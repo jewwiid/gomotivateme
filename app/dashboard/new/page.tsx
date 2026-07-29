@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation } from "convex/react";
-import { useRouter } from "next/navigation";
+import { useAction, useMutation } from "convex/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -29,6 +29,17 @@ import { CATEGORIES, CategoryId, getCategory, getDefaultMilestones } from "@/lib
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Wordmark } from "@/components/Wordmark";
+import {
+  AiAssistButton,
+  AiDraftCard,
+  AiDraftDisclosure,
+} from "@/components/AiAssist";
+import {
+  aiAssistantErrorMessage,
+  type AiDraft,
+  type AiSuggestion,
+  type AiTask,
+} from "@/lib/aiAssistant";
 
 const WIZARD_COPY = [
   {
@@ -101,6 +112,15 @@ const SUPPORT_OPTIONS = [
 ];
 
 export default function NewGoalPage() {
+  const searchParams = useSearchParams();
+  const showDesignPreview =
+    process.env.NODE_ENV !== "production" &&
+    searchParams.get("designPreview") === "1";
+
+  if (showDesignPreview) {
+    return <NewGoalContent designPreview />;
+  }
+
   return (
     <RequireAuth>
       <NewGoalContent />
@@ -108,10 +128,11 @@ export default function NewGoalPage() {
   );
 }
 
-function NewGoalContent() {
+function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) {
   const router = useRouter();
   const create = useMutation(api.goals.create);
   const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
+  const suggest = useAction(api.aiAssistant.suggest);
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
@@ -133,6 +154,102 @@ function NewGoalContent() {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState<AiTask | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null);
+  const [aiError, setAiError] = useState<{
+    task: AiTask;
+    message: string;
+  } | null>(null);
+
+  const requestAiSuggestion = async (task: AiTask) => {
+    setAiBusy(task);
+    setAiSuggestion(null);
+    setAiError(null);
+
+    if (designPreview) {
+      const preview: AiSuggestion = {
+        task,
+        title: task === "shapeGoal" ? "Finish my first short film" : null,
+        summary:
+          task === "shapeGoal"
+            ? "Turn my draft into a finished short film and share it with an audience."
+            : null,
+        story:
+          task === "draftStory"
+            ? "I have carried this story for a long time. Finishing the film would turn that idea into something real, and encouragement along the way would help me keep moving."
+            : null,
+        milestones:
+          task === "suggestMilestones"
+            ? [
+                "Lock the final script",
+                "Plan the shoot",
+                "Film the key scenes",
+                "Complete the edit",
+                "Host a first screening",
+              ]
+            : [],
+        updateText: null,
+        rationale:
+          "This keeps your original meaning while making the next step easier to understand.",
+      };
+      setAiSuggestion(preview);
+      setAiBusy(null);
+      return;
+    }
+
+    const draft: AiDraft = {
+      category,
+      progressType,
+      direction,
+    };
+    if (title.trim()) draft.title = title.trim();
+    if (summary.trim()) draft.summary = summary.trim();
+    if (story.trim()) draft.story = story.trim();
+    if (unit.trim()) draft.unit = unit.trim();
+
+    const start = Number(startValue);
+    const target = Number(targetValue);
+    if (Number.isFinite(start) && startValue.trim()) draft.startValue = start;
+    if (Number.isFinite(target) && targetValue.trim()) draft.targetValue = target;
+
+    const milestoneTitles = milestones
+      .map((milestone) => milestone.title.trim())
+      .filter(Boolean);
+    if (milestoneTitles.length) draft.milestones = milestoneTitles;
+
+    try {
+      const result = await suggest({ task, draft });
+      setAiSuggestion(result);
+    } catch (error) {
+      setAiError({ task, message: aiAssistantErrorMessage(error) });
+    } finally {
+      setAiBusy(null);
+    }
+  };
+
+  const applyAiSuggestion = () => {
+    if (!aiSuggestion) return;
+    if (aiSuggestion.task === "shapeGoal") {
+      if (aiSuggestion.title) setTitle(aiSuggestion.title);
+      if (aiSuggestion.summary) setSummary(aiSuggestion.summary);
+    }
+    if (
+      aiSuggestion.task === "suggestMilestones" &&
+      aiSuggestion.milestones.length
+    ) {
+      setMilestones(
+        aiSuggestion.milestones.map((milestone, index) => ({
+          id: `ai_${Date.now()}_${index}`,
+          title: milestone,
+        }))
+      );
+    }
+    if (aiSuggestion.task === "draftStory" && aiSuggestion.story) {
+      setStory(aiSuggestion.story);
+    }
+    setAiSuggestion(null);
+    setAiError(null);
+  };
 
   const onCategoryChange = (id: CategoryId) => {
     setCategory(id);
@@ -340,6 +457,7 @@ function NewGoalContent() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  maxLength={120}
                   placeholder={getCategory(category).titlePlaceholder ?? "e.g. Write my first novel"}
                   autoFocus
                   className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
@@ -353,9 +471,45 @@ function NewGoalContent() {
                   type="text"
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
+                  maxLength={280}
                   placeholder={getCategory(category).summaryPlaceholder ?? "e.g. One-line summary"}
                   className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
                 />
+              </div>
+              <div className="mt-5 border-t border-[var(--color-border-subtle)] pt-5">
+                <AiAssistButton
+                  label="Help me shape this"
+                  busyLabel="Shaping your goal…"
+                  busy={aiBusy === "shapeGoal"}
+                  disabled={
+                    aiBusy !== null ||
+                    (!title.trim() && !summary.trim())
+                  }
+                  onClick={() => requestAiSuggestion("shapeGoal")}
+                />
+                <AiDraftDisclosure />
+                {aiError?.task === "shapeGoal" ? (
+                  <p className="mt-3 text-sm text-[var(--color-danger)]">
+                    {aiError.message}
+                  </p>
+                ) : null}
+                {aiSuggestion?.task === "shapeGoal" ? (
+                  <AiDraftCard
+                    rationale={aiSuggestion.rationale}
+                    onApply={applyAiSuggestion}
+                    onDismiss={() => setAiSuggestion(null)}
+                    applyLabel="Use title and summary"
+                  >
+                    {aiSuggestion.title ? (
+                      <p className="font-semibold">{aiSuggestion.title}</p>
+                    ) : null}
+                    {aiSuggestion.summary ? (
+                      <p className="mt-1 text-[var(--color-text-secondary)]">
+                        {aiSuggestion.summary}
+                      </p>
+                    ) : null}
+                  </AiDraftCard>
+                ) : null}
               </div>
             </Step>
           )}
@@ -496,6 +650,7 @@ function NewGoalContent() {
                               arr.map((x) => (x.id === m.id ? { ...x, title: v } : x))
                             );
                           }}
+                          maxLength={120}
                           className="flex-1 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
                         />
                         <button
@@ -517,11 +672,44 @@ function NewGoalContent() {
                           { id: `m${arr.length + 1}_${Date.now()}`, title: "" },
                         ])
                       }
+                      disabled={milestones.length >= 8}
                       className="inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                     >
                       <Plus size={12} />
                       Add milestone
                     </button>
+                  </div>
+                  <div className="mt-5 border-t border-[var(--color-border-subtle)] pt-5">
+                    <AiAssistButton
+                      label="Suggest milestones"
+                      busyLabel="Planning steps…"
+                      busy={aiBusy === "suggestMilestones"}
+                      disabled={
+                        aiBusy !== null ||
+                        (!title.trim() && !summary.trim())
+                      }
+                      onClick={() => requestAiSuggestion("suggestMilestones")}
+                    />
+                    <AiDraftDisclosure />
+                    {aiError?.task === "suggestMilestones" ? (
+                      <p className="mt-3 text-sm text-[var(--color-danger)]">
+                        {aiError.message}
+                      </p>
+                    ) : null}
+                    {aiSuggestion?.task === "suggestMilestones" ? (
+                      <AiDraftCard
+                        rationale={aiSuggestion.rationale}
+                        onApply={applyAiSuggestion}
+                        onDismiss={() => setAiSuggestion(null)}
+                        applyLabel="Use these milestones"
+                      >
+                        <ol className="list-decimal space-y-1 pl-5">
+                          {aiSuggestion.milestones.map((milestone) => (
+                            <li key={milestone}>{milestone}</li>
+                          ))}
+                        </ol>
+                      </AiDraftCard>
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -551,10 +739,39 @@ function NewGoalContent() {
               <textarea
                 value={story}
                 onChange={(e) => setStory(e.target.value)}
+                maxLength={3000}
                 placeholder="Write your story…"
                 rows={9}
                 className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-4 text-sm leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
+              <div className="mt-5 border-t border-[var(--color-border-subtle)] pt-5">
+                <AiAssistButton
+                  label="Help me draft this"
+                  busyLabel="Drafting your story…"
+                  busy={aiBusy === "draftStory"}
+                  disabled={
+                    aiBusy !== null ||
+                    (!title.trim() && !summary.trim() && !story.trim())
+                  }
+                  onClick={() => requestAiSuggestion("draftStory")}
+                />
+                <AiDraftDisclosure />
+                {aiError?.task === "draftStory" ? (
+                  <p className="mt-3 text-sm text-[var(--color-danger)]">
+                    {aiError.message}
+                  </p>
+                ) : null}
+                {aiSuggestion?.task === "draftStory" ? (
+                  <AiDraftCard
+                    rationale={aiSuggestion.rationale}
+                    onApply={applyAiSuggestion}
+                    onDismiss={() => setAiSuggestion(null)}
+                    applyLabel="Use this story"
+                  >
+                    <p className="whitespace-pre-wrap">{aiSuggestion.story}</p>
+                  </AiDraftCard>
+                ) : null}
+              </div>
             </Step>
           )}
 

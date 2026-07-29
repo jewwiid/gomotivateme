@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -43,6 +43,15 @@ import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 import { prepareProgressImage } from "@/lib/media";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import {
+  AiAssistButton,
+  AiDraftCard,
+  AiDraftDisclosure,
+} from "@/components/AiAssist";
+import {
+  aiAssistantErrorMessage,
+  type AiSuggestion,
+} from "@/lib/aiAssistant";
 
 export default function GoalDetailPage() {
   const searchParams = useSearchParams();
@@ -422,6 +431,7 @@ function GoalDetailContent() {
           <UpdateModal
             type={showUpdate}
             goalId={goalId}
+            goalTitle={goal.title}
             unit={goal.unit}
             milestones={goal.milestones ?? []}
             onClose={() => setShowUpdate(null)}
@@ -690,12 +700,14 @@ function SupporterInbox({
 function UpdateModal({
   type,
   goalId,
+  goalTitle,
   unit,
   milestones,
   onClose,
 }: {
   type: "note" | "media" | "link" | "value" | "milestone" | "streak";
   goalId: Id<"goals">;
+  goalTitle: string;
   unit: string;
   milestones: any[];
   onClose: () => void;
@@ -732,7 +744,9 @@ function UpdateModal({
             <X size={16} />
           </button>
         </div>
-        {type === "note" && <NoteForm goalId={goalId} onDone={onClose} />}
+        {type === "note" && (
+          <NoteForm goalId={goalId} goalTitle={goalTitle} onDone={onClose} />
+        )}
         {type === "media" && <MediaForm goalId={goalId} onDone={onClose} />}
         {type === "link" && <LinkForm goalId={goalId} onDone={onClose} />}
         {type === "value" && <ValueForm goalId={goalId} unit={unit} onDone={onClose} />}
@@ -745,10 +759,43 @@ function UpdateModal({
   );
 }
 
-function NoteForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void }) {
+function NoteForm({
+  goalId,
+  goalTitle,
+  onDone,
+}: {
+  goalId: Id<"goals">;
+  goalTitle: string;
+  onDone: () => void;
+}) {
   const add = useMutation(api.updates.add);
+  const suggest = useAction(api.aiAssistant.suggest);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const polishUpdate = async () => {
+    setAiBusy(true);
+    setAiSuggestion(null);
+    setAiError(null);
+    try {
+      const result = await suggest({
+        task: "rewriteUpdate",
+        draft: {
+          title: goalTitle,
+          updateText: text.trim(),
+        },
+      });
+      setAiSuggestion(result);
+    } catch (error) {
+      setAiError(aiAssistantErrorMessage(error));
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   return (
     <form
       onSubmit={async (e) => {
@@ -766,12 +813,44 @@ function NoteForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void 
       <textarea
         autoFocus
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+          setAiSuggestion(null);
+          setAiError(null);
+        }}
+        maxLength={2000}
         rows={4}
         required
         placeholder="What happened today?"
         className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
       />
+      <div>
+        <AiAssistButton
+          label="Polish with AI"
+          busyLabel="Polishing…"
+          busy={aiBusy}
+          disabled={busy || !text.trim()}
+          onClick={polishUpdate}
+        />
+        <AiDraftDisclosure />
+        {aiError ? (
+          <p className="mt-3 text-sm text-[var(--color-danger)]">{aiError}</p>
+        ) : null}
+        {aiSuggestion?.task === "rewriteUpdate" &&
+        aiSuggestion.updateText ? (
+          <AiDraftCard
+            rationale={aiSuggestion.rationale}
+            onApply={() => {
+              setText(aiSuggestion.updateText ?? text);
+              setAiSuggestion(null);
+            }}
+            onDismiss={() => setAiSuggestion(null)}
+            applyLabel="Use polished update"
+          >
+            <p className="whitespace-pre-wrap">{aiSuggestion.updateText}</p>
+          </AiDraftCard>
+        ) : null}
+      </div>
       <button
         type="submit"
         disabled={busy || !text.trim()}
