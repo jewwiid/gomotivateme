@@ -48,8 +48,8 @@ const WIZARD_COPY = [
     detail: "Make the destination clear. You can always adjust the details later.",
   },
   {
-    title: "Give it a horizon",
-    detail: "A target date gives your circle something concrete to rally around.",
+    title: "Add a horizon if it helps",
+    detail: "A target date is optional. Add one for a time-bound goal, or leave it open-ended.",
   },
   {
     title: "Tell people why it matters",
@@ -123,11 +123,7 @@ function NewGoalContent() {
   const [unit, setUnit] = useState("pages");
   const [startValue, setStartValue] = useState("");
   const [targetValue, setTargetValue] = useState("");
-  const [targetDate, setTargetDate] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 3);
-    return d.toISOString().slice(0, 10);
-  });
+  const [targetDate, setTargetDate] = useState("");
   const [milestones, setMilestones] = useState<Array<{ id: string; title: string }>>(() =>
     getDefaultMilestones("creative")
   );
@@ -176,7 +172,7 @@ function NewGoalContent() {
       return true;
     }
     if (step === 4) {
-      return new Date(targetDate).getTime() > Date.now();
+      return !targetDate || new Date(`${targetDate}T12:00:00`).getTime() > Date.now();
     }
     if (step === 6) {
       return supportTypes.length > 0;
@@ -208,7 +204,11 @@ function NewGoalContent() {
           return "Add at least one milestone";
       }
     }
-    if (step === 4 && new Date(targetDate).getTime() <= Date.now())
+    if (
+      step === 4 &&
+      targetDate &&
+      new Date(`${targetDate}T12:00:00`).getTime() <= Date.now()
+    )
       return "Pick a date in the future";
     return null;
   };
@@ -257,7 +257,9 @@ function NewGoalContent() {
         startValue: start,
         targetValue: target,
         direction: progressType === "milestones" ? "increase" : direction,
-        targetDate: new Date(targetDate).getTime(),
+        targetDate: targetDate
+          ? new Date(`${targetDate}T12:00:00`).getTime()
+          : undefined,
         milestones: progressType === "milestones" ? milestones : undefined,
         supporterTarget: supporterTarget
           ? parseInt(supporterTarget, 10)
@@ -527,7 +529,7 @@ function NewGoalContent() {
           )}
 
           {step === 4 && (
-            <Step title="When's the target date?">
+            <Step title="Would a target date help?">
               <input
                 type="date"
                 value={targetDate}
@@ -535,7 +537,8 @@ function NewGoalContent() {
                 className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
               />
               <p className="mt-3 text-sm text-[var(--color-text-muted)]">
-                We'll show a countdown and award badges as you pass 25, 50, 75, and 100%.
+                Optional. Leave this blank for an open-ended goal—you can add a
+                date later from goal settings.
               </p>
             </Step>
           )}
