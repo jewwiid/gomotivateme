@@ -110,7 +110,7 @@ export function StructuredSupportComposer({
         </p>
         <Link
           href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)]"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
         >
           Sign in
         </Link>
@@ -118,7 +118,7 @@ export function StructuredSupportComposer({
           New here?{" "}
           <Link
             href={`/signup?redirect=${encodeURIComponent(redirectPath)}`}
-            className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+            className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
           >
             Create an account
           </Link>
@@ -186,7 +186,7 @@ export function StructuredSupportComposer({
                 rows={3}
                 placeholder="Write a follow-up message..."
                 maxLength={1000}
-                className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
               <div className="text-right text-[10px] text-[var(--color-text-dim)]">
                 {followUpBody.length}/1000
@@ -229,7 +229,7 @@ export function StructuredSupportComposer({
                     }
                   }}
                   disabled={followUpBusy || !followUpBody.trim()}
-                  className="rounded-lg bg-[var(--color-accent)] px-4 py-1.5 text-xs font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+                  className="rounded-lg bg-[var(--color-primary)] px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
                 >
                   {followUpBusy ? "Posting..." : "Post message"}
                 </button>
@@ -276,7 +276,7 @@ export function StructuredSupportComposer({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-accent)] px-6 py-4 text-base font-semibold text-black transition hover:bg-[var(--color-accent-soft)]"
+        className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-6 py-4 text-base font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
       >
         Support this goal
       </button>
@@ -311,7 +311,7 @@ export function StructuredSupportComposer({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border-2 border-[var(--color-accent)]/30 bg-[var(--color-bg-card)] p-4 sm:p-5"
+      className="rounded-2xl border-2 border-[var(--color-primary-soft)] bg-[var(--color-bg-card)] p-4 sm:p-5"
     >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-base font-semibold">Support this goal</h3>
@@ -353,7 +353,7 @@ export function StructuredSupportComposer({
                       : ""
                   } ${
                     active
-                      ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                       : "border-[var(--color-border)] bg-[var(--color-bg-elev)] hover:border-[var(--color-border-strong)]"
                   }`}
                 >
@@ -407,7 +407,7 @@ export function StructuredSupportComposer({
               rows={4}
               placeholder="Your message..."
               maxLength={1000}
-              className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+              className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
             />
             <div className="text-right text-[10px] text-[var(--color-text-dim)]">
               {body.length}/1000
@@ -422,7 +422,7 @@ export function StructuredSupportComposer({
                 onChange={(e) => setPledge(e.target.value)}
                 placeholder="e.g. I'll check in every Sunday"
                 maxLength={200}
-                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
               {supportType === "checkin" && (
                 <div className="mt-2">
@@ -437,7 +437,7 @@ export function StructuredSupportComposer({
                         onClick={() => setFrequency(opt.value)}
                         className={`rounded-lg border px-2 py-1.5 text-xs transition ${
                           frequency === opt.value
-                            ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                            ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
                             : "border-[var(--color-border)] bg-[var(--color-bg-elev)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)]"
                         }`}
                       >
@@ -461,7 +461,7 @@ export function StructuredSupportComposer({
               <button
                 onClick={onSubmit}
                 disabled={busy}
-                className="flex-1 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
               >
                 {busy ? "Sending..." : "Send support"}
               </button>
