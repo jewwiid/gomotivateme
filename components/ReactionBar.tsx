@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Dumbbell, Flame, Heart, ThumbsUp, X } from "lucide-react";
+import { Check, Dumbbell, Flame, Heart, ThumbsUp, X } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useVisitorKey } from "@/lib/useVisitorKey";
@@ -192,7 +192,10 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-3 rounded-xl border border-[var(--color-success)]/30 bg-[var(--color-success)]/5 px-3 py-2.5">
+            <div className="mt-3 flex items-start gap-2 rounded-xl border border-[var(--color-success)]/50 bg-[var(--color-success-soft)]/70 px-3 py-2.5">
+              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--color-success)] text-white">
+                <Check size={12} strokeWidth={3} aria-hidden />
+              </span>
               <p className="text-xs font-medium text-[var(--color-text)]">
                 You're on the team. You'll get an email when they post updates.
               </p>

@@ -135,38 +135,39 @@ export function StructuredSupportComposer({
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-[var(--color-success)]/30 bg-[var(--color-success)]/5 p-4"
+        className="rounded-2xl border border-[var(--color-success)]/50 bg-[var(--color-success-soft)]/70 p-4"
       >
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--color-success-soft)] text-[var(--color-success)]">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-success)] text-white">
             <Icon size={16} aria-hidden />
           </span>
-          <span className="text-sm font-semibold">
-            You're supporting as "{meta.label.toLowerCase()}"
-          </span>
+          <div className="min-w-0">
+            <span className="block text-sm font-semibold text-[var(--color-text)]">
+              You're supporting as "{meta.label.toLowerCase()}"
+            </span>
+          </div>
         </div>
         {amISupporting.pledge && (
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             "{amISupporting.pledge}"
           </p>
         )}
-        <div className="mt-3 flex items-center gap-3">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             onClick={() => setOpen(true)}
-            className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)] hover:border-[var(--color-primary-dark)]"
           >
             Update your support
           </button>
-          <span className="text-[var(--color-border)]">·</span>
           <LeaveSupportButton goalId={goalId} />
         </div>
 
         {/* Follow-up message form */}
-        <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+        <div className="mt-3 border-t border-[var(--color-success)]/30 pt-3">
           {!showFollowUp && !followUpDone && (
             <button
               onClick={() => setShowFollowUp(true)}
-              className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)] transition hover:border-[var(--color-primary)]"
             >
               Post a message
             </button>
@@ -245,13 +246,13 @@ export function StructuredSupportComposer({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="rounded-2xl border border-[var(--color-success)]/30 bg-[var(--color-success)]/10 p-6 text-center"
+        className="rounded-2xl border border-[var(--color-success)]/50 bg-[var(--color-success-soft)]/70 p-6 text-center"
       >
-        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-success)]/20 text-[var(--color-success)]">
+        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-success)] text-white">
           <Check size={20} />
         </div>
-        <h3 className="text-base font-semibold">You're on the team</h3>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+        <h3 className="text-base font-semibold text-[var(--color-text)]">You're on the team</h3>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           {user?.name ? `Thanks, ${user.name.split(" ")[0]}.` : "Thanks."} They'll see your support.
         </p>
         <button
@@ -263,7 +264,7 @@ export function StructuredSupportComposer({
             setBody("");
             setPledge("");
           }}
-          className="mt-3 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+          className="mt-3 inline-flex min-h-8 items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)] hover:border-[var(--color-primary-dark)]"
         >
           Update support
         </button>
@@ -479,7 +480,7 @@ function LeaveSupportButton({ goalId }: { goalId: Id<"goals"> }) {
 
   if (confirming) {
     return (
-      <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex flex-wrap items-center gap-1.5">
         <button
           onClick={async () => {
             setBusy(true);
@@ -491,13 +492,13 @@ function LeaveSupportButton({ goalId }: { goalId: Id<"goals"> }) {
             }
           }}
           disabled={busy}
-          className="text-xs font-medium text-[var(--color-danger)] hover:opacity-70 disabled:opacity-50"
+          className="inline-flex min-h-8 items-center rounded-full bg-[var(--color-danger)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {busy ? "Leaving..." : "Confirm leave"}
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="text-xs text-[var(--color-text-dim)] hover:text-[var(--color-text)]"
+          className="inline-flex min-h-8 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition hover:text-[var(--color-text)]"
         >
           Cancel
         </button>
@@ -508,7 +509,7 @@ function LeaveSupportButton({ goalId }: { goalId: Id<"goals"> }) {
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="text-xs font-medium text-[var(--color-text-dim)] hover:text-[var(--color-danger)]"
+      className="inline-flex min-h-8 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger-text)]"
     >
       Leave support
     </button>
