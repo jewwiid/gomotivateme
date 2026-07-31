@@ -192,7 +192,7 @@ export default function HomePage() {
             ) : (
               <div className="mt-10 grid gap-x-5 gap-y-9 md:grid-cols-2 lg:grid-cols-4">
                 {filteredGoals.map((goal: any, index) => (
-                  <GoalTile key={goal._id} goal={goal} image={goal.coverImageId ? coverUrls?.[goal.coverImageId] ?? FALLBACK_GOAL_MEDIA[index] : FALLBACK_GOAL_MEDIA[index]} featured={index === 0} />
+                  <GoalTile key={goal._id} goal={goal} image={goal.coverImageId ? coverUrls?.[goal.coverImageId] ?? undefined : FALLBACK_GOAL_MEDIA[index]} fallbackImage={FALLBACK_GOAL_MEDIA[index]} featured={index === 0} />
                 ))}
               </div>
             )}
@@ -215,14 +215,19 @@ export default function HomePage() {
   );
 }
 
-function GoalTile({ goal, image, featured }: { goal: any; image: string; featured: boolean }) {
+function GoalTile({ goal, image, fallbackImage, featured }: { goal: any; image: string | undefined; fallbackImage?: string; featured: boolean }) {
   const progress = Math.max(0, Math.min(100, Number(goal.progress ?? 0)));
+  const resolvedImage = image ?? fallbackImage ?? "/illustrations/hero-community-v3.webp";
   return (
     <motion.article initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.4 }} className={featured ? "md:col-span-2 lg:row-span-2 lg:col-span-2" : ""}>
       <Link href={`/o/${goal.ownerHandle}/${goal.slug}`} className="group block">
         <div className={`overflow-hidden rounded-[1rem] bg-[var(--color-bg-sunken)] ${featured ? "aspect-[1.32/1]" : "aspect-[1.45/1]"}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt={`${goal.title} goal by ${goal.ownerName || "a GoMotivateMe member"}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />
+          {image === undefined ? (
+            <div className="h-full w-full animate-pulse bg-[var(--color-bg-sunken)]" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={resolvedImage} alt={`${goal.title} goal by ${goal.ownerName || "a GoMotivateMe member"}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />
+          )}
         </div>
         <div className="px-1 pt-3"><div className="flex items-start justify-between gap-3"><h3 className={`${featured ? "text-xl sm:text-2xl" : "text-base"} font-bold leading-tight tracking-[-0.035em] text-[var(--color-text)]`}>{goal.title}</h3><span className="shrink-0 text-[11px] font-medium text-[var(--color-text-muted)]"><CategoryIcon category={goal.category} size={15} /></span></div><p className="mt-1 text-sm text-[var(--color-text-muted)]">by {goal.ownerName || "Someone"} · {relativeTime(goal.createdAt)}</p><div className="mt-4 flex items-center gap-3"><div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--color-bg-sunken)]"><div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${progress}%` }} /></div><span className="whitespace-nowrap text-xs font-semibold text-[var(--color-text-muted)]">{Math.round(progress)}% complete</span></div>{featured && <p className="mt-3 text-sm text-[var(--color-text-muted)]">{goal.supporterCount ? `${formatNumber(goal.supporterCount)} people cheering them on` : "Be one of the first people behind this goal"}</p>}</div>
       </Link>

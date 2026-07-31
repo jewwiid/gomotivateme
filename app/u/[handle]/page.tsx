@@ -704,7 +704,7 @@ function GoalsGrid({
       {goals.map((g) => {
         const progress = pct(g.startValue, g.currentValue, g.targetValue, g.direction);
         const coverUrl = g.coverImageId
-          ? coverUrls?.[g.coverImageId] ?? null
+          ? coverUrls?.[g.coverImageId] ?? undefined
           : null;
         return (
           <Link
@@ -713,7 +713,9 @@ function GoalsGrid({
             className="group block"
           >
             <div className="relative aspect-[1.45/1] w-full overflow-hidden rounded-[1rem] bg-[var(--color-primary-soft)]">
-              {coverUrl ? (
+              {coverUrl === undefined ? (
+                <div className="h-full w-full animate-pulse bg-[var(--color-primary-soft)]" />
+              ) : coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={coverUrl}
@@ -797,7 +799,7 @@ function MotivationsList({
       {motivations.map((m) => {
         const meta = ROLE_META[m.role] ?? ROLE_META.encourager;
         const coverUrl = m.goal.coverImageId
-          ? coverUrls?.[m.goal.coverImageId] ?? null
+          ? coverUrls?.[m.goal.coverImageId] ?? undefined
           : null;
         return (
           <li key={m._id}>
@@ -805,7 +807,9 @@ function MotivationsList({
               href={`/o/${m.goal.ownerHandle ?? ""}/${m.goal.slug}`}
               className="flex items-center gap-4 py-4 transition hover:text-[var(--color-primary)]"
             >
-              {coverUrl ? (
+              {coverUrl === undefined ? (
+                <div className="h-14 w-14 shrink-0 animate-pulse rounded-[0.9rem] bg-[var(--color-primary-soft)]" />
+              ) : coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={coverUrl}

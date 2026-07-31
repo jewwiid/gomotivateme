@@ -216,7 +216,7 @@ function GoalsTab({
       ) : (
         <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {goals.map((g: any, i: number) => {
-            const coverUrl = g.coverImageId ? coverUrls?.[g.coverImageId] : null;
+            const coverUrl = g.coverImageId ? coverUrls?.[g.coverImageId] ?? undefined : null;
             return (
               <motion.div
                 key={g._id}
@@ -229,7 +229,9 @@ function GoalsTab({
                   className="group block"
                 >
                   <div className="relative aspect-[1.4/1] w-full overflow-hidden rounded-[1rem] bg-[var(--color-primary-soft)]">
-                    {coverUrl ? (
+                    {coverUrl === undefined ? (
+                      <div className="h-full w-full animate-pulse bg-[var(--color-primary-soft)]" />
+                    ) : coverUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={coverUrl}

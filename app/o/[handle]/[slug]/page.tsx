@@ -107,7 +107,7 @@ function PublicGoalView({
   );
 
   const coverUrl = goal.coverImageId
-    ? imageUrls?.[goal.coverImageId as Id<"_storage">] ?? null
+    ? imageUrls?.[goal.coverImageId as Id<"_storage">] ?? undefined
     : null;
   const ownerName = owner?.[goal.ownerId]?.name ?? goal.ownerName ?? "Someone";
   const ownerImage = owner?.[goal.ownerId]?.image ?? goal.ownerImage ?? null;
@@ -224,12 +224,16 @@ function PublicGoalView({
         <div id="overview" className="scroll-mt-24 space-y-4">
           <section className="workspace-card grid min-h-[11rem] gap-5 p-4 md:grid-cols-[17.5rem_minmax(0,1fr)] xl:grid-cols-[17.5rem_minmax(0,1fr)_14rem]">
             <div className="relative min-h-40 overflow-hidden rounded-[0.95rem] bg-[var(--color-bg-sunken)] md:min-h-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={coverUrl || "/illustrations/hero-community-v3.webp"}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              {coverUrl === undefined ? (
+                <div className="absolute inset-0 animate-pulse bg-[var(--color-bg-sunken)]" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={coverUrl || "/illustrations/hero-community-v3.webp"}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
             </div>
 
             <div className="flex min-w-0 flex-col justify-center py-1">

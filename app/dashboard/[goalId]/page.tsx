@@ -258,7 +258,7 @@ function GoalDetailContent() {
   const progress = computeProgress(goal);
   const ownerName = user?.name ?? user?.handle ?? goal.ownerName ?? "Goal owner";
   const coverUrl = goal.coverImageId
-    ? coverImageUrls?.[goal.coverImageId] ?? null
+    ? coverImageUrls?.[goal.coverImageId] ?? undefined
     : null;
   const supporterName =
     motivators?.[0]?.user?.displayName ??
