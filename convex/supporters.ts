@@ -207,6 +207,7 @@ export const listMySupports = query({
     for (const s of supports) {
       const goal = await ctx.db.get(s.goalId);
       if (!goal) continue;
+      const isAnon = Boolean(goal.isAnonymous);
       result.push({
         _id: s._id,
         goalId: s.goalId,
@@ -215,14 +216,16 @@ export const listMySupports = query({
         createdAt: s.createdAt,
         goalTitle: goal.title,
         goalSlug: goal.slug,
-        ownerHandle: goal.ownerHandle ?? undefined,
+        ownerHandle: isAnon ? undefined : (goal.ownerHandle ?? undefined),
         goalStatus: goal.status,
         goalCategory: goal.category,
-        ownerName: null as string | null,
+        ownerName: isAnon ? ("Anonymous" as string | null) : (null as string | null),
       });
-      const owner = await ctx.db.get(goal.ownerId);
-      if (owner) {
-        result[result.length - 1].ownerName = owner.name ?? owner.handle ?? null;
+      if (!isAnon) {
+        const owner = await ctx.db.get(goal.ownerId);
+        if (owner) {
+          result[result.length - 1].ownerName = owner.name ?? owner.handle ?? null;
+        }
       }
     }
     return result;

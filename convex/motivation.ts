@@ -382,7 +382,7 @@ export const addInvite = mutation({
         templateId: "inviteReceived",
         category: "transactional",
         payload: JSON.stringify({
-          ownerName: owner?.name ?? "Someone",
+          ownerName: goal.isAnonymous ? "Someone" : (owner?.name ?? "Someone"),
           goalTitle: goal.title,
           inviteMessage: args.personalMessage,
           roleLabel: args.proposedRole,

@@ -112,6 +112,7 @@ export const profileSummary = query({
       .filter(
         (g) =>
           g.visibility === "public" &&
+          !g.isAnonymous &&
           (g.status === "active" ||
             g.status === "completed" ||
             g.status === "paused")
@@ -324,6 +325,9 @@ export const updateProfile = mutation({
         .withIndex("by_owner", (q) => q.eq("ownerId", userId))
         .collect();
       for (const g of goals) {
+        // Skip anonymous goals — their denormalized owner fields are stripped
+        // at read time, so updating them is unnecessary and risks leakage.
+        if (g.isAnonymous) continue;
         await ctx.db.patch(g._id, {
           ...(patch.name !== undefined && { ownerName: patch.name as string }),
           ...(patch.image !== undefined && { ownerImage: (patch.image as string | undefined) ?? undefined }),

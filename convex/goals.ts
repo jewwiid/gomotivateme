@@ -86,6 +86,7 @@ export const create = mutation({
     supporterTarget: v.optional(v.number()),
     supportTypes: v.array(v.string()),
     visibility: v.union(v.literal("public"), v.literal("unlisted")),
+    isAnonymous: v.optional(v.boolean()),
     coverImageId: v.optional(v.id("_storage")),
 
     // --- Motivation Circle ---
@@ -257,6 +258,7 @@ export const create = mutation({
       supportTypes: validSupport as any,
       status: hasInvites ? "draft" : "active",
       visibility: args.visibility,
+      isAnonymous: args.isAnonymous ?? false,
       slug,
       coverImageId: args.coverImageId,
       moderationStatus: "pending",
@@ -377,6 +379,7 @@ export const update = mutation({
     supporterTarget: v.optional(v.number()),
     supportTypes: v.optional(v.array(v.string())),
     visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"))),
+    isAnonymous: v.optional(v.boolean()),
     coverImageId: v.optional(v.id("_storage")),
     targetValue: v.optional(v.number()),
     startValue: v.optional(v.number()),
@@ -462,6 +465,7 @@ export const update = mutation({
       );
     }
     if (args.visibility !== undefined) patch.visibility = args.visibility;
+    if (args.isAnonymous !== undefined) patch.isAnonymous = args.isAnonymous;
     if (args.publicMotivatorPolicy !== undefined) {
       patch.publicMotivatorPolicy = args.publicMotivatorPolicy;
     }
@@ -1056,6 +1060,17 @@ async function ownerDisplayName(ctx: any, ownerId: any) {
 }
 
 /**
+ * Owner display name for fan-out copy, respecting anonymous goals.
+ * Anonymous goals use "Someone" so the owner's real name never appears
+ * in emails to supporters/motivators.
+ */
+async function ownerDisplayNameForGoal(ctx: any, goalId: any, ownerId: any) {
+  const goal = await ctx.db.get(goalId);
+  if (goal?.isAnonymous) return "Someone";
+  return ownerDisplayName(ctx, ownerId);
+}
+
+/**
  * Email C4 — fan out a "new update" notification to a goal's followers.
  *
  * Called via scheduler from:
@@ -1071,7 +1086,7 @@ export const notifyFollowersOfUpdate = internalMutation({
   handler: async (ctx, { goalId, ownerId, updateId }) => {
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
-    const ownerName = await ownerDisplayName(ctx, ownerId);
+    const ownerName = await ownerDisplayNameForGoal(ctx, goalId, ownerId);
     const owner = await ctx.db.get(ownerId);
 
     // Resolve update excerpt + value label if we have an updateId.
@@ -1097,7 +1112,7 @@ export const notifyFollowersOfUpdate = internalMutation({
           ownerName,
           goalTitle: goal.title,
           goalSlug: goal.slug,
-          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
+          ownerHandle: goal.isAnonymous ? undefined : (goal.ownerHandle ?? owner?.handle ?? undefined),
           updateExcerpt,
           valueLabel,
         }),
@@ -1134,7 +1149,7 @@ export const notifyFollowersOfCompletion = internalMutation({
           ownerName: r.name,
           goalTitle: goal.title,
           goalSlug: goal.slug,
-          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
+          ownerHandle: goal.isAnonymous ? undefined : (goal.ownerHandle ?? owner?.handle ?? undefined),
           unit: goal.unit,
           targetValue: goal.targetValue,
         }),
@@ -1164,7 +1179,7 @@ export const notifyFollowersOfStatusChange = internalMutation({
   handler: async (ctx, { goalId, ownerId, newStatus, pausedReason }) => {
     const goal = await ctx.db.get(goalId);
     if (!goal) return;
-    const ownerName = await ownerDisplayName(ctx, ownerId);
+    const ownerName = await ownerDisplayNameForGoal(ctx, goalId, ownerId);
     const owner = await ctx.db.get(ownerId);
 
     const excerpt =
@@ -1188,7 +1203,7 @@ export const notifyFollowersOfStatusChange = internalMutation({
           ownerName,
           goalTitle: goal.title,
           goalSlug: goal.slug,
-          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
+          ownerHandle: goal.isAnonymous ? undefined : (goal.ownerHandle ?? owner?.handle ?? undefined),
           updateExcerpt: excerpt,
           valueLabel: undefined,
         }),

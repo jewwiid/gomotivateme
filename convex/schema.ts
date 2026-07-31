@@ -123,6 +123,14 @@ export default defineSchema({
     /** "public" (indexed) | "unlisted" (link-only). */
     visibility: v.union(v.literal("public"), v.literal("unlisted")),
 
+    /**
+     * When true, the owner's name / avatar / handle are stripped from all
+     * public-facing surfaces (discovery feed, goal page, search, OG image).
+     * The real denormalized fields stay in the DB for dashboard + email use;
+     * public queries replace them with "Anonymous" at read time.
+     */
+    isAnonymous: v.optional(v.boolean()),
+
     slug: v.string(),
     coverImageId: v.optional(v.id("_storage")),
     /** New/edited public goal content waits for a safety decision. */

@@ -14,6 +14,25 @@ function isModerationApproved(goal: any) {
 }
 
 /**
+ * Strip owner identity from a goal for public consumption when the goal is
+ * anonymous. The real denormalized fields stay in the DB for the dashboard
+ * and email fan-out; this replaces name/avatar with neutral values at read
+ * time. ownerHandle is kept so URL routing (/o/[handle]/[slug]) still works,
+ * but the frontend should not render it as a profile link.
+ */
+function stripOwnerIfAnonymous(goal: any) {
+  if (goal.isAnonymous) {
+    return {
+      ...goal,
+      ownerName: "Anonymous",
+      ownerImage: undefined,
+      ownerId: undefined,
+    };
+  }
+  return goal;
+}
+
+/**
  * Fetch a public goal by owner handle + slug (namespaced URL
  * /o/[handle]/[slug]), with computed progress + days remaining.
  */
@@ -42,7 +61,7 @@ export const getGoalByHandleAndSlug = query({
     );
     const days = goal.targetDate ? daysUntil(goal.targetDate, Date.now()) : null;
 
-    return { ...goal, progress, daysRemaining: days };
+    return { ...stripOwnerIfAnonymous(goal), progress, daysRemaining: days };
   },
 });
 
@@ -72,7 +91,7 @@ export const getGoalBySlug = query({
     );
     const days = goal.targetDate ? daysUntil(goal.targetDate, Date.now()) : null;
 
-    return { ...goal, progress, daysRemaining: days };
+    return { ...stripOwnerIfAnonymous(goal), progress, daysRemaining: days };
   },
 });
 
@@ -103,9 +122,9 @@ export const getGoalById = query({
       category: goal.category,
       status: goal.status,
       visibility: goal.visibility,
-      ownerId: goal.ownerId,
-      ownerName: goal.ownerName,
-      ownerImage: goal.ownerImage,
+      ownerId: goal.isAnonymous ? undefined : goal.ownerId,
+      ownerName: goal.isAnonymous ? "Anonymous" : goal.ownerName,
+      ownerImage: goal.isAnonymous ? undefined : goal.ownerImage,
       publicMotivatorPolicy: goal.publicMotivatorPolicy,
       coreMotivatorMin: goal.coreMotivatorMin,
       preLaunchAt: goal.preLaunchAt,
@@ -130,31 +149,34 @@ export const listRecentPublic = query({
     return goals
       .filter((g) => g.status !== "closed" && g.status !== "draft" && isModerationApproved(g))
       .slice(0, take)
-      .map((g) => ({
-        _id: g._id,
-        slug: g.slug,
-        ownerHandle: g.ownerHandle,
-        title: g.title,
-        summary: g.summary,
-        category: g.category,
-        unit: g.unit,
-        startValue: g.startValue,
-        targetValue: g.targetValue,
-        currentValue: g.currentValue,
-        direction: g.direction,
-        targetDate: g.targetDate,
-        coverImageId: g.coverImageId,
-        createdAt: g.createdAt,
-        ownerName: g.ownerName,
-        ownerImage: g.ownerImage,
-        supporterTarget: g.supporterTarget,
-        supporterCount: g.supporterCount,
-        progressType: g.progressType,
-        supportTypes: g.supportTypes,
-        status: g.status,
-        progress: computeProgress(g.startValue, g.currentValue, g.targetValue, g.direction),
-        daysRemaining: g.targetDate ? daysUntil(g.targetDate, Date.now()) : null,
-      }));
+      .map((g) => {
+        const stripped = stripOwnerIfAnonymous(g);
+        return {
+        _id: stripped._id,
+        slug: stripped.slug,
+        ownerHandle: stripped.ownerHandle,
+        title: stripped.title,
+        summary: stripped.summary,
+        category: stripped.category,
+        unit: stripped.unit,
+        startValue: stripped.startValue,
+        targetValue: stripped.targetValue,
+        currentValue: stripped.currentValue,
+        direction: stripped.direction,
+        targetDate: stripped.targetDate,
+        coverImageId: stripped.coverImageId,
+        createdAt: stripped.createdAt,
+        ownerName: stripped.ownerName,
+        ownerImage: stripped.ownerImage,
+        supporterTarget: stripped.supporterTarget,
+        supporterCount: stripped.supporterCount,
+        progressType: stripped.progressType,
+        supportTypes: stripped.supportTypes,
+        status: stripped.status,
+        progress: computeProgress(stripped.startValue, stripped.currentValue, stripped.targetValue, stripped.direction),
+        daysRemaining: stripped.targetDate ? daysUntil(stripped.targetDate, Date.now()) : null,
+        };
+      });
   },
 });
 
@@ -175,22 +197,25 @@ export const listByCategory = query({
           && isModerationApproved(g)
       )
       .slice(0, take)
-      .map((g) => ({
-        _id: g._id,
-        slug: g.slug,
-        ownerHandle: g.ownerHandle,
-        title: g.title,
-        summary: g.summary,
-        currentValue: g.currentValue,
-        targetValue: g.targetValue,
-        unit: g.unit,
-        direction: g.direction,
-        coverImageId: g.coverImageId,
-        supporterCount: g.supporterCount,
-        supporterTarget: g.supporterTarget,
-        progress: computeProgress(g.startValue, g.currentValue, g.targetValue, g.direction),
-        status: g.status,
-      }));
+      .map((g) => {
+        const stripped = stripOwnerIfAnonymous(g);
+        return {
+        _id: stripped._id,
+        slug: stripped.slug,
+        ownerHandle: stripped.ownerHandle,
+        title: stripped.title,
+        summary: stripped.summary,
+        currentValue: stripped.currentValue,
+        targetValue: stripped.targetValue,
+        unit: stripped.unit,
+        direction: stripped.direction,
+        coverImageId: stripped.coverImageId,
+        supporterCount: stripped.supporterCount,
+        supporterTarget: stripped.supporterTarget,
+        progress: computeProgress(stripped.startValue, stripped.currentValue, stripped.targetValue, stripped.direction),
+        status: stripped.status,
+        };
+      });
   },
 });
 
@@ -228,35 +253,38 @@ export const searchPublicGoals = query({
           (!q ||
             g.title.toLowerCase().includes(q) ||
             (g.summary ?? "").toLowerCase().includes(q) ||
-            (g.ownerName ?? "").toLowerCase().includes(q))
+            (g.isAnonymous ? false : (g.ownerName ?? "").toLowerCase().includes(q)))
       )
       .slice(0, take)
-      .map((g) => ({
-        _id: g._id,
-        slug: g.slug,
-        title: g.title,
-        summary: g.summary,
-        category: g.category,
-        unit: g.unit,
-        startValue: g.startValue,
-        targetValue: g.targetValue,
-        currentValue: g.currentValue,
-        direction: g.direction,
-        targetDate: g.targetDate,
-        coverImageId: g.coverImageId,
-        createdAt: g.createdAt,
-        ownerId: g.ownerId,
-        ownerName: g.ownerName,
-        ownerHandle: g.ownerHandle,
-        ownerImage: g.ownerImage,
-        supporterTarget: g.supporterTarget,
-        supporterCount: g.supporterCount,
-        progressType: g.progressType,
-        supportTypes: g.supportTypes,
-        status: g.status,
-        progress: computeProgress(g.startValue, g.currentValue, g.targetValue, g.direction),
-        daysRemaining: g.targetDate ? daysUntil(g.targetDate, Date.now()) : null,
-      }));
+      .map((g) => {
+        const stripped = stripOwnerIfAnonymous(g);
+        return {
+        _id: stripped._id,
+        slug: stripped.slug,
+        title: stripped.title,
+        summary: stripped.summary,
+        category: stripped.category,
+        unit: stripped.unit,
+        startValue: stripped.startValue,
+        targetValue: stripped.targetValue,
+        currentValue: stripped.currentValue,
+        direction: stripped.direction,
+        targetDate: stripped.targetDate,
+        coverImageId: stripped.coverImageId,
+        createdAt: stripped.createdAt,
+        ownerId: stripped.ownerId,
+        ownerName: stripped.ownerName,
+        ownerHandle: stripped.ownerHandle,
+        ownerImage: stripped.ownerImage,
+        supporterTarget: stripped.supporterTarget,
+        supporterCount: stripped.supporterCount,
+        progressType: stripped.progressType,
+        supportTypes: stripped.supportTypes,
+        status: stripped.status,
+        progress: computeProgress(stripped.startValue, stripped.currentValue, stripped.targetValue, stripped.direction),
+        daysRemaining: stripped.targetDate ? daysUntil(stripped.targetDate, Date.now()) : null,
+        };
+      });
   },
 });
 

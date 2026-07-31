@@ -171,6 +171,7 @@ export const updateGoal = internalMutation({
     coverImageId: v.optional(v.id("_storage")),
     supporterTarget: v.optional(v.number()),
     visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"))),
+    isAnonymous: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const goal = await ctx.db.get(args.goalId);
@@ -186,6 +187,7 @@ export const updateGoal = internalMutation({
     if (args.coverImageId !== undefined) patch.coverImageId = args.coverImageId;
     if (args.supporterTarget !== undefined) patch.supporterTarget = args.supporterTarget;
     if (args.visibility !== undefined) patch.visibility = args.visibility;
+    if (args.isAnonymous !== undefined) patch.isAnonymous = args.isAnonymous;
 
     // Re-run moderation if text or cover changed
     if (

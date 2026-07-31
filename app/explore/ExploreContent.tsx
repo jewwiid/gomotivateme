@@ -250,7 +250,9 @@ function GoalsTab({
                       <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{g.summary}</p>
                     )}
                     <div className="mt-2 text-xs text-[var(--color-text-muted)]">
-                      {g.ownerHandle ? (
+                      {g.isAnonymous ? (
+                        <span>Anonymous</span>
+                      ) : g.ownerHandle ? (
                         <span className="font-medium text-[var(--color-text-secondary)]">@{g.ownerHandle}</span>
                       ) : (
                         <span>{g.ownerName || "Someone"}</span>

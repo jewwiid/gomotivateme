@@ -406,6 +406,7 @@ function GoalDetailContent() {
               supporterTarget={goal.supporterTarget}
               supportTypes={goal.supportTypes ?? []}
               visibility={goal.visibility}
+              isAnonymous={goal.isAnonymous}
               targetValue={goal.targetValue}
               startValue={goal.startValue}
               unit={goal.unit}
@@ -1250,6 +1251,7 @@ function GoalSettings({
   supporterTarget,
   supportTypes,
   visibility,
+  isAnonymous,
   targetValue,
   startValue,
   unit,
@@ -1267,6 +1269,7 @@ function GoalSettings({
   supporterTarget?: number;
   supportTypes: string[];
   visibility: string;
+  isAnonymous?: boolean;
   targetValue?: number;
   startValue?: number;
   unit?: string;
@@ -1294,6 +1297,9 @@ function GoalSettings({
   );
   const [draftVisibility, setDraftVisibility] = useState<"public" | "unlisted">(
     (visibility as any) ?? "public"
+  );
+  const [draftIsAnonymous, setDraftIsAnonymous] = useState<boolean>(
+    Boolean(isAnonymous)
   );
   const [draftTargetValue, setDraftTargetValue] = useState<string>(
     targetValue?.toString() ?? ""
@@ -1358,6 +1364,7 @@ function GoalSettings({
         coverImageId: draftCover,
         supporterTarget: parsedSupTarget,
         visibility: draftVisibility,
+        isAnonymous: draftIsAnonymous,
         targetValue: parsedTargetValue,
         startValue: parsedStartValue,
         unit: canEditTargetFields && !targetFieldsLocked && draftUnit !== "" ? draftUnit : undefined,
@@ -1391,6 +1398,7 @@ function GoalSettings({
     setDraftCover(coverImageId);
     setDraftSupporterTarget(supporterTarget?.toString() ?? "");
     setDraftVisibility((visibility as any) ?? "public");
+    setDraftIsAnonymous(Boolean(isAnonymous));
     setDraftTargetValue(targetValue?.toString() ?? "");
     setDraftStartValue(startValue?.toString() ?? "");
     setDraftUnit(unit ?? "");
@@ -1567,6 +1575,28 @@ function GoalSettings({
             </select>
           ) : (
             <p className="text-sm text-[var(--color-text)] capitalize">{visibility}</p>
+          )}
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
+            Anonymous
+          </label>
+          {editing ? (
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={draftIsAnonymous}
+                onChange={(e) => setDraftIsAnonymous(e.target.checked)}
+                className="h-4 w-4 rounded border-[var(--color-border-strong)] text-[var(--color-primary)] focus:ring-[var(--color-accent)]"
+              />
+              <span className="text-sm text-[var(--color-text)]">
+                Hide my name, avatar, and profile link
+              </span>
+            </label>
+          ) : (
+            <p className="text-sm text-[var(--color-text)]">
+              {isAnonymous ? "Yes (name hidden)" : "No"}
+            </p>
           )}
         </div>
       </div>

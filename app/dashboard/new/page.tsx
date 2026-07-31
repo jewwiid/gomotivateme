@@ -151,6 +151,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   const [supporterTarget, setSupporterTarget] = useState("");
   const [supportTypes, setSupportTypes] = useState<string[]>(["encourage", "checkin"]);
   const [visibility, setVisibility] = useState<"public" | "unlisted">("public");
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -383,6 +384,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           : undefined,
         supportTypes,
         visibility,
+        isAnonymous,
         coverImageId,
       });
       router.push(`/dashboard/${goalId}`);
@@ -878,6 +880,41 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   </div>
                 </button>
               </div>
+
+              <label
+                className={`mt-4 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                  isAnonymous
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                    : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="sr-only"
+                />
+                <div
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                    isAnonymous
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]"
+                      : "border-[var(--color-border-strong)] bg-white"
+                  }`}
+                  onClick={() => setIsAnonymous((v) => !v)}
+                >
+                  {isAnonymous && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold">Keep me anonymous</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">
+                    Your name, avatar, and profile link won't appear on the goal page or in the discovery feed. People can still find and support the goal.
+                  </div>
+                </div>
+              </label>
             </Step>
           )}
 
@@ -921,7 +958,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 <ReviewItem label="Timeline" value={targetDate ? new Date(`${targetDate}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }) : "No date set"} onEdit={() => setStep(4)} />
                 <ReviewItem label="Story" value={story || "Add your story later"} onEdit={() => setStep(5)} />
                 <ReviewItem label="Support" value={`${supportTypes.length} ways to show up`} onEdit={() => setStep(6)} />
-                <ReviewItem label="Visibility" value={visibility === "public" ? "Public" : "Unlisted"} onEdit={() => setStep(7)} />
+                <ReviewItem label="Visibility" value={`${visibility === "public" ? "Public" : "Unlisted"}${isAnonymous ? " · Anonymous" : ""}`} onEdit={() => setStep(7)} />
               </div>
             </Step>
           )}
