@@ -22,7 +22,7 @@ import {
   Flame,
   ListChecks,
 } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { CATEGORIES, CategoryId, getCategory, getDefaultMilestones } from "@/lib/categories";
@@ -158,6 +158,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   const [visibility, setVisibility] = useState<"public" | "unlisted">("public");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverDropRef = useRef<HTMLLabelElement>(null);
 
@@ -182,6 +183,17 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
     e.stopPropagation();
     setCoverDragOver(false);
   }, []);
+
+  // Generate / revoke object URL for preview when coverFile changes.
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverFile);
+    setCoverPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverFile]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<AiTask | null>(null);
@@ -949,18 +961,66 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
 
           {step === totalSteps - 1 && (
             <Step title="Everything looks good?">
-              <label
-                htmlFor="goal-cover"
-                ref={coverDropRef}
-                onDrop={handleCoverDrop}
-                onDragOver={handleCoverDragOver}
-                onDragLeave={handleCoverDragLeave}
-                className={`block cursor-pointer rounded-2xl border border-dashed px-6 py-10 text-center transition ${
-                  coverDragOver
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] scale-[1.01]"
-                    : "border-[var(--color-border-strong)] bg-[var(--color-bg)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
-                }`}
-              >
+              {coverPreview ? (
+                <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-sunken)]">
+                  <div className="relative aspect-[1.45/1] w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={coverPreview} alt="Cover preview" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setCoverFile(null)}
+                      className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] shadow-sm backdrop-blur transition hover:bg-white"
+                    >
+                      <Trash2 size={12} />
+                      Remove
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <p className="truncate text-xs font-medium text-[var(--color-text-muted)]">
+                      {coverFile?.name}
+                    </p>
+                    <label
+                      htmlFor="goal-cover"
+                      className="shrink-0 cursor-pointer text-xs font-semibold text-[var(--color-primary)] transition hover:text-[var(--color-primary-dark)]"
+                    >
+                      Change photo
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <label
+                  htmlFor="goal-cover"
+                  ref={coverDropRef}
+                  onDrop={handleCoverDrop}
+                  onDragOver={handleCoverDragOver}
+                  onDragLeave={handleCoverDragLeave}
+                  className={`block cursor-pointer rounded-2xl border border-dashed px-6 py-10 text-center transition ${
+                    coverDragOver
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] scale-[1.01]"
+                      : "border-[var(--color-border-strong)] bg-[var(--color-bg)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
+                  }`}
+                >
+                  <input
+                    id="goal-cover"
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(event) => setCoverFile(event.target.files?.[0] ?? null)}
+                  />
+                  <ImagePlus className="mx-auto text-[var(--color-primary)]" size={24} />
+                  <p className="mt-3 text-sm font-semibold">Add a cover photo</p>
+                  <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[var(--color-text-muted)]">
+                    {coverDragOver
+                      ? "Drop to add this image"
+                      : "Drag an image here or click to browse. A bright, clear image helps people connect with your goal."}
+                  </p>
+                  <span className="mt-5 inline-flex rounded-full border border-[var(--color-border-strong)] bg-white px-4 py-2 text-xs font-semibold text-[var(--color-text)]">
+                    Choose a photo
+                  </span>
+                </label>
+              )}
+              {/* Hidden input always present so "Change photo" works even when preview is showing */}
+              {coverPreview && (
                 <input
                   id="goal-cover"
                   type="file"
@@ -968,19 +1028,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   className="sr-only"
                   onChange={(event) => setCoverFile(event.target.files?.[0] ?? null)}
                 />
-                <ImagePlus className="mx-auto text-[var(--color-primary)]" size={24} />
-                <p className="mt-3 text-sm font-semibold">{coverFile ? coverFile.name : "Add a cover photo"}</p>
-                <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[var(--color-text-muted)]">
-                  {coverDragOver
-                    ? "Drop to add this image"
-                    : coverFile
-                    ? "Your cover will be added when you create the goal."
-                    : "Drag an image here or click to browse. A bright, clear image helps people connect with your goal."}
-                </p>
-                <span className="mt-5 inline-flex rounded-full border border-[var(--color-border-strong)] bg-white px-4 py-2 text-xs font-semibold text-[var(--color-text)]">
-                  {coverFile ? "Choose another" : "Choose a photo"}
-                </span>
-              </label>
+              )}
               <div className="mt-8 divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
                 <ReviewItem label="Goal" value={title || "Untitled goal"} onEdit={() => setStep(1)} />
                 <ReviewItem label="Category" value={CATEGORIES.find((item) => item.id === category)?.label ?? category} onEdit={() => setStep(0)} />
