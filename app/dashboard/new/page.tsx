@@ -41,6 +41,11 @@ import {
   type AiTask,
 } from "@/lib/aiAssistant";
 
+/** Capitalize the first letter of a unit string for display. */
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 const WIZARD_COPY = [
   {
     title: "What's your goal about?",
@@ -629,11 +634,11 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                     >
                       {getCategory(category).unitOptions.map((u) => (
                         <option key={u} value={u}>
-                          {u}
+                          {cap(u)}
                         </option>
                       ))}
                       {!getCategory(category).unitOptions.includes(unit) && unit && (
-                        <option value="__custom">{unit} (custom)</option>
+                        <option value="__custom">{cap(unit)} (custom)</option>
                       )}
                       <option value="__custom">Custom…</option>
                     </select>
@@ -987,7 +992,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                       ? `${milestones.filter((milestone) => milestone.title.trim()).length} milestones`
                       : progressType === "streak"
                       ? `${targetValue || "—"} days`
-                      : `${startValue || "—"} → ${targetValue || "—"} ${unit}`
+                      : `${startValue || "—"} → ${targetValue || "—"} ${cap(unit)}`
                   }
                   onEdit={() => setStep(3)}
                 />
@@ -1136,7 +1141,7 @@ function DirectionToggle({
               : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
           }`}
         >
-          {d === "decrease" ? "↓ decrease" : "↑ increase"}
+          {d === "decrease" ? "↓ Decrease" : "↑ Increase"}
         </button>
       ))}
     </div>
