@@ -39,6 +39,7 @@ type WorkspaceGoal = {
   targetValue?: number;
   supporterCount?: number;
   coreMotivatorMin?: number;
+  progressType?: string;
   milestones?: Array<{
     id: string;
     title: string;
@@ -297,15 +298,31 @@ export function OwnerGoalWorkspace({
                   onClick={() => onOpenUpdate("media")}
                 />
                 <ComposerAction
-                  icon={Flag}
-                  label="Milestone"
-                  onClick={() => onOpenUpdate("milestone")}
-                />
-                <ComposerAction
                   icon={LinkIcon}
                   label="Link"
                   onClick={() => onOpenUpdate("link")}
                 />
+                {goal.progressType === "milestones" && (
+                  <ComposerAction
+                    icon={Flag}
+                    label="Milestone"
+                    onClick={() => onOpenUpdate("milestone")}
+                  />
+                )}
+                {goal.progressType === "number" && (
+                  <ComposerAction
+                    icon={CircleGauge}
+                    label="Log value"
+                    onClick={() => onOpenUpdate("value")}
+                  />
+                )}
+                {goal.progressType === "streak" && (
+                  <ComposerAction
+                    icon={Sparkles}
+                    label="Mark today"
+                    onClick={() => onOpenUpdate("streak")}
+                  />
+                )}
                 <button
                   type="submit"
                   disabled={!note.trim() || posting}
@@ -317,6 +334,7 @@ export function OwnerGoalWorkspace({
               </div>
             </form>
 
+            {goal.progressType === "milestones" && (
             <section id="milestones" className="workspace-card scroll-mt-24 p-4 pb-3">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -330,7 +348,11 @@ export function OwnerGoalWorkspace({
                 </a>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-4 lg:grid-cols-4">
-                {milestones.map((milestone, index) => (
+                {milestones.length === 0 ? (
+                  <p className="col-span-full py-4 text-center text-sm text-[var(--color-text-muted)]">
+                    No milestones yet. Add some below.
+                  </p>
+                ) : milestones.map((milestone, index) => (
                   <button
                     key={milestone.id}
                     type="button"
@@ -374,6 +396,7 @@ export function OwnerGoalWorkspace({
                 ))}
               </div>
             </section>
+            )}
 
             <section id="updates" className="workspace-card scroll-mt-24 p-4 sm:p-5">
               <div className="flex items-center justify-between">

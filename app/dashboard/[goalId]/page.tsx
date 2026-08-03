@@ -44,6 +44,7 @@ import {
   type OwnerUpdateKind,
 } from "@/components/OwnerGoalWorkspace";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
+import { getDefaultMilestones } from "@/lib/categories";
 import { prepareProgressImage } from "@/lib/media";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -416,6 +417,7 @@ function GoalDetailContent() {
               unit={goal.unit}
               direction={goal.direction}
               progressType={goal.progressType}
+              category={goal.category}
               supporterCount={goal.supporterCount ?? 0}
               currentValue={goal.currentValue ?? 0}
               onDeleted={() => router.push("/dashboard")}
@@ -1261,6 +1263,7 @@ function GoalSettings({
   unit,
   direction,
   progressType,
+  category,
   supporterCount,
   currentValue,
   onDeleted,
@@ -1279,6 +1282,7 @@ function GoalSettings({
   unit?: string;
   direction?: "increase" | "decrease";
   progressType?: string;
+  category?: string;
   supporterCount: number;
   currentValue: number;
   onDeleted: () => void;
@@ -1327,7 +1331,7 @@ function GoalSettings({
   const [deleting, setDeleting] = useState(false);
 
   const canEditTargetFields = progressType !== "milestones" && progressType !== "streak";
-  const hasTraction = supporterCount > 0 || currentValue > 0;
+  const hasTraction = supporterCount > 0 || currentValue !== (startValue ?? 0);
   const targetFieldsLocked = canEditTargetFields && hasTraction;
 
   const onUploadCover = async (file: File | null) => {
@@ -1614,6 +1618,7 @@ function GoalSettings({
         supporterCount={supporterCount}
         changeProgressType={changeProgressType}
         editing={editing}
+        category={category ?? "personal"}
       />
 
       {canEditTargetFields && (
@@ -1777,6 +1782,7 @@ function ProgressTypeSwitcher({
   supporterCount,
   changeProgressType,
   editing,
+  category,
 }: {
   goalId: Id<"goals">;
   currentType: string;
@@ -1784,6 +1790,7 @@ function ProgressTypeSwitcher({
   supporterCount: number;
   changeProgressType: any;
   editing: boolean;
+  category: string;
 }) {
   const [selectedType, setSelectedType] = useState(currentType);
   const [busy, setBusy] = useState(false);
@@ -1841,6 +1848,11 @@ function ProgressTypeSwitcher({
       await changeProgressType({
         goalId,
         progressType: selectedType,
+        // Seed default milestones when switching to milestones type
+        milestones:
+          selectedType === "milestones"
+            ? getDefaultMilestones(category)
+            : undefined,
         // Defaults for number type — server coerces for milestones/streak
         startValue: 0,
         targetValue: 100,
