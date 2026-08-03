@@ -174,7 +174,7 @@ function GoalsTab({
           onClick={() => setActiveCategory(null)}
           label="All goals"
         />
-        {FEATURED_CATEGORIES.map((c) => (
+        {CATEGORIES.map((c) => (
           <CategoryTab
             key={c.id}
             active={activeCategory === c.id}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
@@ -22,6 +23,7 @@ const HERO_SLIDES = [
 
 export default function HomePage() {
   const { user } = useCurrentUser();
+  const router = useRouter();
   const recent = useQuery(api.public.listRecentPublic, { limit: 12 });
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -178,7 +180,7 @@ export default function HomePage() {
                   key={category.id}
                   active={activeCategory === category.id}
                   label={category.label}
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => router.push(`/explore?tab=goals&category=${category.id}`)}
                 />
               ))}
             </div>
