@@ -4,10 +4,8 @@ import { Wordmark } from "@/components/Wordmark";
  * @deprecated Use `<Wordmark />` directly. This re-export exists for
  * backward compatibility with code that still imports `Logo`.
  *
- * The old image-based wordmark (GoMotivateMe_Wordmark.svg) is still used
- * for the favicon, the OG image, and emails — but in the UI itself the
- * wordmark is now rendered as text in the loaded display font, so it
- * scales crisply and stays consistent with the page titles.
+ * The UI wordmark combines the official brand icon with live text so the
+ * mark remains recognizable while the name stays crisp at every size.
  */
 
 type LogoProps = {

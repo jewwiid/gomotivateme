@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Check, MessageCircle } from "lucide-react";
+import { displayName } from "@/lib/format";
 
 const TYPE_LABELS: Record<string, string> = {
   encouragement: "Encouragement",
@@ -89,7 +90,7 @@ export function CheckInList({ goalId }: { goalId: Id<"goals"> }) {
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2">
                 <span className="text-sm font-semibold text-[var(--color-text)]">
-                  {c.motivator.name}
+                  {displayName(c.motivator.name)}
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${

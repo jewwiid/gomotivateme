@@ -6,7 +6,7 @@ import { Dumbbell, Flame, Heart, MessageCircle, Sparkles, ThumbsUp, TrendingUp, 
 import { useMemo } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { relativeTime } from "@/lib/format";
+import { displayName, relativeTime } from "@/lib/format";
 
 const CHEER_META: Record<string, { icon: typeof ThumbsUp; label: string }> = {
   thumbsup: { icon: ThumbsUp, label: "a cheer" },
@@ -209,7 +209,7 @@ function ActivityBody({ item }: { item: ActivityItem }) {
   if (item.kind === "supporter") {
     return (
       <p className="text-[var(--color-text-secondary)]">
-        <span className="font-medium text-[var(--color-text)]">{item.name ?? "Someone"}</span> joined
+        <span className="font-medium text-[var(--color-text)]">{displayName(item.name)}</span> joined
         with {SUPPORT_LABEL[item.supportType] ?? item.supportType}
       </p>
     );
@@ -217,7 +217,7 @@ function ActivityBody({ item }: { item: ActivityItem }) {
   if (item.kind === "message") {
     return (
       <p className="text-[var(--color-text-secondary)]">
-        <span className="font-medium text-[var(--color-text)]">{item.name ?? "Someone"}</span> sent{" "}
+        <span className="font-medium text-[var(--color-text)]">{displayName(item.name)}</span> sent{" "}
         {SUPPORT_LABEL[item.supportType] ?? "a note"}
         {item.body && <span className="text-[var(--color-text-muted)]"> — "{item.body.slice(0, 80)}{item.body.length > 80 ? "…" : ""}"</span>}
       </p>
@@ -227,7 +227,7 @@ function ActivityBody({ item }: { item: ActivityItem }) {
     const cheerLabel = (CHEER_META[item.emoji] ?? CHEER_META.thumbsup).label;
     return (
       <p className="text-[var(--color-text-secondary)]">
-        <span className="font-medium text-[var(--color-text)]">{item.name ?? "Someone"}</span> sent{" "}
+        <span className="font-medium text-[var(--color-text)]">{displayName(item.name)}</span> sent{" "}
         {cheerLabel}
       </p>
     );

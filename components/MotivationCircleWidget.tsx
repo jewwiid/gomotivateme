@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { displayName } from "@/lib/format";
 
 const ROLE_META: Record<
   string,
@@ -127,7 +128,7 @@ export function MotivationCircleWidget({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <div className="truncate text-xs font-semibold text-[var(--color-text)]">
-                      {m.user?.displayName ?? "Motivator"}
+                      {displayName(m.user?.displayName)}
                     </div>
                     <div className="text-[10px] text-[var(--color-text-muted)]">
                       {meta.label} · {FREQ_LABEL[m.checkInFrequency] ?? m.checkInFrequency}
@@ -164,7 +165,7 @@ export function MotivationCircleWidget({
                     <span className={`${meta.color}`}>
                       <meta.icon size={10} />
                     </span>
-                    {m.user?.displayName ?? "Motivator"}
+                    {displayName(m.user?.displayName)}
                   </span>
                 );
               })}

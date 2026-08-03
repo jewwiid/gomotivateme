@@ -25,7 +25,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { formatNumber, relativeTime } from "@/lib/format";
+import { displayName, formatNumber, relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 type Tab = "activity" | "about";
@@ -110,7 +110,7 @@ export default function ProfilePage() {
   }
 
   const { user, stats, goals, motivations } = summary;
-  const displayName = user.name ?? `@${user.handle ?? "user"}`;
+  const profileName = user.name ?? `@${user.handle ?? "user"}`;
   const initials = initialsOf(user.name, user.handle);
   const profileUrl =
     typeof window !== "undefined" && user.handle
@@ -181,7 +181,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h1 className="title-page">
-                      {displayName}
+                      {displayName(profileName)}
                     </h1>
                     <p className="mt-1 text-sm text-[var(--color-text-muted)]">
                       @{user.handle ?? "no-handle-yet"}
@@ -223,7 +223,7 @@ export default function ProfilePage() {
                 {/* Share button — uses Web Share API if available, falls back to clipboard. */}
                 {user.handle && (
                   <div className="flex items-center gap-2 pt-1">
-                    <ShareProfileButton url={profileUrl} name={displayName} />
+                    <ShareProfileButton url={profileUrl} name={profileName} />
                     {isMe && (
                       <Link
                         href="/settings"
@@ -303,7 +303,7 @@ export default function ProfilePage() {
             <p className="mt-3 text-base italic text-[var(--color-text-muted)]">
               {isMe
                 ? "Add a short intro so people know what you're working on and why."
-                : `${displayName} hasn't added an intro yet.`}
+                : `${displayName(profileName)} hasn't added an intro yet.`}
             </p>
           )}
         </section>
@@ -332,7 +332,7 @@ export default function ProfilePage() {
                 <ActivityTab
                   goals={goals}
                   motivations={motivations}
-                  displayName={displayName}
+                  displayName={displayName(profileName)}
                 />
               )}
               {tab === "about" && (
@@ -648,7 +648,7 @@ function DiscoverSidebar({
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
-                      {m.name ?? `@${m.handle}`}
+                      {m.name ? displayName(m.name) : `@${m.handle}`}
                     </div>
                     <div className="truncate text-[10px] text-[var(--color-text-muted)]">
                       {m.goalsCount} {m.goalsCount === 1 ? "goal" : "goals"} ·{" "}
@@ -838,7 +838,7 @@ function MotivationsList({
                   <span>·</span>
                   <span>{FREQ_LABEL[m.checkInFrequency] ?? m.checkInFrequency}</span>
                   <span>·</span>
-                  <span>by {m.goal.ownerName ?? "Someone"}</span>
+                  <span>by {displayName(m.goal.ownerName)}</span>
                   <span>·</span>
                   <span>joined {relativeTime(m.acceptedAt)}</span>
                 </div>

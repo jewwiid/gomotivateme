@@ -45,7 +45,7 @@ import {
   WorkspaceShell,
   type WorkspaceNavItem,
 } from "@/components/WorkspaceShell";
-import { formatDate, formatNumber } from "@/lib/format";
+import { displayName, formatDate, formatNumber } from "@/lib/format";
 
 export default function PublicGoalPage() {
   const params = useParams<{ handle: string; slug: string }>();
@@ -186,44 +186,10 @@ function PublicGoalView({
       <WorkspaceShell
         items={navItems}
         ariaLabel="Public goal navigation"
-        asideFooter={
-          <div className="workspace-card p-4">
-            <p className="text-sm font-bold text-[var(--color-text)]">
-              {isOwner ? "Your public goal" : `Show up for ${ownerName.split(" ")[0]}`}
-            </p>
-            <p className="mt-2 text-xs leading-5 text-[var(--color-text-muted)]">
-              {isOwner
-                ? "Keep the story current from your management workspace."
-                : "Encouragement and thoughtful check-ins turn intention into momentum."}
-            </p>
-            {isOwner ? (
-              <Link href={`/dashboard/${goalId}`} className="workspace-button-primary mt-4">
-                Manage goal
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={scrollToSupport}
-                className="workspace-button-primary mt-4"
-              >
-                <Heart size={15} aria-hidden />
-                {supportLabel}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onShare}
-              className="workspace-button-secondary mt-2"
-            >
-              {copied ? <Check size={15} aria-hidden /> : <Share2 size={15} aria-hidden />}
-              {copied ? "Link copied" : "Share goal"}
-            </button>
-          </div>
-        }
       >
         <div id="overview" className="scroll-mt-24 space-y-4">
           <section className="workspace-card grid min-h-[11rem] gap-5 p-4 md:grid-cols-[17.5rem_minmax(0,1fr)] xl:grid-cols-[17.5rem_minmax(0,1fr)_14rem]">
-            <div className="relative min-h-40 overflow-hidden rounded-[0.95rem] bg-[var(--color-bg-sunken)] md:min-h-0">
+            <div className="relative min-h-40 overflow-hidden rounded-[2px] bg-[var(--color-bg-sunken)] md:min-h-0">
               {coverUrl === undefined ? (
                 <div className="absolute inset-0 animate-pulse bg-[var(--color-bg-sunken)]" />
               ) : (
@@ -239,7 +205,7 @@ function PublicGoalView({
             <div className="flex min-w-0 flex-col justify-center py-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  className={`rounded-[2px] px-3 py-1 font-mono text-xs font-medium ${
                     isCompleted
                       ? "bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
                       : isPaused
@@ -261,7 +227,7 @@ function PublicGoalView({
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-muted)]">
                 <Avatar name={ownerName} image={ownerImage} size="md" />
-                <span className="font-semibold text-[var(--color-text)]">{ownerName}</span>
+                <span className="font-semibold text-[var(--color-text)]">{displayName(ownerName)}</span>
                 <span aria-hidden>·</span>
                 <span>Started {formatDate(goal.createdAt)}</span>
                 {goal.targetDate ? (
@@ -276,7 +242,8 @@ function PublicGoalView({
             <div className="grid grid-cols-2 gap-2 md:col-span-2 xl:col-span-1 xl:flex xl:flex-col">
               {isOwner ? (
                 <Link href={`/dashboard/${goalId}`} className="workspace-button-primary">
-                  Manage this goal
+                  <span className="sm:hidden">Manage</span>
+                  <span className="hidden sm:inline">Manage this goal</span>
                 </Link>
               ) : (
                 <button
@@ -285,7 +252,8 @@ function PublicGoalView({
                   className="workspace-button-primary"
                 >
                   <Heart size={16} aria-hidden />
-                  {supportLabel}
+                  <span className="sm:hidden">Support</span>
+                  <span className="hidden sm:inline">{supportLabel}</span>
                 </button>
               )}
               <button type="button" onClick={onShare} className="workspace-button-secondary">
@@ -705,7 +673,7 @@ function OrganiserMini({
       <div className="mt-3 flex items-center gap-3">
         <Avatar name={ownerName} image={ownerImage} size="lg" />
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-[var(--color-text)]">{ownerName}</p>
+          <p className="truncate text-sm font-bold text-[var(--color-text)]">{displayName(ownerName)}</p>
           <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Organising this goal</p>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { relativeTime } from "@/lib/format";
+import { displayName, relativeTime } from "@/lib/format";
 
 const EMOJI_GLYPH: Record<string, string> = {
   thumbsup: "👍",
@@ -40,7 +40,7 @@ export function RecentCheerers({ goalId }: { goalId: Id<"goals"> }) {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-xs font-medium text-[var(--color-text)]">
-                  {r.displayName || "Anonymous"}
+                  {displayName(r.displayName)}
                 </div>
                 <div className="text-[10px] text-[var(--color-text-dim)]">
                   {relativeTime(r.createdAt)}

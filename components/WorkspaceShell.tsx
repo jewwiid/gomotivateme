@@ -14,52 +14,39 @@ export type WorkspaceNavItem = {
 export function WorkspaceShell({
   items,
   ariaLabel = "Goal workspace",
-  asideFooter,
   children,
 }: {
   items: WorkspaceNavItem[];
   ariaLabel?: string;
-  asideFooter?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className="shell-app lg:grid lg:grid-cols-[17.5rem_minmax(0,1fr)]">
-      <aside className="border-b border-[var(--color-border)] bg-[var(--color-bg)] lg:sticky lg:top-[4.25rem] lg:flex lg:h-[calc(100vh-4.25rem)] lg:flex-col lg:border-b-0 lg:border-r">
+    <div className="shell-app">
+      <div className="sticky top-[4.25rem] z-30 border-b border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur">
         <nav
           aria-label={ariaLabel}
-          className="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] sm:px-6 lg:flex-col lg:gap-1.5 lg:overflow-visible lg:px-7 lg:py-7"
+          className="flex gap-7 overflow-x-auto px-4 [scrollbar-width:none] sm:px-6 lg:px-8"
         >
-          {items.map(({ label, href, icon: Icon, active, external }) => (
+          {items.map(({ label, href, active, external }) => (
             <a
               key={`${href}-${label}`}
               href={href}
               target={external ? "_blank" : undefined}
               rel={external ? "noreferrer" : undefined}
-              className={`group inline-flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+              className={`relative inline-flex min-h-13 shrink-0 items-center gap-2 py-2 text-sm font-medium transition ${
                 active
-                  ? "bg-[var(--color-primary-soft)]/55 text-[var(--color-primary)]"
-                  : "text-[var(--color-text)] hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-primary)]"
+                  ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
               }`}
             >
-              <Icon
-                size={18}
-                strokeWidth={1.8}
-                aria-hidden
-                className={active ? "text-[var(--color-primary)]" : "text-[var(--color-text-secondary)]"}
-              />
               <span>{label}</span>
+              {external ? <span className="font-mono text-[10px]" aria-hidden>↗</span> : null}
             </a>
           ))}
         </nav>
+      </div>
 
-        {asideFooter ? (
-          <div className="mt-auto hidden border-t border-[var(--color-border)] p-7 lg:block">
-            {asideFooter}
-          </div>
-        ) : null}
-      </aside>
-
-      <div className="min-w-0 px-4 py-5 sm:px-6 lg:py-5 lg:pl-5 lg:pr-4">
+      <div className="min-w-0 px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
         {children}
       </div>
     </div>

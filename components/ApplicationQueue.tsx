@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { displayName } from "@/lib/format";
 
 const ROLE_META: Record<
   string,
@@ -144,7 +145,9 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <div className="truncate text-xs font-semibold">
-                        {app.applicant?.name ?? app.applicant?.email ?? "Someone"}
+                        {app.applicant?.name
+                          ? displayName(app.applicant.name)
+                          : app.applicant?.email ?? "Someone"}
                       </div>
                       <div className={`flex items-center gap-1 text-[10px] ${meta.color}`}>
                         <Icon size={9} />

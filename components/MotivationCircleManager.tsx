@@ -21,6 +21,7 @@ import {
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { displayName } from "@/lib/format";
 
 const ROLE_META: Record<
   string,
@@ -200,7 +201,7 @@ export function MotivationCircleManager({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <div className="truncate text-xs font-semibold">
-                      {m.user?.name ?? "Motivator"}
+                      {displayName(m.user?.name)}
                     </div>
                     <div className="text-[10px] text-[var(--color-text-dim)]">
                       {meta.label}
@@ -267,7 +268,7 @@ export function MotivationCircleManager({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <div className="truncate text-xs font-semibold">
-                      {inv.name}
+                      {displayName(inv.name)}
                     </div>
                     <div className="text-[10px] text-[var(--color-text-dim)]">
                       {meta.label} · {FREQ_LABEL[inv.proposedFrequency]}

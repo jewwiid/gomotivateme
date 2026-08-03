@@ -1,21 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Manrope } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CookieConsent } from "@/components/CookieConsent";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
+const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-jakarta",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plex-sans",
   display: "swap",
 });
 
-const manrope = Manrope({
+const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  variable: "--font-manrope",
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fafaf6",
+  themeColor: "#f6f8f7",
   width: "device-width",
   initialScale: 1,
 };
@@ -54,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${manrope.variable}`}>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <ConvexClientProvider>
           {children}

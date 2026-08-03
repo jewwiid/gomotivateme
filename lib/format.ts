@@ -1,6 +1,23 @@
 /**
- * Date / number formatting helpers.
+ * Date / number / name formatting helpers.
  */
+
+/**
+ * Format a full name for public display as "First L." (first name + last
+ * initial + period). Falls back gracefully for single names, empty, or null.
+ *
+ *   "Jude Okun"      → "Jude O."
+ *   "Jude"           → "Jude"
+ *   "Jude A. Smith"  → "Jude A."
+ *   null / ""        → "Someone"
+ */
+export function displayName(name: string | null | undefined): string {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "Someone";
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+}
 
 export function formatDate(ms: number): string {
   return new Date(ms).toLocaleDateString("en-US", {

@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import {
   Heart,
   LayoutDashboard,
-  Plus,
   Settings,
   Users,
 } from "lucide-react";
@@ -55,25 +53,7 @@ export function DashboardWorkspaceShell({
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
-      <WorkspaceShell
-        items={items}
-        ariaLabel="Account workspace"
-        asideFooter={
-          <div className="workspace-card p-4">
-            <p className="text-sm font-bold text-[var(--color-text)]">Ready for what’s next?</p>
-            <p className="mt-2 text-xs leading-5 text-[var(--color-text-muted)]">
-              Turn a personal ambition into a goal your people can support.
-            </p>
-            <Link
-              href="/dashboard/new"
-              className="workspace-button-primary mt-4"
-            >
-              <Plus size={15} aria-hidden />
-              Start a goal
-            </Link>
-          </div>
-        }
-      >
+      <WorkspaceShell items={items} ariaLabel="Account workspace">
         {children}
       </WorkspaceShell>
     </div>

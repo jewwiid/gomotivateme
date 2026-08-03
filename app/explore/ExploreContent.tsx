@@ -4,29 +4,22 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, Sparkles, Users, ArrowRight, Grid3X3, Target, ChevronRight } from "lucide-react";
+import { Users, ArrowRight, Grid3X3, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES, FEATURED_CATEGORIES, getCategory } from "@/lib/categories";
-import { formatNumber, relativeTime } from "@/lib/format";
+import { displayName, relativeTime } from "@/lib/format";
 import { Header } from "@/components/Header";
 
 type Tab = "goals" | "motivators" | "categories";
 
-const TAB_META: Array<{ id: Tab; label: string; icon: React.ReactNode }> = [
-  { id: "goals", label: "Goals", icon: <Target size={14} /> },
-  { id: "motivators", label: "Motivators", icon: <Users size={14} /> },
-  { id: "categories", label: "Categories", icon: <Grid3X3 size={14} /> },
+const TAB_META: Array<{ id: Tab; label: string }> = [
+  { id: "goals", label: "Goals" },
+  { id: "motivators", label: "Motivators" },
+  { id: "categories", label: "Categories" },
 ];
-
-const SUPPORT_LABEL: Record<string, string> = {
-  encourage: "Encouragement",
-  experience: "Shared experience",
-  advice: "Advice",
-  checkin: "Check-ins",
-  join: "Joining in",
-};
 
 const VALID_TABS: Tab[] = ["goals", "motivators", "categories"];
 
@@ -67,32 +60,25 @@ export function ExploreContent() {
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
 
-      {/* Page hero — title, subtitle, search bar */}
-      <section>
-        <div className="shell-content px-5 py-14 sm:px-8 sm:py-20">
+      <section className="border-b border-[var(--color-border)]">
+        <div className="shell-content px-5 pb-0 pt-14 sm:px-8 sm:pt-20">
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="max-w-4xl"
+            className="grid gap-8 lg:grid-cols-[1fr_24rem] lg:items-end"
           >
-            <p className="brand-kicker">Find a goal to stand behind</p>
-            <h1
-              className="mt-3 font-display text-balance text-5xl font-bold leading-[0.93] tracking-[-0.06em] text-[var(--color-text)] sm:text-7xl"
-            >
-              Small steps. Real people.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--color-text-muted)] sm:text-lg">
-              Browse public goals, follow motivators, or jump into a category that fits you.
-            </p>
-          </motion.div>
-
-          <div className="mt-8 max-w-xl">
-            <div className="relative">
-              <Search
-                size={16}
-                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-dim)]"
-              />
+            <div>
+              <p className="font-mono text-xs text-[var(--color-primary)]">Explore</p>
+              <h1 className="mt-4 max-w-[13ch] text-balance font-display text-5xl font-semibold leading-[0.94] tracking-[-0.055em] text-[var(--color-text)] sm:text-7xl">
+                Find a goal worth showing up for.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--color-text-secondary)] sm:text-lg">
+                Browse the work in progress, meet the people behind it, and offer the kind of support they asked for.
+              </p>
+            </div>
+            <label className="block border-b border-[var(--color-text)] pb-3">
+              <span className="block font-mono text-[11px] text-[var(--color-text-muted)]">Search this directory</span>
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -103,27 +89,25 @@ export function ExploreContent() {
                     ? "Search by name or handle…"
                     : "Search categories…"
                 }
-                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-transparent py-3.5 pl-11 pr-4 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+                className="mt-2 w-full bg-transparent text-base text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-dim)]"
               />
-            </div>
-          </div>
+            </label>
+          </motion.div>
 
-          {/* Tab bar — pill style, single-select */}
-          <div className="mt-10 flex items-center">
-            <div className="inline-flex gap-5 border-b border-[var(--color-border)]">
+          <div className="mt-10 flex items-center overflow-x-auto [scrollbar-width:none]">
+            <div className="inline-flex gap-7">
               {TAB_META.map((t) => {
                 const active = tab === t.id;
                 return (
                   <button
                     key={t.id}
                     onClick={() => setTab(t.id)}
-                    className={`inline-flex items-center gap-1.5 -mb-px border-b-2 px-0 py-2.5 text-sm font-semibold transition ${
+                    className={`inline-flex shrink-0 items-center border-b-2 px-0 py-4 text-sm font-medium transition ${
                       active
                         ? "border-[var(--color-primary)] text-[var(--color-primary)]"
                         : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                     }`}
                   >
-                    {t.icon}
                     {t.label}
                   </button>
                 );
@@ -166,36 +150,36 @@ function GoalsTab({
     category: activeCategory ?? undefined,
     limit: 60,
   });
-
-  const coverIds = useMemo(
+  const coverImageIds = useMemo(
     () =>
       Array.from(
-        new Set((goals ?? []).map((g: any) => g.coverImageId).filter(Boolean))
+        new Set(
+          (goals ?? [])
+            .map((goal: any) => goal.coverImageId)
+            .filter(Boolean) as Id<"_storage">[]
+        )
       ),
     [goals]
   );
   const coverUrls = useQuery(
     api.storage.getUrls,
-    coverIds.length > 0 ? { ids: coverIds as any } : "skip"
+    coverImageIds.length > 0 ? { ids: coverImageIds } : "skip"
   );
 
   return (
     <div>
-      {/* Category pills — uses the featured set so the row doesn't scroll
-          horizontally on mobile. "All" is always first. */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <CategoryPill
+      <div className="mb-2 flex gap-6 overflow-x-auto border-b border-[var(--color-border)] [scrollbar-width:none]">
+        <CategoryTab
           active={activeCategory === null}
           onClick={() => setActiveCategory(null)}
-          label="All"
+          label="All goals"
         />
         {FEATURED_CATEGORIES.map((c) => (
-          <CategoryPill
+          <CategoryTab
             key={c.id}
             active={activeCategory === c.id}
             onClick={() => setActiveCategory(c.id)}
             label={c.label}
-            icon={<CategoryIcon category={c.id} size={12} />}
           />
         ))}
       </div>
@@ -203,9 +187,8 @@ function GoalsTab({
       {goals === undefined ? (
         <SkeletonGrid />
       ) : goals.length === 0 ? (
-        <div className="flex flex-col items-center border-y border-dashed border-[var(--color-border-strong)] px-6 py-16 text-center">
-          <Sparkles size={28} className="mb-3 text-[var(--color-text-dim)]" />
-          <p className="text-sm text-[var(--color-text-secondary)]">
+        <div className="border-b border-[var(--color-border)] py-16">
+          <p className="max-w-lg text-xl font-medium text-[var(--color-text)]">
             {query
               ? `No goals match “${query}”.`
               : activeCategory
@@ -214,92 +197,19 @@ function GoalsTab({
           </p>
         </div>
       ) : (
-        <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {goals.map((g: any, i: number) => {
-            const coverUrl = g.coverImageId ? coverUrls?.[g.coverImageId] ?? undefined : null;
-            return (
-              <motion.div
-                key={g._id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.4) }}
-              >
-                <Link
-                  href={`/o/${g.ownerHandle}/${g.slug}`}
-                  className="group block"
-                >
-                  <div className="relative aspect-[1.4/1] w-full overflow-hidden rounded-[1rem] bg-[var(--color-primary-soft)]">
-                    {coverUrl === undefined ? (
-                      <div className="h-full w-full animate-pulse bg-[var(--color-primary-soft)]" />
-                    ) : coverUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={coverUrl}
-                        alt=""
-                        className="h-full w-full object-cover transition group-hover:scale-105"
-                      />
-                    ) : null}
-                    <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] backdrop-blur">
-                      <CategoryIcon category={g.category} size={10} />
-                      {g.category}
-                    </div>
-                  </div>
-                  <div className="px-1 pt-3">
-                    <h3 className="line-clamp-2 font-display text-lg font-bold leading-snug tracking-[-0.035em] text-[var(--color-text)]">
-                      {g.title}
-                    </h3>
-                    {g.summary && (
-                      <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{g.summary}</p>
-                    )}
-                    <div className="mt-2 text-xs text-[var(--color-text-muted)]">
-                      {g.isAnonymous ? (
-                        <span>Anonymous</span>
-                      ) : g.ownerHandle ? (
-                        <span className="font-medium text-[var(--color-text-secondary)]">@{g.ownerHandle}</span>
-                      ) : (
-                        <span>{g.ownerName || "Someone"}</span>
-                      )}
-                      <span className="mx-1.5">·</span>
-                      <span>{relativeTime(g.createdAt)}</span>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <MiniProgress
-                        label="Goal"
-                        pct={g.progress}
-                        hint={`${formatNumber(g.currentValue)} / ${formatNumber(g.targetValue)} ${g.unit}`}
-                      />
-                      {g.supporterTarget ? (
-                        <MiniProgress
-                          label="Supporters"
-                          pct={Math.min(100, (g.supporterCount / g.supporterTarget) * 100)}
-                          hint={`${g.supporterCount} / ${g.supporterTarget}`}
-                        />
-                      ) : (
-                        <div className="flex items-baseline justify-between text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
-                          <span>Supporters</span>
-                          <span className="font-mono tabular-nums text-[var(--color-text-secondary)]">
-                            {g.supporterCount}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    {g.supportTypes && g.supportTypes.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        {g.supportTypes.slice(0, 3).map((t: string) => (
-                          <span
-                            key={t}
-                            className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-text-secondary)]"
-                          >
-                            {SUPPORT_LABEL[t] ?? t}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              </motion.div>
-            );
-          })}
+        <div>
+          {goals.map((g: any, i: number) => (
+            <ExploreGoalRow
+              key={g._id}
+              goal={g}
+              index={i}
+              coverUrl={
+                g.coverImageId
+                  ? coverUrls?.[g.coverImageId as Id<"_storage">] ?? undefined
+                  : null
+              }
+            />
+          ))}
         </div>
       )}
     </div>
@@ -484,56 +394,101 @@ function CategoriesTab({ query }: { query: string }) {
 // Shared bits
 // =====================
 
-function CategoryPill({
+function CategoryTab({
   active,
   onClick,
   label,
-  icon,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
-  icon?: React.ReactNode;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+      aria-pressed={active}
+      className={`relative shrink-0 py-4 text-sm font-medium transition ${
         active
-          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-          : "border-[var(--color-border-strong)] bg-white text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]"
+          ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+          : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
       }`}
     >
-      {icon}
       {label}
     </button>
   );
 }
 
-function MiniProgress({
-  label,
-  pct,
-  hint,
+function ExploreGoalRow({
+  goal,
+  index,
+  coverUrl,
 }: {
-  label: string;
-  pct: number;
-  hint: string;
+  goal: any;
+  index: number;
+  coverUrl: string | null | undefined;
 }) {
+  const progress = Math.max(0, Math.min(100, Number(goal.progress ?? 0)));
   return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
-        <span>{label}</span>
-        <span className="font-mono tabular-nums text-[var(--color-text-secondary)]">{Math.round(pct)}%</span>
-      </div>
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-sunken)]">
-        <div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)]"
-          style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
-        />
-      </div>
-      <div className="mt-0.5 text-[10px] text-[var(--color-text-muted)]">{hint}</div>
-    </div>
+    <motion.article
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.3) }}
+      className="border-b border-[var(--color-border)]"
+    >
+      <Link
+        href={`/o/${goal.ownerHandle}/${goal.slug}`}
+        className="group grid gap-4 py-7 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-start sm:gap-5 sm:py-8 lg:grid-cols-[8rem_3rem_minmax(0,1fr)_8rem_9rem_2rem] lg:items-center"
+      >
+        {goal.coverImageId ? (
+          <div className="relative aspect-[16/9] overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-sunken)] sm:aspect-[4/3]">
+            {coverUrl === undefined ? (
+              <div className="h-full w-full animate-pulse bg-[var(--color-bg-sunken)]" />
+            ) : coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverUrl}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
+              />
+            ) : (
+              <div className="h-full w-full bg-[var(--color-bg-sunken)]" aria-hidden />
+            )}
+          </div>
+        ) : (
+          <div className="hidden aspect-[4/3] border border-[var(--color-border)] bg-[var(--color-bg-sunken)] sm:block" aria-hidden />
+        )}
+        <div className="grid min-w-0 gap-4 lg:contents">
+          <span className="font-mono text-xs text-[var(--color-text-dim)]">{String(index + 1).padStart(2, "0")}</span>
+          <div className="min-w-0">
+            <h3 className="text-balance font-display text-2xl font-semibold leading-tight tracking-[-0.035em] transition group-hover:text-[var(--color-primary)] sm:text-3xl">
+              {goal.title}
+            </h3>
+            <p className="mt-2 line-clamp-1 text-sm text-[var(--color-text-muted)]">
+              {goal.isAnonymous ? "Anonymous" : goal.ownerHandle ? `@${goal.ownerHandle}` : displayName(goal.ownerName)} · {relativeTime(goal.createdAt)}
+            </p>
+          </div>
+          <span className="text-sm text-[var(--color-text-secondary)] lg:text-right">{formatCategory(goal.category)}</span>
+          <div>
+            <div className="flex items-center justify-between gap-3 font-mono text-xs text-[var(--color-text-muted)]">
+              <span>Progress</span><span className="tabular-nums">{Math.round(progress)}%</span>
+            </div>
+            <div className="mt-2 h-px bg-[var(--color-border-strong)]">
+              <div className="h-px bg-[var(--color-primary)]" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="mt-2 font-mono text-[10px] text-[var(--color-text-dim)]">{goal.supporterCount ?? 0} showing up</p>
+          </div>
+          <span className="hidden text-right text-xl transition group-hover:translate-x-1 group-hover:text-[var(--color-primary)] lg:block" aria-hidden>→</span>
+        </div>
+      </Link>
+    </motion.article>
   );
+}
+
+function formatCategory(category?: string) {
+  if (!category) return "Personal goal";
+  return category.replace(/[-_]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function SkeletonGrid({ kind = "goal" }: { kind?: "goal" | "avatar" | "category" }) {
@@ -568,15 +523,12 @@ function SkeletonGrid({ kind = "goal" }: { kind?: "goal" | "avatar" | "category"
     );
   }
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div>
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="overflow-hidden workspace-card">
-          <div className="aspect-[16/9] animate-pulse bg-[var(--color-bg-elev)]" />
-          <div className="space-y-2 p-4">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--color-bg-elev)]" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-[var(--color-bg-elev)]" />
-            <div className="mt-3 h-1.5 w-full animate-pulse rounded bg-[var(--color-bg-elev)]" />
-          </div>
+        <div key={i} className="grid gap-4 border-b border-[var(--color-border)] py-7 sm:grid-cols-[3rem_1fr_10rem]">
+          <div className="h-3 w-6 animate-pulse bg-[var(--color-bg-sunken)]" />
+          <div className="space-y-3"><div className="h-5 max-w-sm animate-pulse bg-[var(--color-bg-sunken)]" /><div className="h-3 max-w-xs animate-pulse bg-[var(--color-bg-elev)]" /></div>
+          <div className="h-3 animate-pulse bg-[var(--color-bg-sunken)]" />
         </div>
       ))}
     </div>

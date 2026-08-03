@@ -9,7 +9,6 @@ import {
   Heart,
   LayoutDashboard,
   LogOut,
-  Search,
   Settings as SettingsIcon,
   User as UserIcon,
   Users,
@@ -17,7 +16,6 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import { Logo } from "@/components/Logo";
 import { Wordmark } from "@/components/Wordmark";
 
 export function Header({
@@ -133,19 +131,21 @@ export function Header({
     <motion.header
       className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur"
     >
-      <div className="relative shell-app flex h-[4.25rem] items-center px-5 sm:px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
-        {/* Primary nav (public, hidden on mobile) — left column */}
+      <div className="shell-app flex h-[4.25rem] items-center gap-7 px-5 sm:px-6">
+        <Wordmark size="lg" ariaLabel="GoMotivateMe — home" />
+
         <nav
           aria-label="Primary navigation"
-          className="hidden items-center gap-5 text-sm font-medium text-[var(--color-text)] md:flex"
+          className="hidden h-full items-center gap-7 text-sm font-medium text-[var(--color-text-secondary)] md:flex"
         >
           <Link
             href="/explore"
-            className={`inline-flex items-center gap-1.5 transition hover:text-[var(--color-primary)] ${
-              isExplore ? "text-[var(--color-primary)]" : ""
+            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
+              isExplore
+                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+                : ""
             }`}
           >
-            <Search size={14} strokeWidth={1.9} aria-hidden />
             Explore
           </Link>
           <Link
@@ -154,26 +154,21 @@ export function Header({
           >
             How it works
           </Link>
-          <Link
-            href={startGoalHref}
-            className="hidden transition hover:text-[var(--color-primary)] lg:inline-flex"
-          >
-            Start a goal
-          </Link>
         </nav>
 
-        {/* Wordmark — centered on mobile (absolute), grid-centered on desktop */}
-        <div className="flex-1 flex justify-center md:flex-none">
-          <Wordmark size="xl" ariaLabel="GoMotivateMe — home" />
-        </div>
-
-        {/* Account / avatar nav — right column, pushed to the right edge */}
         <nav
           aria-label="Account navigation"
-          className="flex shrink-0 items-center justify-end gap-4 text-sm font-medium text-[var(--color-text)]"
+          className="ml-auto flex shrink-0 items-center justify-end gap-4 text-sm font-medium text-[var(--color-text)]"
         >
           {hasAccount && visibleUser ? (
-            <div className="relative">
+            <>
+              <Link
+                href={startGoalHref}
+                className="hidden min-h-10 items-center border border-[var(--color-border-strong)] px-4 text-xs font-semibold transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] sm:inline-flex"
+              >
+                New goal
+              </Link>
+              <div className="relative">
               <button
                 ref={triggerRef}
                 type="button"
@@ -208,7 +203,7 @@ export function Header({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.98 }}
                     transition={{ duration: 0.14, ease: "easeOut" }}
-                    className="absolute right-0 top-full z-50 mt-2 w-60 origin-top-right overflow-hidden workspace-card shadow-[0_18px_40px_-12px_rgba(31,31,27,0.18),0_4px_10px_-2px_rgba(31,31,27,0.08)]"
+                    className="absolute right-0 top-full z-50 mt-2 w-60 origin-top-right overflow-hidden workspace-card"
                   >
                     {/* User identity strip — small, so the menu still works on
                         narrow viewports where the name next to the avatar is
@@ -246,7 +241,7 @@ export function Header({
                               }`}
                             >
                               <span
-                                className={`grid h-7 w-7 place-items-center rounded-lg ${
+                                className={`grid h-7 w-7 place-items-center rounded-[2px] ${
                                   active
                                     ? "bg-[var(--color-primary)] text-white"
                                     : "bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)] group-hover:bg-[var(--color-gold-soft)]"
@@ -256,7 +251,7 @@ export function Header({
                               </span>
                               <span className="flex-1 font-medium">{label}</span>
                               {active ? (
-                                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
+                                <span className="h-px w-3 bg-[var(--color-primary)]" />
                               ) : null}
                             </Link>
                           </li>
@@ -270,7 +265,7 @@ export function Header({
                         onClick={handleSignOut}
                         className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm text-[var(--color-text)] transition hover:bg-[var(--color-danger-soft)] hover:text-[var(--color-danger-text)]"
                       >
-                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)] group-hover:bg-[var(--color-danger-soft)]">
+                        <span className="grid h-7 w-7 place-items-center rounded-[2px] bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)] group-hover:bg-[var(--color-danger-soft)]">
                           <LogOut size={15} strokeWidth={1.8} aria-hidden />
                         </span>
                         <span className="flex-1 text-left font-medium">
@@ -281,14 +276,23 @@ export function Header({
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+              </div>
+            </>
           ) : (
-            <Link
-              href="/login"
-              className="transition hover:text-[var(--color-primary)]"
-            >
-              Sign in
-            </Link>
+            <>
+              <Link
+                href="/login"
+                className="transition hover:text-[var(--color-primary)]"
+              >
+                Sign in
+              </Link>
+              <Link
+                href={startGoalHref}
+                className="hidden min-h-10 items-center bg-[var(--color-text)] px-4 text-xs font-semibold text-white transition hover:bg-[var(--color-primary)] sm:inline-flex"
+              >
+                Start a goal
+              </Link>
+            </>
           )}
         </nav>
       </div>

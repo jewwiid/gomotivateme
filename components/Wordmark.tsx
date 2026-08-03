@@ -1,16 +1,6 @@
 import Link from "next/link";
 
-/**
- * GoMotivateMe wordmark — rendered as text in the loaded display font
- * (Plus Jakarta Sans, weight 800, tight tracking) rather than a raster/SVG
- * asset. This way it:
- *   - scales crisply at every size,
- *   - inherits the loaded font so titles and wordmark are visually consistent,
- *   - allows per-glyph color ("Motivate" in brand gold, the rest in brand blue).
- *
- * Replaces the old image-based <Logo />. The PNG/SVG assets in /public/brand/
- * are still used for the favicon, OG image, and emails.
- */
+/** The product wordmark paired with the official GoMotivateMe brand mark. */
 
 type WordmarkSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
@@ -40,13 +30,20 @@ export function Wordmark({
   const text = (
     <span
       aria-label={ariaLabel}
-      className={`inline-flex items-baseline font-extrabold leading-none tracking-[-0.045em] antialiased ${
+      className={`inline-flex items-center gap-[0.42em] font-semibold leading-none tracking-[-0.035em] text-[var(--color-text)] antialiased ${
         sizeMap[size]
       } ${className ?? ""}`}
     >
-      <span style={{ color: "var(--color-primary)" }}>Go</span>
-      <span style={{ color: "var(--color-gold)" }}>Motivate</span>
-      <span style={{ color: "var(--color-primary)" }}>Me</span>
+      <span aria-hidden className="relative h-[1.05em] w-[1.05em] shrink-0 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/apple-icon.png"
+          alt=""
+          draggable={false}
+          className="absolute inset-0 h-full w-full scale-[1.55] object-contain"
+        />
+      </span>
+      <span>GoMotivateMe</span>
     </span>
   );
 

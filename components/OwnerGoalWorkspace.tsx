@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowUpRight,
   CalendarDays,
   Check,
   CircleGauge,
@@ -179,35 +178,10 @@ export function OwnerGoalWorkspace({
   };
 
   return (
-    <WorkspaceShell
-      items={navItems}
-      asideFooter={
-        <div className="workspace-card p-4">
-          <p className="text-sm font-bold text-[var(--color-text)]">Your public link</p>
-          <p className="mt-2 break-all text-xs leading-5 text-[var(--color-text-muted)]">{publicLabel}</p>
-          <a
-            href={publicUrl || "#public-page"}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-          >
-            View public page
-            <ArrowUpRight size={14} aria-hidden />
-          </a>
-          <button
-            type="button"
-            onClick={onCopyLink}
-            className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-          >
-            {linkCopied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
-            {linkCopied ? "Copied" : "Copy link"}
-          </button>
-        </div>
-      }
-    >
+    <WorkspaceShell items={navItems}>
       <div id="overview" className="scroll-mt-24 space-y-4">
         <section className="workspace-card grid min-h-[11rem] gap-5 p-4 md:grid-cols-[17.5rem_minmax(0,1fr)] xl:grid-cols-[17.5rem_minmax(0,1fr)_14rem]">
-          <div className="relative min-h-40 overflow-hidden rounded-[0.95rem] bg-[var(--color-bg-sunken)] md:min-h-0">
+          <div className="relative min-h-40 overflow-hidden rounded-[2px] bg-[var(--color-bg-sunken)] md:min-h-0">
             {coverUrl === undefined ? (
               <div className="absolute inset-0 animate-pulse bg-[var(--color-bg-sunken)]" />
             ) : (
@@ -222,7 +196,7 @@ export function OwnerGoalWorkspace({
 
           <div className="flex min-w-0 flex-col justify-center py-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-[var(--color-success-soft)] px-3 py-1 text-xs font-bold text-[var(--color-success-text)]">
+              <span className="rounded-[2px] bg-[var(--color-success-soft)] px-3 py-1 font-mono text-xs font-medium text-[var(--color-success-text)]">
                 {titleCase(goal.status)}
               </span>
               <span className="text-xs font-medium text-[var(--color-text-muted)]">
@@ -244,7 +218,8 @@ export function OwnerGoalWorkspace({
               rel="noreferrer"
               className="workspace-button-primary"
             >
-              Preview public page
+              <span className="sm:hidden">Preview</span>
+              <span className="hidden sm:inline">Preview public page</span>
               <ExternalLink size={15} aria-hidden />
             </a>
             <button type="button" onClick={onCopyLink} className="workspace-button-secondary">
@@ -607,20 +582,17 @@ export function MomentumStat({
         }
       />
       <div className="min-w-0">
-        <p className="truncate text-[0.67rem] font-bold uppercase tracking-[0.12em] text-[var(--color-text-dim)]">
+        <p className="truncate font-mono text-[0.67rem] font-medium text-[var(--color-text-dim)]">
           {label}
         </p>
         <div className="mt-1 flex items-baseline gap-2">
           <strong className="truncate text-lg tracking-[-0.035em] text-[var(--color-text)] sm:text-xl">{value}</strong>
-          {progress !== undefined ? (
-            <span className="text-xs font-bold text-[var(--color-primary)]">On track</span>
-          ) : null}
         </div>
         <p className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">{detail}</p>
         {progress !== undefined ? (
-          <div className="mt-2 h-1 w-24 overflow-hidden rounded-full bg-[var(--color-bg-sunken)]">
+          <div className="mt-2 h-px w-24 overflow-hidden bg-[var(--color-bg-sunken)]">
             <div
-              className="h-full rounded-full bg-[var(--color-primary)]"
+              className="h-full bg-[var(--color-primary)]"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </div>
@@ -643,7 +615,7 @@ function ComposerAction({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+      className="inline-flex min-h-9 items-center gap-2 rounded-[2px] border border-[var(--color-border-strong)] bg-white px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
     >
       <Icon size={15} strokeWidth={1.8} aria-hidden />
       {label}

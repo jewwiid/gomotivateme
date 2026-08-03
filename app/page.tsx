@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { FEATURED_CATEGORIES } from "@/lib/categories";
-import { relativeTime } from "@/lib/format";
+import { relativeTime, displayName } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Header } from "@/components/Header";
 
@@ -297,7 +297,7 @@ function GoalRow({
               {goal.title}
             </h3>
             <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-              {goal.ownerName || "A GoMotivateMe member"} · shared {relativeTime(goal.createdAt)}
+              {displayName(goal.ownerName)} · shared {relativeTime(goal.createdAt)}
             </p>
           </div>
           <span className="text-sm text-[var(--color-text-secondary)] lg:text-right">{formatCategory(goal.category)}</span>

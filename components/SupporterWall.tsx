@@ -6,7 +6,7 @@ import { Sparkles, Users } from "lucide-react";
 import { useMemo } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { relativeTime } from "@/lib/format";
+import { displayName, relativeTime } from "@/lib/format";
 
 const SUPPORT_GLYPH: Record<string, string> = {
   encourage: "💛",
@@ -83,7 +83,7 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-[var(--color-text)]">
-                    {name}
+                    {displayName(name)}
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-[var(--color-text-dim)]">
                     <span>{SUPPORT_GLYPH[s.supportType] ?? "💛"}</span>
