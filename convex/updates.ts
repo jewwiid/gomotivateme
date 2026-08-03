@@ -426,3 +426,71 @@ export const hide = mutation({
     await ctx.db.patch(updateId, { publicVisible: false });
   },
 });
+
+/**
+ * Undo a progress update with an optional reason. Marks the update as
+ * reverted (keeps the audit trail) and recalculates the goal's currentValue.
+ *
+ *   - value (number/streak): finds the previous non-reverted value update
+ *     and sets currentValue to that. If none exists, resets to startValue.
+ *   - milestone: un-toggles the milestone (done=false) and decrements count.
+ *   - note/media/link: just marks reverted (no progress impact).
+ */
+export const undoUpdate = mutation({
+  args: {
+    updateId: v.id("updates"),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, { updateId, reason }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const update = await ctx.db.get(updateId);
+    if (!update) throw new Error("Update not found");
+    if (update.ownerId !== userId) throw new Error("Not the owner");
+    if (update.revertedAt) throw new Error("Already undone");
+
+    const now = Date.now();
+    const goal = await ctx.db.get(update.goalId);
+    if (!goal) throw new Error("Goal not found");
+
+    // Mark the update as reverted (don't delete — audit trail).
+    await ctx.db.patch(updateId, {
+      revertedAt: now,
+      revertReason: reason?.trim() || undefined,
+    });
+
+    if (update.type === "value") {
+      // Scan recent updates and find the latest non-reverted value.
+      const recentUpdates = await ctx.db
+        .query("updates")
+        .withIndex("by_goal_created", (q) => q.eq("goalId", update.goalId))
+        .order("desc")
+        .take(50);
+
+      const latestValue = recentUpdates.find(
+        (u) => u.type === "value" && !u.revertedAt && u._id !== updateId
+      );
+
+      await ctx.db.patch(update.goalId, {
+        currentValue: latestValue?.value ?? goal.startValue ?? 0,
+        updatedAt: now,
+      });
+    } else if (update.type === "milestone" && update.milestoneId) {
+      if (goal.progressType === "milestones" && goal.milestones) {
+        const milestones = goal.milestones.map((m) =>
+          m.id === update.milestoneId
+            ? { ...m, done: false, completedAt: undefined }
+            : m
+        );
+        const completedCount = milestones.filter((m) => m.done).length;
+        await ctx.db.patch(update.goalId, {
+          milestones,
+          currentValue: completedCount,
+          updatedAt: now,
+        });
+      }
+    }
+
+    return { ok: true };
+  },
+});

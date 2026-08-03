@@ -242,8 +242,6 @@
 
   .workspace-detail-section {
     margin-top: 1rem;
-    border-top: 1px solid var(--color-border);
-    padding-top: 1rem;
   }
 }
 

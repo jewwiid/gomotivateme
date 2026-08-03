@@ -91,6 +91,7 @@ export function OwnerGoalWorkspace({
   onOpenUpdate,
   onPostUpdate,
   onQuickIncrement,
+  onUndoUpdate,
   milestoneEditor,
   updatesArchive,
   supporterInbox,
@@ -112,6 +113,7 @@ export function OwnerGoalWorkspace({
   onOpenUpdate: (kind: OwnerUpdateKind) => void;
   onPostUpdate: (note: string) => Promise<void>;
   onQuickIncrement?: (delta: number) => void;
+  onUndoUpdate?: (updateId: string) => void;
   milestoneEditor?: ReactNode;
   updatesArchive?: ReactNode;
   supporterInbox?: ReactNode;
@@ -442,14 +444,25 @@ export function OwnerGoalWorkspace({
                   updates.slice(0, 3).map((update) => (
                     <div key={update._id} className="flex gap-3">
                       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
-                        {update.type === "milestone" ? <Flag size={16} aria-hidden /> : <MessageCircle size={16} aria-hidden />}
+                        {update.type === "milestone" ? <Flag size={16} aria-hidden /> : update.type === "value" ? <CircleGauge size={16} aria-hidden /> : <MessageCircle size={16} aria-hidden />}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <p className="text-sm font-bold text-[var(--color-text)]">
-                            {update.type === "milestone" ? "Milestone updated" : "Update posted"}
+                            {update.type === "milestone" ? "Milestone updated" : update.type === "value" ? "Progress logged" : "Update posted"}
                           </p>
-                          <time className="text-xs text-[var(--color-text-dim)]">{timeAgo(update.createdAt)}</time>
+                          <div className="flex items-center gap-2">
+                            {(update.type === "value" || update.type === "milestone") && onUndoUpdate && (
+                              <button
+                                type="button"
+                                onClick={() => onUndoUpdate(update._id)}
+                                className="text-xs font-medium text-[var(--color-text-dim)] underline transition hover:text-[var(--color-danger)]"
+                              >
+                                Undo
+                              </button>
+                            )}
+                            <time className="text-xs text-[var(--color-text-dim)]">{timeAgo(update.createdAt)}</time>
+                          </div>
                         </div>
                         <p className="mt-1 line-clamp-2 text-sm leading-5 text-[var(--color-text-muted)]">
                           {update.note || "Progress shared with your support circle."}

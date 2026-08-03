@@ -265,6 +265,9 @@ export default defineSchema({
     reportCount: v.optional(v.number()),
     publicVisible: v.boolean(),
     createdAt: v.number(),
+    /** Set when this update was undone/reverted. Keeps the audit trail. */
+    revertedAt: v.optional(v.number()),
+    revertReason: v.optional(v.string()),
   })
     .index("by_goal", ["goalId"])
     .index("by_goal_created", ["goalId", "createdAt"])

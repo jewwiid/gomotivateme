@@ -183,6 +183,7 @@ function GoalDetailContent() {
   const motivators = useQuery(api.motivation.listActiveMotivators, { goalId });
   const addUpdate = useMutation(api.updates.add);
   const quickIncrement = useMutation(api.goals.quickIncrement);
+  const undoUpdate = useMutation(api.updates.undoUpdate);
   const coverImageUrls = useQuery(
     api.storage.getUrls,
     goal?.coverImageId ? { ids: [goal.coverImageId] } : "skip"
@@ -311,6 +312,11 @@ function GoalDetailContent() {
         onOpenUpdate={(kind: OwnerUpdateKind) => setShowUpdate(kind)}
         onPostUpdate={postQuickUpdate}
         onQuickIncrement={async (delta) => { await quickIncrement({ goalId, delta }); }}
+        onUndoUpdate={(updateId) => {
+          const reason = prompt("Why are you undoing this? (optional)");
+          if (reason === null) return; // user cancelled
+          void undoUpdate({ updateId: updateId as Id<"updates">, reason: reason || undefined });
+        }}
         milestoneEditor={
           goal.progressType === "milestones" ? (
             <div className="workspace-card p-5">
