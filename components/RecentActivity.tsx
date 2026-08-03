@@ -40,10 +40,12 @@ type ActivityItem =
 export function RecentActivity({
   goalId,
   unit,
+  ownerName,
   limit = 8,
 }: {
   goalId: Id<"goals">;
   unit?: string;
+  ownerName?: string;
   limit?: number;
 }) {
   const supporters = useQuery(api.supporters.listForGoal, { goalId, limit: 8 });
@@ -133,7 +135,7 @@ export function RecentActivity({
           >
             <ActivityIcon item={it} />
             <div className="min-w-0 flex-1">
-              <ActivityBody item={it} />
+              <ActivityBody item={it} ownerName={ownerName} />
             </div>
             <time
               dateTime={new Date(it.at).toISOString()}
@@ -214,7 +216,7 @@ function ActivityIcon({ item }: { item: ActivityItem }) {
   );
 }
 
-function ActivityBody({ item }: { item: ActivityItem }) {
+function ActivityBody({ item, ownerName }: { item: ActivityItem; ownerName?: string }) {
   if (item.kind === "supporter") {
     return (
       <p className="text-[var(--color-text-secondary)]">
@@ -244,7 +246,7 @@ function ActivityBody({ item }: { item: ActivityItem }) {
   // update
   return (
     <p className="text-[var(--color-text-secondary)]">
-      <span className="font-medium text-[var(--color-text)]">You</span> {item.body}
+      <span className="font-medium text-[var(--color-text)]">{ownerName ?? "Owner"}</span> {item.body}
     </p>
   );
 }

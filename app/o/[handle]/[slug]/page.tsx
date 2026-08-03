@@ -400,7 +400,7 @@ function PublicGoalView({
               </section>
 
               <div id="updates" className="scroll-mt-24">
-                <RecentActivity goalId={goalId} unit={goal.unit} limit={4} />
+                <RecentActivity goalId={goalId} unit={goal.unit} ownerName={displayName(ownerName)} limit={4} />
               </div>
 
               <EditorialTimeline
