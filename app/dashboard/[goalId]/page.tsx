@@ -312,13 +312,11 @@ function GoalDetailContent() {
         onPostUpdate={postQuickUpdate}
         onQuickIncrement={async (delta) => { await quickIncrement({ goalId, delta }); }}
         milestoneEditor={
-          goal.progressType === "milestones" &&
-          goal.milestones &&
-          goal.milestones.length > 0 ? (
+          goal.progressType === "milestones" ? (
             <div className="workspace-card p-5">
               <MilestonesList
                 goalId={goalId}
-                milestones={goal.milestones}
+                milestones={goal.milestones ?? []}
                 isOwner={true}
                 currentValue={goal.currentValue ?? 0}
                 targetValue={goal.targetValue ?? 0}
