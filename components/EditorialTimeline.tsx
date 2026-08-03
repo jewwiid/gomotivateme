@@ -188,7 +188,9 @@ function EntryHeader({ u }: { u: UpdateDoc }) {
     return (
       <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
         <TrendingUp size={11} />
-        Value logged {u.value !== undefined && <span className="text-[var(--color-primary)]">· {u.value}</span>}
+        {u.value !== undefined && (
+          <span className="text-[var(--color-primary)]">· {u.value} day streak</span>
+        )}
       </div>
     );
   }

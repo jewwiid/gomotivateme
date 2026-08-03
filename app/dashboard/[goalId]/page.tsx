@@ -182,6 +182,7 @@ function GoalDetailContent() {
   const supportMessages = useQuery(api.supportMessages.listForOwner, { goalId });
   const motivators = useQuery(api.motivation.listActiveMotivators, { goalId });
   const addUpdate = useMutation(api.updates.add);
+  const quickIncrement = useMutation(api.goals.quickIncrement);
   const coverImageUrls = useQuery(
     api.storage.getUrls,
     goal?.coverImageId ? { ids: [goal.coverImageId] } : "skip"
@@ -309,6 +310,7 @@ function GoalDetailContent() {
         onCopyLink={onCopyLink}
         onOpenUpdate={(kind: OwnerUpdateKind) => setShowUpdate(kind)}
         onPostUpdate={postQuickUpdate}
+        onQuickIncrement={async (delta) => { await quickIncrement({ goalId, delta }); }}
         milestoneEditor={
           goal.progressType === "milestones" &&
           goal.milestones &&

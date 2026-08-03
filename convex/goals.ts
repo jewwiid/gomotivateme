@@ -1203,6 +1203,43 @@ export const recordValue = mutation({
   },
 });
 
+/**
+ * Quick increment — adds `delta` (default 1) to the current value of a
+ * number-type goal. A shortcut for "I read 1 more book" without typing
+ * the full absolute value. Reuses recordValue's full logic internally.
+ */
+export const quickIncrement = mutation({
+  args: {
+    goalId: v.id("goals"),
+    delta: v.optional(v.number()),
+  },
+  handler: async (ctx, { goalId, delta }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const goal = await ctx.db.get(goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not found");
+    if (goal.progressType !== "number") {
+      throw new Error("Quick increment is only for number-type goals");
+    }
+    const step = delta ?? 1;
+    const newValue = (goal.currentValue ?? goal.startValue ?? 0) + step;
+    await ctx.db.patch(goalId, {
+      currentValue: newValue,
+      updatedAt: Date.now(),
+    });
+    await ctx.db.insert("updates", {
+      goalId,
+      ownerId: userId,
+      type: "value",
+      value: newValue,
+      moderationStatus: "approved",
+      publicVisible: true,
+      createdAt: Date.now(),
+    });
+    return { newValue };
+  },
+});
+
 
 /**
  * Collect the people who should hear about a change to a goal.

@@ -55,7 +55,9 @@ export function UpdateCard({
           {update.type === "value" && (
             <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-[var(--color-bg-elev)] px-2 py-0.5 text-xs font-medium text-[var(--color-text)]">
               <TrendingUp size={10} />
-              {arrow} {update.value} {unit}
+              {unit === "days"
+                ? `${update.value} day streak`
+                : `${arrow} ${update.value} ${unit}`}
             </span>
           )}
         </div>

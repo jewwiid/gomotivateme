@@ -12,9 +12,9 @@ interface GoalDoc {
   title: string;
   category: string;
   unit: string;
-  startValue: number;
+  startValue?: number;
   targetValue: number;
-  currentValue: number;
+  currentValue?: number;
   direction: "increase" | "decrease";
   targetDate?: number;
   slug: string;
@@ -30,10 +30,12 @@ const goalMedia = [
   "/illustrations/steps/together-v3.webp",
 ];
 
-function pct(start: number, current: number, target: number, dir: "increase" | "decrease") {
-  const total = dir === "decrease" ? start - target : target - start;
+function pct(start: number | undefined, current: number | undefined, target: number, dir: "increase" | "decrease") {
+  const s = start ?? 0;
+  const c = current ?? s;
+  const total = dir === "decrease" ? s - target : target - s;
   if (total <= 0) return 0;
-  const moved = dir === "decrease" ? start - current : current - start;
+  const moved = dir === "decrease" ? s - c : c - s;
   return Math.max(0, Math.min(100, (moved / total) * 100));
 }
 
@@ -80,7 +82,7 @@ export function GoalCard({ goal }: { goal: GoalDoc }) {
           )}
           <p className="mt-1 text-xs">
             {daysLeft === null
-              ? `${formatNumber(goal.currentValue)} ${goal.unit}`
+              ? `${formatNumber(goal.currentValue ?? goal.startValue ?? 0)} ${goal.unit}`
               : daysLeft < 0
               ? `${Math.abs(daysLeft)}d overdue`
               : daysLeft === 0

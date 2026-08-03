@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   MessageCircle,
+  Plus,
   Send,
   Settings,
   Share2,
@@ -89,6 +90,7 @@ export function OwnerGoalWorkspace({
   onCopyLink,
   onOpenUpdate,
   onPostUpdate,
+  onQuickIncrement,
   milestoneEditor,
   updatesArchive,
   supporterInbox,
@@ -109,6 +111,7 @@ export function OwnerGoalWorkspace({
   onCopyLink: () => void;
   onOpenUpdate: (kind: OwnerUpdateKind) => void;
   onPostUpdate: (note: string) => Promise<void>;
+  onQuickIncrement?: (delta: number) => void;
   milestoneEditor?: ReactNode;
   updatesArchive?: ReactNode;
   supporterInbox?: ReactNode;
@@ -322,11 +325,18 @@ export function OwnerGoalWorkspace({
                   />
                 )}
                 {goal.progressType === "number" && (
-                  <ComposerAction
-                    icon={CircleGauge}
-                    label="Log value"
-                    onClick={() => onOpenUpdate("value")}
-                  />
+                  <>
+                    <ComposerAction
+                      icon={Plus}
+                      label="+1"
+                      onClick={() => onQuickIncrement?.(1)}
+                    />
+                    <ComposerAction
+                      icon={CircleGauge}
+                      label="Log value"
+                      onClick={() => onOpenUpdate("value")}
+                    />
+                  </>
                 )}
                 {goal.progressType === "streak" && (
                   <ComposerAction
