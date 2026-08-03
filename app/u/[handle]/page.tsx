@@ -83,6 +83,11 @@ export default function ProfilePage() {
     ? coverUrl?.[summary.user.coverImageId as Id<"_storage">] ?? null
     : null;
   const motivators = useQuery(api.users.listFeaturedMotivators, { limit: 8 });
+  // Must be before any early returns — Rules of Hooks.
+  const followCounts = useQuery(
+    api.follows.counts,
+    summary ? { userId: summary.user._id } : "skip"
+  );
 
   if (summary === undefined) {
     return (
@@ -115,8 +120,6 @@ export default function ProfilePage() {
   const { user, stats, goals, motivations } = summary;
   const profileName = user.name ?? `@${user.handle ?? "user"}`;
   const initials = initialsOf(user.name, user.handle);
-  // Follower / following counts for this profile.
-  const followCounts = useQuery(api.follows.counts, { userId: user._id });
   const profileUrl =
     typeof window !== "undefined" && user.handle
       ? `${window.location.origin}/@${user.handle}`
