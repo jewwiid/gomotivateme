@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronDown, ChevronUp, Loader2, Send } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Loader2, Send, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -50,6 +50,7 @@ export function MilestonesList({
           />
         ))}
       </ol>
+      {isOwner && <AddMilestone goalId={goalId} />}
     </section>
   );
 }
@@ -66,8 +67,10 @@ function MilestoneCard({
   delay: number;
 }) {
   const toggleMilestone = useMutation(api.goals.toggleMilestone);
+  const removeMilestone = useMutation(api.goals.removeMilestone);
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   const onToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,6 +80,18 @@ function MilestoneCard({
       await toggleMilestone({ goalId, milestoneId: milestone.id, done: !milestone.done });
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onRemove = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isOwner || milestone.done) return;
+    if (!confirm(`Remove "${milestone.title}"?`)) return;
+    setRemoving(true);
+    try {
+      await removeMilestone({ goalId, milestoneId: milestone.id });
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -118,6 +133,18 @@ function MilestoneCard({
         >
           {milestone.title}
         </span>
+        {/* Remove button (owners only, undone milestones only) */}
+        {isOwner && !milestone.done && (
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={removing}
+            className="shrink-0 rounded-md p-1 text-[var(--color-text-dim)] transition hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] disabled:opacity-50"
+            aria-label="Remove milestone"
+          >
+            {removing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          </button>
+        )}
         {/* Expand chevron */}
         {expanded ? (
           <ChevronUp size={16} className="shrink-0 text-[var(--color-text-dim)]" />
@@ -265,6 +292,49 @@ function MilestoneComposer({
         >
           {busy ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
           {busy ? "Posting..." : "Post"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Inline "Add milestone" input — owner only. Calls addMilestone mutation.
+ */
+function AddMilestone({ goalId }: { goalId: Id<"goals"> }) {
+  const addMilestone = useMutation(api.goals.addMilestone);
+  const [title, setTitle] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setBusy(true);
+    try {
+      await addMilestone({ goalId, title: title.trim() });
+      setTitle("");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="mt-3">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Add a milestone…"
+          className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={busy || !title.trim()}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          Add
         </button>
       </div>
     </form>

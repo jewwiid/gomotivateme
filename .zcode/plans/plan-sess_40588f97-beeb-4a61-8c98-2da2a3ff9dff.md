@@ -1,99 +1,56 @@
-# Goal creation overhaul — categories, metrics, form flow
+# Change Progress Type feature
 
 ## Problem
-The categories are GoFundMe cause-oriented (medical, memorial, emergency, charity…), not activity-oriented. A user who wants to "lose weight", "launch an app", or "read 50 pages" can't find a natural fit. The unit picker is brittle (`hint.split(" ")[0]` → "any"), milestone defaults are hardcoded regardless of category, the direction toggle is jargon, and `startValue`/`currentValue` are required even for milestone/streak goals (the NaN bug we already hit).
+Goals are locked to their `progressType` at creation. A goal created as "number" (tracking users 8→100) can't switch to milestones later — the milestone UI is hidden, and there's no backend mutation to change the type or add milestones post-creation.
 
-## Scope of this pass
-**Everything needed to make the 4 example cases work cleanly**: app launch, reading, weight loss, personal milestones — plus backend hardening and schema fix. This is a focused overhaul, not a full AI-assist rewrite.
+## Design decisions
 
----
+**When to allow it:** Only when the goal has **no traction** — `supporterCount === 0 && currentValue === startValue` (no supporters, no logged progress). This matches the existing product philosophy in the codebase (lines 400-408 of goals.ts: "progressType mid-run would invalidate the commitment"). Once a goal has real activity, the type is locked. This keeps it clean — you can fix a miscreated goal, but can't pull the rug out from supporters.
 
-## Step 1 — New category set (`lib/categories.ts`)
+**What happens on switch:** Server-side coercion mirrors the `create` mutation:
+- → `milestones`: force `startValue=0`, `currentValue=0`, `targetValue=milestones.length`, `unit="milestones"`, `direction="increase"`, seed the `milestones` array with defaults
+- → `streak`: force `startValue=0`, `currentValue=0`, `unit="days"`, `direction="increase"`, clear milestones
+- → `number`: keep client-sent start/target/unit/direction, clear milestones
 
-Replace the 18 GoFundMe categories with 12 activity-oriented ones. Each gets `unitOptions` (actual array, not a hint string) and `defaultProgressType`:
+## Implementation
 
-| ID | Label | Units | Default type | Direction |
-|----|-------|-------|-------------|-----------|
-| `health` | Health & fitness | kg, lbs, km, miles, reps | number | decrease (weight) / increase (fitness) |
-| `learning` | Learning | books, pages, courses, hours | number | increase |
-| `career` | Career & money | $, calls, clients, applications | number | increase |
-| `launch` | Product launch | — (milestones) | milestones | increase |
-| `creative` | Creative project | songs, pages, episodes, paintings | number | increase |
-| `habit` | Habit & streak | days | streak | increase |
-| `sports` | Sports & fitness event | km, miles, minutes, reps | number | increase |
-| `community` | Community & charity | $, people, events | number | increase |
-| `personal` | Personal milestone | — (milestones or number) | milestones | increase |
-| `travel` | Travel & adventure | places, miles, days | number | increase |
-| `family` | Family & kids | any | number | increase |
-| `faith` | Faith & spiritual | days, sessions | number | increase |
+### Step 1 — Backend: new `changeProgressType` mutation (`convex/goals.ts`)
 
-Each category object: `{ id, label, icon, unitOptions: string[], defaultProgressType, defaultDirection }`.
+```
+changeProgressType(goalId, progressType, startValue?, targetValue?, unit?, direction?, milestones?)
+```
 
-**Remove** the legacy `"weight"` category reference (the public page has `goal.category === "weight"` soft-warning logic — replace with a `health` + `unit in [kg, lbs]` check, or a `sensitiveCategory` flag on the category object).
+- Auth check (owner only)
+- **Traction gate**: throw if `supporterCount > 0 || currentValue !== startValue`
+- Server-side coercion per type (same logic as `create` lines 150-187)
+- Patches the goal doc with new `progressType`, coerced values, and milestone array
+- Returns the updated goal
 
-**Backward compatibility**: existing goals have old categories (`medical`, `creative`, `business`, etc). Add a `legacyCategoryMap` that maps old → new (`medical` → `health`, `business` → `career`, `wishes` → `personal`, `education` → `learning`, etc). `getCategory()` falls back to the map so old goals still display correctly.
+### Step 2 — Backend: `addMilestone` + `removeMilestone` mutations (`convex/goals.ts`)
 
-## Step 2 — Backend hardening (`convex/goals.ts` + `convex/schema.ts`)
+Allow milestone list editing after creation (currently impossible):
+- `addMilestone(goalId, title)` — appends `{ id, title, done: false }` to the milestones array, increments `targetValue`
+- `removeMilestone(goalId, milestoneId)` — removes from array (only if not `done`), decrements `targetValue`
+- Both gated on `progressType === "milestones"`
 
-**`convex/goals.ts`**:
-- Update the duplicated `CATEGORIES` list to the new 12 ids
-- In the `create` handler: server-side coercion based on `progressType`:
-  - `milestones`: force `startValue = 0`, `currentValue = 0`, `targetValue = milestones.length`, `direction = "increase"`, `unit = "milestones"` — ignore client-sent values
-  - `streak`: force `startValue = 0`, `unit = "days"`, `direction = "increase"`
-  - `number`: keep client values but validate `targetValue !== startValue` and direction consistency
+### Step 3 — Frontend: progress type switcher in GoalSettings (`app/dashboard/[goalId]/page.tsx`)
 
-**`convex/schema.ts`** (lines 79-81):
-- `startValue: v.optional(v.number())` (was required → caused NaN)
-- `currentValue: v.optional(v.number())` (was required)
-- This is backwards-compatible: existing rows keep their values; new milestone/streak goals can omit them
+Inside the existing `GoalSettings` component (lines 1245-1752), above the target-fields block:
+- A "Progress type" section with the 3-option card picker (reusing `PROGRESS_TEMPLATES` pattern from the create form)
+- **Gated behind the traction check** — if the goal has supporters or logged progress, show the lock banner ("This goal has activity — close it and start a new one to change the tracking method")
+- When switching to milestones, show the milestone list editor (add/remove/edit titles) — same UI as the create form step 3
+- When switching to number, show start/target/unit/direction fields
+- When switching to streak, show the days target field
+- "Save changes" button calls the new `changeProgressType` mutation
 
-## Step 3 — Form improvements (`app/dashboard/new/page.tsx`)
+### Step 4 — Frontend: milestone add/remove in the dashboard
 
-**Category picker (step 1)**:
-- Replace `onCategoryChange` to set `unit` from `category.unitOptions[0]` (not `hint.split(" ")[0]`)
-- Set `progressType` from `category.defaultProgressType` automatically
-
-**Progress type step (step 2)**:
-- When category has `defaultProgressType`, pre-select it (user can still override)
-- **Unit becomes a `<select>`** with `category.unitOptions` as options + "Custom…" free-text fallback (not a parsed hint string)
-
-**Direction toggle (step 3)**:
-- Remove the raw `↓ decrease / ↑ increase` toggle
-- Replace with human language: for `health` show "Lose weight" vs "Build fitness" radio; for other categories default to increase and hide the toggle entirely (only show if the user explicitly switches to a number type and the category supports both directions)
-
-**Milestone defaults**:
-- Replace hardcoded Research/Plan/Execute/Complete with category-aware defaults:
-  - `launch`: Research → Build MVP → Beta test → Launch
-  - `personal`: Start → Halfway → Nearly there → Complete
-  - `health` (if user picks milestones): Set baseline → First milestone → Second milestone → Goal
-  - Default fallback: Step 1 → Step 2 → Step 3 → Done
-- User can still edit all milestone titles inline
-
-**Validation feedback**:
-- Show inline error text when `canAdvance()` is false (currently the button just silently disables):
-  - "Enter a title to continue"
-  - "Target must be different from starting value"
-  - "Pick a date in the future"
-
-## Step 4 — Display fixes
-
-**`app/o/[slug]/page.tsx`** (public goal page):
-- Replace `goal.category === "weight"` with a `sensitiveCategories` check: `["health"].includes(goal.category) && ["kg", "lbs"].includes(goal.unit)` — keeps the body-topic soft warning for weight goals without a legacy `"weight"` id
-
-**`components/GoalCard.tsx`**:
-- Already uses `getCategory()` for display — the backward-compat map in Step 1 handles this automatically
-
-## Step 5 — Backfill existing prod data
-
-One-off mutation that:
-- Maps old category ids → new ids on all existing goals
-- Sets `startValue`/`currentValue` to `0` where they're `NaN` or `undefined`
-
-## What this does NOT include (flagging)
-- **AI title-to-suggestion** (typing "lose 10kg" auto-suggests health/kg/decrease) — valuable but a separate feature; the category picker with `unitOptions` already makes the manual flow much faster
-- **Collapsing 9 steps → 5** — the improvements above make each step clearer and faster, but the step count stays the same to avoid a risky UX rewrite in this pass
-- **Support types** (`encourage`, `checkin`, etc.) — untouched, they work fine
+Update `MilestonesList` component to include an "Add milestone" button and per-milestone remove/edit affordances — calls the new `addMilestone`/`removeMilestone` mutations. This makes milestones editable from both the settings panel AND the main dashboard view.
 
 ## Files touched
-**Edited**: `lib/categories.ts`, `convex/goals.ts`, `convex/schema.ts`, `app/dashboard/new/page.tsx`, `app/o/[slug]/page.tsx`
-**No new files**
+**Edited:** `convex/goals.ts` (2-3 new mutations), `app/dashboard/[goalId]/page.tsx` (GoalSettings + milestone UI), `components/MilestonesList.tsx` (add/remove buttons)
+**No new files, no schema changes** (milestones array already exists on the goal doc)
+
+## Not in scope
+- Converting existing progress history when switching types (old updates stay as-is — they're just notes at that point)
+- Allowing type changes after traction (deliberately locked — would confuse supporters)

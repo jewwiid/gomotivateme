@@ -24,10 +24,14 @@ import {
   CheckCircle2,
   Archive,
   Lock as LockIcon,
+  BarChart3,
+  Flame,
+  ListChecks,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
@@ -1280,6 +1284,7 @@ function GoalSettings({
   onDeleted: () => void;
 }) {
   const updateGoal = useMutation(api.goals.update);
+  const changeProgressType = useMutation(api.goals.changeProgressType);
   const removeGoal = useMutation(api.goals.remove);
   const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
   const coverUrl = useQuery(
@@ -1601,6 +1606,16 @@ function GoalSettings({
         </div>
       </div>
 
+      {/* Progress type switcher — only when goal has no traction */}
+      <ProgressTypeSwitcher
+        goalId={goalId}
+        currentType={progressType ?? "number"}
+        hasTraction={hasTraction}
+        supporterCount={supporterCount}
+        changeProgressType={changeProgressType}
+        editing={editing}
+      />
+
       {canEditTargetFields && (
         <div className="mb-3">
           {targetFieldsLocked && (
@@ -1748,5 +1763,149 @@ function GoalSettings({
 
       {err && <p className="mt-3 text-xs text-[var(--color-danger)]">{err}</p>}
     </motion.section>
+  );
+}
+
+/**
+ * Progress type switcher — lets the owner change a goal from number → milestones
+ * → streak (or vice versa). Only available when the goal has no traction.
+ */
+function ProgressTypeSwitcher({
+  goalId,
+  currentType,
+  hasTraction,
+  supporterCount,
+  changeProgressType,
+  editing,
+}: {
+  goalId: Id<"goals">;
+  currentType: string;
+  hasTraction: boolean;
+  supporterCount: number;
+  changeProgressType: any;
+  editing: boolean;
+}) {
+  const [selectedType, setSelectedType] = useState(currentType);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  // Sync when goal data refreshes
+  useEffect(() => {
+    setSelectedType(currentType);
+  }, [currentType]);
+
+  if (!editing) {
+    return (
+      <div className="mb-3">
+        <span className="text-xs font-medium text-[var(--color-text-muted)]">
+          Progress type
+        </span>
+        <p className="text-sm text-[var(--color-text)] capitalize">
+          {currentType === "number" ? "Number target" : currentType === "streak" ? "Daily streak" : "Milestone checklist"}
+        </p>
+      </div>
+    );
+  }
+
+  if (hasTraction) {
+    return (
+      <div className="mb-3">
+        <span className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+          Progress type
+        </span>
+        <div className="flex items-start gap-2 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] px-3 py-2 text-xs text-[var(--color-text-muted)]">
+          <LockIcon size={12} className="mt-0.5 shrink-0" />
+          <span>
+            Tracking method is locked because this goal
+            {supporterCount > 0
+              ? ` has ${supporterCount} supporter${supporterCount === 1 ? "" : "s"}`
+              : " has logged progress"}.
+            Close this goal and create a new one to change it.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const TYPES = [
+    { id: "number", label: "Number target", icon: BarChart3 },
+    { id: "streak", label: "Daily streak", icon: Flame },
+    { id: "milestones", label: "Milestone checklist", icon: ListChecks },
+  ] as const;
+
+  const onApply = async () => {
+    if (selectedType === currentType) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await changeProgressType({
+        goalId,
+        progressType: selectedType,
+        // Defaults for number type — server coerces for milestones/streak
+        startValue: 0,
+        targetValue: 100,
+        unit: "units",
+        direction: "increase",
+      });
+    } catch (e: any) {
+      setErr(e?.message ?? "Couldn't change progress type");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mb-3">
+      <span className="mb-2 block text-xs font-medium text-[var(--color-text-muted)]">
+        Progress type
+      </span>
+      <div className="grid grid-cols-3 gap-2">
+        {TYPES.map((t) => {
+          const Icon = t.icon;
+          const active = selectedType === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSelectedType(t.id)}
+              className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition ${
+                active
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)]"
+              }`}
+            >
+              <Icon size={18} />
+              <span className="text-[11px] font-medium leading-tight">{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      {selectedType !== currentType && (
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
+          >
+            {busy ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+            {busy ? "Changing…" : `Switch to ${selectedType}`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedType(currentType)}
+            className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+          >
+            Cancel
+          </button>
+          {err && <span className="text-xs text-[var(--color-danger)]">{err}</span>}
+        </div>
+      )}
+      <p className="mt-1.5 text-[11px] text-[var(--color-text-dim)]">
+        {selectedType === "milestones" && "We'll set up default milestones you can edit."}
+        {selectedType === "streak" && "Tracks consecutive days of progress."}
+        {selectedType === "number" && "Track a measurable target (start → goal)."}
+      </p>
+    </div>
   );
 }

@@ -681,6 +681,170 @@ export const toggleMilestone = mutation({
   },
 });
 
+/**
+ * Change a goal's progress type. Only allowed when the goal has no traction
+ * (no supporters, no logged progress) — mirrors the product philosophy that
+ * progressType is a commitment to supporters.
+ *
+ * Server-side coercion per type (same as `create`):
+ *   milestones → startValue=0, unit="milestones", targetValue=milestones.length
+ *   streak     → startValue=0, unit="days", direction="increase"
+ *   number     → keeps client-sent values with validation
+ */
+export const changeProgressType = mutation({
+  args: {
+    goalId: v.id("goals"),
+    progressType: v.union(
+      v.literal("number"),
+      v.literal("streak"),
+      v.literal("milestones")
+    ),
+    // Only used for "number":
+    startValue: v.optional(v.number()),
+    targetValue: v.optional(v.number()),
+    unit: v.optional(v.string()),
+    direction: v.optional(v.union(v.literal("increase"), v.literal("decrease"))),
+    // Only used for "milestones":
+    milestones: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          title: v.string(),
+        })
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const goal = await ctx.db.get(args.goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not found");
+
+    // Traction gate — no changes once the goal has supporters or progress.
+    const hasTraction =
+      (goal.supporterCount ?? 0) > 0 ||
+      (goal.currentValue ?? 0) !== (goal.startValue ?? 0);
+    if (hasTraction) {
+      throw new Error(
+        "This goal already has supporters or logged progress. Close it and create a new one to change the tracking method."
+      );
+    }
+
+    let startValue: number;
+    let currentValue: number;
+    let targetValue: number;
+    let direction: "increase" | "decrease";
+    let unit: string;
+    let milestones: Array<{ id: string; title: string; done: boolean; completedAt?: number }> | undefined;
+
+    if (args.progressType === "milestones") {
+      startValue = 0;
+      currentValue = 0;
+      direction = "increase";
+      unit = "milestones";
+      milestones = (args.milestones ?? []).map((m) => ({
+        id: m.id,
+        title: m.title,
+        done: false,
+      }));
+      targetValue = milestones.length;
+    } else if (args.progressType === "streak") {
+      startValue = 0;
+      currentValue = 0;
+      direction = "increase";
+      unit = "days";
+      targetValue = args.targetValue ?? 30;
+      milestones = undefined;
+    } else {
+      // "number"
+      startValue = args.startValue ?? 0;
+      targetValue = args.targetValue ?? 100;
+      currentValue = startValue;
+      direction = args.direction ?? "increase";
+      unit = args.unit ?? "units";
+      milestones = undefined;
+      if (startValue === targetValue) throw new Error("Start and target must differ");
+    }
+
+    await ctx.db.patch(args.goalId, {
+      progressType: args.progressType,
+      startValue,
+      currentValue,
+      targetValue,
+      direction,
+      unit,
+      milestones,
+      updatedAt: Date.now(),
+    });
+
+    return { ok: true, progressType: args.progressType };
+  },
+});
+
+/** Add a milestone to an existing milestone-type goal. */
+export const addMilestone = mutation({
+  args: {
+    goalId: v.id("goals"),
+    title: v.string(),
+  },
+  handler: async (ctx, { goalId, title }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const goal = await ctx.db.get(goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not found");
+    if (goal.progressType !== "milestones") throw new Error("Not a milestone goal");
+
+    const trimmed = title.trim();
+    if (!trimmed) throw new Error("Milestone title can't be empty");
+
+    const current = goal.milestones ?? [];
+    const id = `m${current.length + 1}_${Date.now()}`;
+    const milestones = [...current, { id, title: trimmed, done: false }];
+    const completedCount = milestones.filter((m) => m.done).length;
+
+    await ctx.db.patch(goalId, {
+      milestones,
+      targetValue: milestones.length,
+      currentValue: completedCount,
+      updatedAt: Date.now(),
+    });
+
+    return { id };
+  },
+});
+
+/** Remove a milestone from an existing milestone-type goal (only if not done). */
+export const removeMilestone = mutation({
+  args: {
+    goalId: v.id("goals"),
+    milestoneId: v.string(),
+  },
+  handler: async (ctx, { goalId, milestoneId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const goal = await ctx.db.get(goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not found");
+    if (goal.progressType !== "milestones") throw new Error("Not a milestone goal");
+
+    const current = goal.milestones ?? [];
+    const target = current.find((m) => m.id === milestoneId);
+    if (!target) throw new Error("Milestone not found");
+    if (target.done) throw new Error("Can't remove a completed milestone");
+
+    const milestones = current.filter((m) => m.id !== milestoneId);
+    const completedCount = milestones.filter((m) => m.done).length;
+
+    await ctx.db.patch(goalId, {
+      milestones,
+      targetValue: milestones.length,
+      currentValue: completedCount,
+      updatedAt: Date.now(),
+    });
+
+    return { ok: true };
+  },
+});
+
 /** Delete a goal and its associated rows. */
 export const remove = mutation({
   args: { goalId: v.id("goals") },
