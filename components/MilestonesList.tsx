@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronDown, ChevronUp, Loader2, Send, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Loader2, Send, Plus, Trash2, Pencil, X } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -68,9 +68,13 @@ function MilestoneCard({
 }) {
   const toggleMilestone = useMutation(api.goals.toggleMilestone);
   const removeMilestone = useMutation(api.goals.removeMilestone);
+  const renameMilestone = useMutation(api.goals.renameMilestone);
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(milestone.title);
+  const [renaming, setRenaming] = useState(false);
 
   const onToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -92,6 +96,23 @@ function MilestoneCard({
       await removeMilestone({ goalId, milestoneId: milestone.id });
     } finally {
       setRemoving(false);
+    }
+  };
+
+  const onRename = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draftTitle.trim() || draftTitle.trim() === milestone.title) {
+      setEditingTitle(false);
+      setDraftTitle(milestone.title);
+      return;
+    }
+    setRenaming(true);
+    try {
+      await renameMilestone({ goalId, milestoneId: milestone.id, title: draftTitle.trim() });
+      setEditingTitle(false);
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -124,26 +145,81 @@ function MilestoneCard({
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
         </button>
-        <span
-          className={`flex-1 text-sm ${
-            milestone.done
-              ? "text-[var(--color-text-muted)] line-through"
-              : "text-[var(--color-text)]"
-          }`}
-        >
-          {milestone.title}
-        </span>
-        {/* Remove button (owners only, undone milestones only) */}
-        {isOwner && !milestone.done && (
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={removing}
-            className="shrink-0 rounded-md p-1 text-[var(--color-text-dim)] transition hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] disabled:opacity-50"
-            aria-label="Remove milestone"
-          >
-            {removing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          </button>
+        {editingTitle ? (
+          <form onSubmit={onRename} className="flex flex-1 items-center gap-1">
+            <input
+              autoFocus
+              type="text"
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setEditingTitle(false);
+                  setDraftTitle(milestone.title);
+                }
+              }}
+              className="flex-1 rounded-md border border-[var(--color-primary)] bg-white px-2 py-1 text-sm text-[var(--color-text)] focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={renaming || !draftTitle.trim()}
+              className="rounded-md p-1 text-[var(--color-success)] transition hover:bg-[var(--color-success)]/10 disabled:opacity-50"
+              aria-label="Save"
+            >
+              {renaming ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingTitle(false);
+                setDraftTitle(milestone.title);
+              }}
+              className="rounded-md p-1 text-[var(--color-text-dim)] transition hover:bg-[var(--color-bg-elev)]"
+              aria-label="Cancel"
+            >
+              <X size={14} />
+            </button>
+          </form>
+        ) : (
+          <>
+            <span
+              className={`flex-1 text-sm ${
+                milestone.done
+                  ? "text-[var(--color-text-muted)] line-through"
+                  : "text-[var(--color-text)]"
+              }`}
+            >
+              {milestone.title}
+            </span>
+            {/* Edit button (owners only, undone milestones only) */}
+            {isOwner && !milestone.done && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingTitle(true);
+                }}
+                className="shrink-0 rounded-md p-1 text-[var(--color-text-dim)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
+                aria-label="Rename milestone"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+            {/* Remove button (owners only, undone milestones only) */}
+            {isOwner && !milestone.done && (
+              <button
+                type="button"
+                onClick={onRemove}
+                disabled={removing}
+                className="shrink-0 rounded-md p-1 text-[var(--color-text-dim)] transition hover:bg-[var(--color-danger)]/10 hover:text-[var(--color-danger)] disabled:opacity-50"
+                aria-label="Remove milestone"
+              >
+                {removing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              </button>
+            )}
+          </>
         )}
         {/* Expand chevron */}
         {expanded ? (

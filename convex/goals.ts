@@ -845,6 +845,32 @@ export const removeMilestone = mutation({
   },
 });
 
+/** Rename an existing milestone (owner only). */
+export const renameMilestone = mutation({
+  args: {
+    goalId: v.id("goals"),
+    milestoneId: v.string(),
+    title: v.string(),
+  },
+  handler: async (ctx, { goalId, milestoneId, title }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    const goal = await ctx.db.get(goalId);
+    if (!goal || goal.ownerId !== userId) throw new Error("Not found");
+    if (goal.progressType !== "milestones") throw new Error("Not a milestone goal");
+
+    const trimmed = title.trim();
+    if (!trimmed) throw new Error("Milestone title can't be empty");
+
+    const milestones = (goal.milestones ?? []).map((m) =>
+      m.id === milestoneId ? { ...m, title: trimmed } : m
+    );
+
+    await ctx.db.patch(goalId, { milestones, updatedAt: Date.now() });
+    return { ok: true };
+  },
+});
+
 /** Delete a goal and its associated rows. */
 export const remove = mutation({
   args: { goalId: v.id("goals") },
@@ -953,7 +979,44 @@ export const logStreakDay = mutation({
     const alreadyLoggedToday = todaysUpdates.some((u) => u.type === "value");
     if (alreadyLoggedToday) throw new Error("Already logged today");
 
-    const newValue = (goal.currentValue ?? 0) + 1;
+    // --- Streak continuity check ---
+    // If the last streak log was more than ~48h ago (user's TZ), the streak
+    // is broken — reset to 1 instead of incrementing. The 48h window (not
+    // 24h) gives timezone slack and lets someone log late the next day.
+    const lastStreakUpdate = todaysUpdates.length > 0
+      ? // Today's updates exist but none are value-type (already checked above).
+        // Look back further for the most recent value update.
+        (await ctx.db
+          .query("updates")
+          .withIndex("by_goal_created", (q) =>
+            q.eq("goalId", goalId).lt("createdAt", todayStart)
+          )
+          .order("desc")
+          .first())
+      : // No updates at all today — find the most recent one ever.
+        (await ctx.db
+          .query("updates")
+          .withIndex("by_goal_created", (q) =>
+            q.eq("goalId", goalId).lt("createdAt", todayStart)
+          )
+          .order("desc")
+          .first());
+
+    let newValue: number;
+    const lastValueUpdate = lastStreakUpdate?.type === "value" ? lastStreakUpdate : null;
+    if (lastValueUpdate) {
+      const gapMs = now - lastValueUpdate.createdAt;
+      const hoursSinceLast = gapMs / 3_600_000;
+      if (hoursSinceLast > 48) {
+        // Streak broken — start fresh.
+        newValue = 1;
+      } else {
+        newValue = (goal.currentValue ?? 0) + 1;
+      }
+    } else {
+      // First ever log.
+      newValue = 1;
+    }
     const updateId = await ctx.db.insert("updates", {
       goalId,
       ownerId: userId,

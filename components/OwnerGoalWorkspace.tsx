@@ -8,6 +8,7 @@ import {
   ExternalLink,
   FileText,
   Flag,
+  Flame,
   Home,
   Image as ImageIcon,
   Link as LinkIcon,
@@ -40,6 +41,7 @@ type WorkspaceGoal = {
   supporterCount?: number;
   coreMotivatorMin?: number;
   progressType?: string;
+  unit?: string;
   milestones?: Array<{
     id: string;
     title: string;
@@ -132,7 +134,9 @@ export function OwnerGoalWorkspace({
 
   const navItems: WorkspaceNavItem[] = [
     { label: "Overview", href: "#overview", icon: Home, active: true },
-    { label: "Milestones", href: "#milestones", icon: Flag },
+    ...(goal.progressType === "milestones"
+      ? [{ label: "Milestones", href: "#milestones", icon: Flag }]
+      : []),
     { label: "Updates", href: "#updates", icon: MessageCircle },
     { label: "Support circle", href: "#support-circle", icon: Users },
     { label: "Public page", href: publicUrl || "#public-page", icon: ExternalLink, external: true },
@@ -244,12 +248,20 @@ export function OwnerGoalWorkspace({
               className="col-span-2 sm:col-span-1"
             />
             <MomentumStat
-              icon={Flag}
-              label="Milestones"
-              value={`${goal.currentValue ?? milestones.filter((m) => m.done).length} of ${
-                goal.targetValue ?? milestones.length
-              }`}
-              detail={firstIncomplete?.title || "All complete"}
+              icon={goal.progressType === "streak" ? Flame : goal.progressType === "number" ? CircleGauge : Flag}
+              label={goal.progressType === "streak" ? "Streak" : goal.progressType === "number" ? "Progress" : "Milestones"}
+              value={
+                goal.progressType === "streak"
+                  ? `${goal.currentValue ?? 0}d`
+                  : `${goal.currentValue ?? milestones.filter((m) => m.done).length} of ${goal.targetValue ?? milestones.length}`
+              }
+              detail={
+                goal.progressType === "milestones"
+                  ? firstIncomplete?.title || "All complete"
+                  : goal.progressType === "streak"
+                  ? "days logged"
+                  : goal.unit ?? "units"
+              }
             />
             <MomentumStat
               icon={Users}
