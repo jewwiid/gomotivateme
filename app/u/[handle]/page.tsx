@@ -245,7 +245,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-2 pt-1">
                     <ShareProfileButton url={profileUrl} name={profileName} />
                     {!isMe && (
-                      <FollowButton followeeId={user._id} />
+                      <FollowButton followeeId={user._id} signedIn={!!me} />
                     )}
                     {isMe && (
                       <Link
@@ -478,11 +478,24 @@ function ShareProfileButton({ url, name }: { url: string; name: string }) {
  * - "pending"                     → "Requested" (calls cancel)
  * - "accepted"                    → "Following" (calls cancel / unfollow)
  */
-function FollowButton({ followeeId }: { followeeId: Id<"users"> }) {
-  const status = useQuery(api.follows.amIFollowing, { followeeId });
+function FollowButton({ followeeId, signedIn }: { followeeId: Id<"users">; signedIn: boolean }) {
+  const status = useQuery(api.follows.amIFollowing, signedIn ? { followeeId } : "skip");
   const request = useMutation(api.follows.request);
   const cancel = useMutation(api.follows.cancel);
   const [busy, setBusy] = useState(false);
+
+  // Not signed in → render as a link to the login page.
+  if (!signedIn) {
+    return (
+      <Link
+        href="/login"
+        className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]"
+      >
+        <UserPlus size={13} />
+        Follow
+      </Link>
+    );
+  }
 
   // While the status query is loading, render a placeholder with the same
   // width as the Follow button so the header doesn't shift on resolve.
