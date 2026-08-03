@@ -641,9 +641,11 @@ export default defineSchema({
     attempts: v.number(),
     createdAt: v.number(),
     sentAt: v.optional(v.number()),
+    /** When the user opened/saw this notification in-app. null = unread. */
+    readAt: v.optional(v.number()),
   })
     .index("by_status_created", ["status", "createdAt"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId", "createdAt"]),
 
   /**
    * Follow graph — approval-gated.

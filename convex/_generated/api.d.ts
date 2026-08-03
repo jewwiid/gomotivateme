@@ -23,6 +23,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as moderation from "../moderation.js";
 import type * as motivation from "../motivation.js";
 import type * as notificationPrefs from "../notificationPrefs.js";
+import type * as notifications from "../notifications.js";
 import type * as public_ from "../public.js";
 import type * as reactions from "../reactions.js";
 import type * as reports from "../reports.js";
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   moderation: typeof moderation;
   motivation: typeof motivation;
   notificationPrefs: typeof notificationPrefs;
+  notifications: typeof notifications;
   public: typeof public_;
   reactions: typeof reactions;
   reports: typeof reports;

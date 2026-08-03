@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Wordmark } from "@/components/Wordmark";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function Header({
   previewUser,
@@ -168,6 +169,7 @@ export function Header({
               >
                 New goal
               </Link>
+              <NotificationBell />
               <div className="relative">
               <button
                 ref={triggerRef}
