@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useQuery } from "convex/react";
 import { ArrowRight, Calendar } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
+import { api } from "@/convex/_generated/api";
 import { CategoryIcon } from "./CategoryIcon";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -21,6 +23,7 @@ interface GoalDoc {
   createdAt: number;
   summary?: string;
   supporterCount?: number;
+  coverImageId?: Id<"_storage">;
 }
 
 const goalMedia = [
@@ -44,7 +47,15 @@ export function GoalCard({ goal }: { goal: GoalDoc }) {
   const daysLeft = goal.targetDate
     ? Math.ceil((goal.targetDate - Date.now()) / (1000 * 60 * 60 * 24))
     : null;
-  const media = goalMedia[Math.abs(goal.category.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)) % goalMedia.length];
+  const fallbackMedia = goalMedia[Math.abs(goal.category.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)) % goalMedia.length];
+
+  // Look up the real cover image URL if the goal has one.
+  const coverUrls = useQuery(
+    api.storage.getUrls,
+    goal.coverImageId ? { ids: [goal.coverImageId] } : "skip"
+  );
+  const coverUrl = goal.coverImageId && coverUrls ? (coverUrls as any)[goal.coverImageId] : null;
+  const imgSrc = coverUrl ?? fallbackMedia;
 
   return (
     <motion.div whileHover={{ x: 3 }} transition={{ type: "spring", stiffness: 320, damping: 24 }}>
@@ -54,7 +65,7 @@ export function GoalCard({ goal }: { goal: GoalDoc }) {
       >
         <div className="relative aspect-[1.65/1] overflow-hidden rounded-xl bg-[var(--color-primary-soft)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={media} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
+          <img src={imgSrc} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
