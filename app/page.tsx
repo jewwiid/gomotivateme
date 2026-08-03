@@ -2,31 +2,22 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { motion } from "framer-motion";
-import { ArrowRight, Heart, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
-import { CategoryIcon } from "@/components/CategoryIcon";
+import { Id } from "@/convex/_generated/dataModel";
 import { FEATURED_CATEGORIES } from "@/lib/categories";
-import { formatNumber, relativeTime } from "@/lib/format";
+import { relativeTime } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Header } from "@/components/Header";
-import { WelcomeModal } from "@/components/WelcomeModal";
 
-const FALLBACK_GOAL_MEDIA = [
-  "/illustrations/hero-community-v3.webp",
-  "/illustrations/steps/plan-v3.webp",
-  "/illustrations/steps/share-v3.webp",
-  "/illustrations/steps/move-v3.webp",
-  "/illustrations/steps/together-v3.webp",
-];
+const easeOut = [0.16, 1, 0.3, 1] as const;
 
-const HERO_MEDIA = [
-  { src: "/illustrations/steps/move-v3.webp", alt: "A member getting ready to take the next step toward a goal", tilt: "-rotate-[7deg]" },
-  { src: "/illustrations/steps/plan-v3.webp", alt: "A member planning a personal goal", tilt: "-rotate-[3deg]" },
-  { src: "/illustrations/hero-community-v3.webp", alt: "Friends supporting one another toward their goals", tilt: "rotate-0" },
-  { src: "/illustrations/steps/share-v3.webp", alt: "Friends sharing a progress update", tilt: "rotate-[3deg]" },
-  { src: "/illustrations/steps/together-v3.webp", alt: "A support team working toward a shared goal", tilt: "rotate-[7deg]" },
+const HERO_SLIDES = [
+  { src: "/illustrations/hero-community-v3.webp", alt: "People supporting each other's goals" },
+  { src: "/illustrations/motivation-circle-v3.webp", alt: "Your motivation circle" },
+  { src: "/illustrations/steps/together-v3.webp", alt: "Working together toward a goal" },
+  { src: "/illustrations/steps/share-v3.webp", alt: "Sharing progress with your team" },
 ];
 
 export default function HomePage() {
@@ -35,16 +26,20 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const coverIds = useMemo(
+  const coverImageIds = useMemo(
     () =>
       Array.from(
-        new Set((recent ?? []).map((goal: any) => goal.coverImageId).filter(Boolean))
+        new Set(
+          (recent ?? [])
+            .map((goal: any) => goal.coverImageId)
+            .filter(Boolean) as Id<"_storage">[]
+        )
       ),
     [recent]
   );
   const coverUrls = useQuery(
     api.storage.getUrls,
-    coverIds.length > 0 ? { ids: coverIds as any } : "skip"
+    coverImageIds.length > 0 ? { ids: coverImageIds } : "skip"
   );
 
   const filteredGoals = useMemo(() => {
@@ -59,155 +54,194 @@ export default function HomePage() {
           (goal.ownerName ?? "").toLowerCase().includes(query)
       );
     }
-    return goals.slice(0, 5);
+    return goals.slice(0, 6);
   }, [activeCategory, recent, searchQuery]);
 
   const startGoalHref = user ? "/dashboard/new" : "/signup";
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
-      {!user && <WelcomeModal />}
-
+    <div className="min-h-screen overflow-x-clip bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
 
       <main>
-        <section className="relative px-5 pb-6 pt-20 sm:px-8 sm:pt-28 lg:pt-32">
-          <div className="mx-auto max-w-5xl text-center">
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45 }}
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6e981b]"
-            >
-              <span className="h-2 w-2 rounded-full bg-[#b9e85f]" />
-              Goals grow with support
-            </motion.p>
-            <motion.h1
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.07 }}
-              className="mx-auto mt-5 max-w-5xl text-balance font-display text-[clamp(3rem,7.25vw,6.5rem)] font-bold leading-[0.92] tracking-[-0.06em] text-[var(--color-text)]"
-            >
-              Every goal goes further
-              <br className="hidden sm:block" />
-              with people behind it.
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.14 }}
-              className="mx-auto mt-6 max-w-xl text-pretty text-base leading-7 text-[var(--color-text-muted)] sm:text-lg"
-            >
-              Share your progress. Let the people who care help you keep going.
-            </motion.p>
+        <section className="px-5 pb-16 pt-16 sm:px-8 sm:pb-24 sm:pt-24 lg:pb-28 lg:pt-28">
+          <div className="shell-bleed grid items-center gap-14 lg:grid-cols-12 lg:gap-10">
+            <div className="lg:col-span-7 lg:pr-8">
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: easeOut }}
+                className="font-mono text-xs font-medium text-[var(--color-primary)]"
+              >
+                A public home for personal goals
+              </motion.p>
+              <motion.h1
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.65, delay: 0.05, ease: easeOut }}
+                className="mt-6 max-w-[12ch] text-balance font-display text-[clamp(3.4rem,7.2vw,7rem)] font-semibold leading-[0.88] tracking-[-0.065em]"
+              >
+                Goals are harder to quit when people show up.
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.14, ease: easeOut }}
+                className="mt-8 grid max-w-2xl gap-7 border-t border-[var(--color-border)] pt-7 sm:grid-cols-[1fr_auto] sm:items-end"
+              >
+                <p className="max-w-[34rem] text-pretty text-base leading-7 text-[var(--color-text-secondary)] sm:text-lg">
+                  Give your goal one clear page. Post the work as it happens, and let the people you trust keep you moving.
+                </p>
+                <div className="flex flex-wrap items-center gap-4 sm:justify-end">
+                  <Link
+                    href={startGoalHref}
+                    className="inline-flex min-h-12 items-center bg-[var(--color-primary)] px-5 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)] active:translate-y-0"
+                  >
+                    Start a goal <span className="ml-3" aria-hidden>→</span>
+                  </Link>
+                  <a
+                    href="#explore"
+                    className="inline-flex min-h-12 items-center border-b border-[var(--color-text)] text-sm font-semibold transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  >
+                    See public goals
+                  </a>
+                </div>
+              </motion.div>
+            </div>
+
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.21 }}
-              className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.12, ease: easeOut }}
+              className="relative lg:col-span-5"
             >
-              <Link href={startGoalHref} className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 py-3.5 text-base font-bold text-white shadow-[0_8px_20px_rgba(4,77,252,0.18)] transition hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)]">
-                Start a goal <ArrowRight size={17} />
-              </Link>
-              <a href="#explore" className="inline-flex items-center gap-2 px-3 py-3 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">
-                Explore goals <ArrowRight size={16} />
-              </a>
+              <div className="absolute -right-5 -top-5 h-16 w-16 bg-[var(--color-primary)] sm:-right-8 sm:-top-8 sm:h-24 sm:w-24" aria-hidden />
+              <HeroCarousel />
             </motion.div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.28 }}
-            className="shell-bleed mt-16 grid grid-cols-3 items-end gap-3 sm:mt-20 sm:grid-cols-5 sm:gap-5"
-          >
-            {HERO_MEDIA.map((media, index) => (
-              <div
-                key={media.src}
-                className={`${media.tilt} ${index > 2 ? "hidden sm:block" : ""} relative overflow-hidden rounded-[1.35rem] bg-[var(--color-bg-sunken)] shadow-[0_14px_30px_rgba(31,31,27,0.08)] ${index === 2 ? "aspect-[1.05/1] sm:-translate-y-5" : "aspect-[.84/1]"}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={media.src} alt={media.alt} className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </motion.div>
         </section>
 
-        <section id="how-it-works" className="relative mt-12 scroll-mt-24 overflow-hidden bg-[var(--color-bg-elev)] px-5 py-20 sm:mt-16 sm:px-8 sm:py-28">
-          <div className="pointer-events-none absolute inset-x-[-8%] -top-14 h-24 rounded-[50%] bg-[var(--color-bg)]" />
-          <div className="relative shell-content grid items-center gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-24">
-            <div className="relative mx-auto w-full max-w-xl rounded-[2rem] bg-[#dff2ae] p-7 sm:p-10">
-              <div className="absolute left-8 top-8 h-8 w-8 rounded-full border-[5px] border-[#f7fbeb]" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/illustrations/steps/share-v3.webp" alt="Friends sharing a progress update with supporters" className="mx-auto w-full max-w-md object-contain" />
-              <div className="absolute bottom-7 left-7 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[var(--color-text)] shadow-sm sm:bottom-10 sm:left-10">You&apos;ve got this.</div>
-            </div>
+        <section id="how-it-works" className="scroll-mt-28 border-y border-[var(--color-border)] bg-[var(--color-bg-elev)] px-5 py-20 sm:px-8 sm:py-28">
+          <div className="shell-content grid gap-14 lg:grid-cols-[0.82fr_1.18fr] lg:gap-24">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6e981b]">How it works</p>
-              <h2 className="mt-4 max-w-xl text-balance font-display text-4xl font-bold leading-[0.98] tracking-[-0.05em] text-[var(--color-text)] sm:text-6xl">Support makes progress stick.</h2>
-              <p className="mt-5 max-w-xl text-base leading-7 text-[var(--color-text-muted)] sm:text-lg">GoMotivateMe helps you turn a meaningful goal into lasting change, with encouragement from people who want to see you win.</p>
-              <ol className="mt-9 divide-y divide-[var(--color-border-strong)] border-y border-[var(--color-border-strong)]">
-                {[
-                  ["01", "Set a goal", "Choose something meaningful, then decide what progress looks like."],
-                  ["02", "Invite your people", "Share one link with the people you want beside you."],
-                  ["03", "Keep showing up", "Post the small wins, the stuck moments, and what comes next."],
-                ].map(([number, title, body]) => (
-                  <li key={number} className="grid grid-cols-[3.5rem_1fr] gap-3 py-5 sm:grid-cols-[5rem_1fr] sm:py-6">
-                    <span className="pt-0.5 text-2xl font-bold tracking-[-0.05em] text-[var(--color-primary)]">{number}</span>
-                    <div><h3 className="text-lg font-bold tracking-[-0.03em] text-[var(--color-text)]">{title}</h3><p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">{body}</p></div>
-                  </li>
-                ))}
-              </ol>
-              <a href="#explore" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">Browse goals <ArrowRight size={16} /></a>
+              <p className="font-mono text-xs text-[var(--color-primary)]">How it works</p>
+              <h2 className="mt-5 max-w-[13ch] text-balance font-display text-4xl font-semibold leading-[0.96] tracking-[-0.05em] sm:text-6xl">
+                Give the work somewhere to live.
+              </h2>
+              <p className="mt-6 max-w-md text-base leading-7 text-[var(--color-text-secondary)]">
+                Not another private checklist. A living record of the target, the setbacks, and the people who helped you through them.
+              </p>
             </div>
+
+            <ol className="border-t border-[var(--color-border-strong)]">
+              {[
+                ["01", "Name the real goal", "Set the target, deadline, milestones, and the reason you care about finishing."],
+                ["02", "Choose your kind of support", "Ask for encouragement, advice, check-ins, or someone to do the work alongside you."],
+                ["03", "Leave an honest trail", "Post wins and difficult weeks. Progress is more useful when it looks like real life."],
+              ].map(([number, title, body]) => (
+                <li key={number} className="grid gap-4 border-b border-[var(--color-border-strong)] py-7 sm:grid-cols-[4rem_1fr] sm:gap-6 sm:py-8">
+                  <span className="font-mono text-xs text-[var(--color-primary)]">{number}</span>
+                  <div className="grid gap-3 md:grid-cols-[0.8fr_1.2fr] md:gap-8">
+                    <h3 className="text-xl font-semibold tracking-[-0.025em]">{title}</h3>
+                    <p className="max-w-md text-sm leading-6 text-[var(--color-text-secondary)]">{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
-        <section id="explore" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28">
+        <section id="explore" className="scroll-mt-28 px-5 py-20 sm:px-8 sm:py-28">
           <div className="shell-content">
-            <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
+            <div className="grid gap-8 border-b border-[var(--color-border-strong)] pb-8 lg:grid-cols-[1fr_24rem] lg:items-end">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6e981b]">Find a goal to stand behind</p>
-                <h2 className="mt-4 text-balance font-display text-4xl font-bold leading-[0.96] tracking-[-0.055em] text-[var(--color-text)] sm:text-6xl">Small steps. Real people.</h2>
+                <p className="font-mono text-xs text-[var(--color-primary)]">Open goals</p>
+                <h2 className="mt-4 text-balance font-display text-4xl font-semibold leading-[0.96] tracking-[-0.05em] sm:text-6xl">
+                  See what people are working on.
+                </h2>
               </div>
-              <label className="relative block w-full max-w-sm">
-                <span className="sr-only">Search goals</span>
-                <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search goals" className="w-full rounded-xl border border-[var(--color-border-strong)] bg-transparent py-3 pl-11 pr-4 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15" />
+              <label className="block border-b border-[var(--color-text)] pb-3">
+                <span className="block font-mono text-[11px] text-[var(--color-text-muted)]">Search public goals</span>
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Type a goal, person, or topic"
+                  className="mt-2 w-full bg-transparent text-base text-[var(--color-text)] outline-none placeholder:text-[var(--color-text-dim)]"
+                />
               </label>
             </div>
 
-            <div className="mt-7 flex flex-wrap gap-2">
+            <div className="flex gap-6 overflow-x-auto border-b border-[var(--color-border)] [scrollbar-width:none]">
               <CategoryFilter active={activeCategory === null} label="All goals" onClick={() => setActiveCategory(null)} />
-              {FEATURED_CATEGORIES.map((category) => <CategoryFilter key={category.id} active={activeCategory === category.id} label={category.label} icon={<CategoryIcon category={category.id} size={14} />} onClick={() => setActiveCategory(category.id)} />)}
+              {FEATURED_CATEGORIES.map((category) => (
+                <CategoryFilter
+                  key={category.id}
+                  active={activeCategory === category.id}
+                  label={category.label}
+                  onClick={() => setActiveCategory(category.id)}
+                />
+              ))}
             </div>
 
-            {filteredGoals.length === 0 ? (
-              <div className="mt-12 grid place-items-center border-y border-[var(--color-border)] py-16 text-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/illustrations/empty-new-beginning-v3.webp" alt="A seedling ready to grow" className="h-28 w-28 object-contain" />
-                <p className="mt-4 max-w-sm text-base text-[var(--color-text-muted)]">{recent === undefined ? "Loading…" : "No goals match that search yet. Be the first to share yours."}</p>
-                <Link href={startGoalHref} className="mt-5 text-sm font-bold text-[var(--color-primary)]">Start a goal <span aria-hidden>→</span></Link>
+            {recent === undefined ? (
+              <div aria-label="Loading public goals">
+                {[0, 1, 2].map((item) => (
+                  <div key={item} className="grid animate-pulse gap-4 border-b border-[var(--color-border)] py-7 sm:grid-cols-[3rem_1fr_9rem]">
+                    <div className="h-3 w-6 bg-[var(--color-bg-sunken)]" />
+                    <div className="space-y-3"><div className="h-5 max-w-sm bg-[var(--color-bg-sunken)]" /><div className="h-3 max-w-xs bg-[var(--color-bg-sunken)]" /></div>
+                    <div className="h-3 bg-[var(--color-bg-sunken)]" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredGoals.length === 0 ? (
+              <div className="border-b border-[var(--color-border)] py-16">
+                <p className="max-w-lg text-xl font-medium">No public goals match that search.</p>
+                <p className="mt-2 text-sm text-[var(--color-text-muted)]">Try a broader term, or put the first goal in this category on the board.</p>
+                <Link href={startGoalHref} className="mt-7 inline-block border-b border-[var(--color-primary)] pb-1 text-sm font-semibold text-[var(--color-primary)]">Start a goal →</Link>
               </div>
             ) : (
-              <div className="mt-10 grid gap-x-5 gap-y-9 md:grid-cols-2 lg:grid-cols-4">
+              <div>
                 {filteredGoals.map((goal: any, index) => (
-                  <GoalTile key={goal._id} goal={goal} image={goal.coverImageId ? coverUrls?.[goal.coverImageId] ?? undefined : FALLBACK_GOAL_MEDIA[index]} fallbackImage={FALLBACK_GOAL_MEDIA[index]} featured={index === 0} />
+                  <GoalRow
+                    key={goal._id}
+                    goal={goal}
+                    index={index}
+                    coverUrl={
+                      goal.coverImageId
+                        ? coverUrls?.[goal.coverImageId as Id<"_storage">] ?? undefined
+                        : null
+                    }
+                  />
                 ))}
               </div>
             )}
-            <div className="mt-11"><Link href="/explore" className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-primary)] px-5 py-3 text-sm font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white">Explore all goals <ArrowRight size={16} /></Link></div>
+
+            <Link
+              href="/explore"
+              className="mt-8 inline-flex min-h-11 items-center border-b border-[var(--color-text)] text-sm font-semibold transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            >
+              Browse every public goal <span className="ml-3" aria-hidden>→</span>
+            </Link>
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-[var(--color-gold-soft)] px-5 py-24 text-center sm:px-8 sm:py-32">
-          <div className="pointer-events-none absolute inset-x-[-10%] -top-12 h-20 rounded-[50%] bg-[var(--color-bg)]" />
-          <div className="pointer-events-none absolute inset-x-[-10%] -bottom-12 h-20 rounded-[50%] bg-[var(--color-bg)]" />
-          <div className="relative mx-auto max-w-4xl">
-            <p className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-gold-text)]"><Heart size={17} className="text-[var(--color-gold-text)]" fill="currentColor" /> A little support changes everything</p>
-            <h2 className="mt-5 text-balance font-display text-4xl font-bold leading-[0.96] tracking-[-0.055em] text-[var(--color-text)] sm:text-6xl">Your next step deserves a team.</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[var(--color-gold-text)] sm:text-lg">Share your goal, rally your people, and move forward with confidence.</p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"><Link href={startGoalHref} className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 py-3.5 text-base font-bold text-white transition hover:bg-[var(--color-primary-dark)]">Start a goal <ArrowRight size={17} /></Link><a href="#explore" className="inline-flex items-center gap-2 px-3 py-3 text-sm font-bold text-[var(--color-primary)] transition hover:gap-3">Explore goals <ArrowRight size={16} /></a></div>
+        <section className="border-y border-[#27312d] bg-[#121816] px-5 py-16 text-white sm:px-8 sm:py-20">
+          <div className="shell-content grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <p className="font-mono text-xs text-[#8cabff]">Ready when the goal is real</p>
+              <h2 className="mt-5 max-w-[15ch] text-balance font-display text-4xl font-semibold leading-[0.95] tracking-[-0.05em] sm:text-6xl">
+                Don&apos;t let it disappear in a private note.
+              </h2>
+              <p className="mt-5 max-w-xl text-base leading-7 text-[#b8c1bd]">
+                Put the plan somewhere your people can find it—and come back when you need them.
+              </p>
+            </div>
+            <Link
+              href={startGoalHref}
+              className="inline-flex min-h-13 w-fit items-center bg-[#6f91ff] px-6 text-sm font-semibold text-[#0d1411] transition hover:-translate-y-0.5 hover:bg-white active:translate-y-0"
+            >
+              Make your goal public <span className="ml-4" aria-hidden>→</span>
+            </Link>
           </div>
         </section>
       </main>
@@ -215,26 +249,154 @@ export default function HomePage() {
   );
 }
 
-function GoalTile({ goal, image, fallbackImage, featured }: { goal: any; image: string | undefined; fallbackImage?: string; featured: boolean }) {
+function GoalRow({
+  goal,
+  index,
+  coverUrl,
+}: {
+  goal: any;
+  index: number;
+  coverUrl: string | null | undefined;
+}) {
   const progress = Math.max(0, Math.min(100, Number(goal.progress ?? 0)));
-  const resolvedImage = image ?? fallbackImage ?? "/illustrations/hero-community-v3.webp";
   return (
-    <motion.article initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ duration: 0.4 }} className={featured ? "md:col-span-2 lg:row-span-2 lg:col-span-2" : ""}>
-      <Link href={`/o/${goal.ownerHandle}/${goal.slug}`} className="group block">
-        <div className={`overflow-hidden rounded-[1rem] bg-[var(--color-bg-sunken)] ${featured ? "aspect-[1.32/1]" : "aspect-[1.45/1]"}`}>
-          {image === undefined ? (
-            <div className="h-full w-full animate-pulse bg-[var(--color-bg-sunken)]" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={resolvedImage} alt={`${goal.title} goal by ${goal.ownerName || "a GoMotivateMe member"}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />
-          )}
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-30px" }}
+      transition={{ duration: 0.45, ease: easeOut }}
+      className="border-b border-[var(--color-border)]"
+    >
+      <Link
+        href={`/o/${goal.ownerHandle}/${goal.slug}`}
+        className="group grid gap-4 py-7 transition sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-start sm:gap-5 sm:py-8 lg:grid-cols-[8rem_3rem_minmax(0,1fr)_8rem_9rem_2rem] lg:items-center"
+      >
+        {goal.coverImageId ? (
+          <div className="relative aspect-[16/9] overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-sunken)] sm:aspect-[4/3]">
+            {coverUrl === undefined ? (
+              <div className="h-full w-full animate-pulse bg-[var(--color-bg-sunken)]" />
+            ) : coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverUrl}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
+              />
+            ) : (
+              <div className="h-full w-full bg-[var(--color-bg-sunken)]" aria-hidden />
+            )}
+          </div>
+        ) : (
+          <div className="hidden aspect-[4/3] border border-[var(--color-border)] bg-[var(--color-bg-sunken)] sm:block" aria-hidden />
+        )}
+        <div className="grid min-w-0 gap-4 lg:contents">
+          <span className="font-mono text-xs text-[var(--color-text-dim)]">{String(index + 1).padStart(2, "0")}</span>
+          <div className="min-w-0">
+            <h3 className="text-balance font-display text-2xl font-semibold leading-tight tracking-[-0.035em] transition group-hover:text-[var(--color-primary)] sm:text-3xl">
+              {goal.title}
+            </h3>
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+              {goal.ownerName || "A GoMotivateMe member"} · shared {relativeTime(goal.createdAt)}
+            </p>
+          </div>
+          <span className="text-sm text-[var(--color-text-secondary)] lg:text-right">{formatCategory(goal.category)}</span>
+          <div>
+            <div className="flex items-center justify-between gap-3 font-mono text-xs text-[var(--color-text-muted)]">
+              <span>Progress</span><span className="tabular-nums">{Math.round(progress)}%</span>
+            </div>
+            <div className="mt-2 h-px bg-[var(--color-border-strong)]">
+              <div className="h-px bg-[var(--color-primary)]" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+          <span className="hidden text-right text-xl transition group-hover:translate-x-1 group-hover:text-[var(--color-primary)] lg:block" aria-hidden>→</span>
         </div>
-        <div className="px-1 pt-3"><div className="flex items-start justify-between gap-3"><h3 className={`${featured ? "text-xl sm:text-2xl" : "text-base"} font-bold leading-tight tracking-[-0.035em] text-[var(--color-text)]`}>{goal.title}</h3><span className="shrink-0 text-[11px] font-medium text-[var(--color-text-muted)]"><CategoryIcon category={goal.category} size={15} /></span></div><p className="mt-1 text-sm text-[var(--color-text-muted)]">by {goal.ownerName || "Someone"} · {relativeTime(goal.createdAt)}</p><div className="mt-4 flex items-center gap-3"><div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--color-bg-sunken)]"><div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${progress}%` }} /></div><span className="whitespace-nowrap text-xs font-semibold text-[var(--color-text-muted)]">{Math.round(progress)}% complete</span></div>{featured && <p className="mt-3 text-sm text-[var(--color-text-muted)]">{goal.supporterCount ? `${formatNumber(goal.supporterCount)} people cheering them on` : "Be one of the first people behind this goal"}</p>}</div>
       </Link>
     </motion.article>
   );
 }
 
-function CategoryFilter({ active, label, icon, onClick }: { active: boolean; label: string; icon?: React.ReactNode; onClick: () => void }) {
-  return <button onClick={onClick} className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${active ? "border-[var(--color-text)] bg-[var(--color-text)] text-white" : "border-[var(--color-border-strong)] bg-transparent text-[var(--color-text-secondary)] hover:border-[var(--color-text-muted)]"}`}>{icon}{label}</button>;
+function CategoryFilter({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`relative shrink-0 py-4 text-sm font-medium transition ${
+        active
+          ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+          : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function formatCategory(category?: string) {
+  if (!category) return "Personal goal";
+  return category
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+/**
+ * Auto-rotating carousel of hero illustration images.
+ * Fades between slides every 5 seconds, with dot navigation.
+ */
+function HeroCarousel() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="relative aspect-square overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-elev)]">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, scale: 1.02 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.6, ease: easeOut }}
+          className="absolute inset-0"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={HERO_SLIDES[index].src}
+            alt={HERO_SLIDES[index].alt}
+            className="h-full w-full object-cover"
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Dot navigation */}
+      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+        {HERO_SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setIndex(i)}
+            aria-label={`Slide ${i + 1}`}
+            className={`h-1.5 rounded-full transition-all ${
+              i === index
+                ? "w-6 bg-[var(--color-primary)]"
+                : "w-1.5 bg-white/40 hover:bg-white/60"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
