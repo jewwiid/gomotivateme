@@ -36,6 +36,8 @@ export const me = query({
       bio: (user as { bio?: string }).bio ?? null,
       coverImageId: (user as { coverImageId?: string }).coverImageId ?? null,
       isAdmin: (user as { isAdmin?: boolean }).isAdmin ?? false,
+      followPolicy:
+        (user as { followPolicy?: "approval" | "open" }).followPolicy ?? "approval",
     };
   },
 });
@@ -252,6 +254,19 @@ export const removeAvatar = mutation({
     if (!userId) throw new Error("Not signed in");
     await ctx.db.patch(userId, { image: undefined });
     return { ok: true };
+  },
+});
+
+/**
+ * Set who can follow the current user: "approval" (default — each new
+ * follower must be approved) or "open" (follow requests auto-accept).
+ */
+export const updateFollowPolicy = mutation({
+  args: { policy: v.union(v.literal("approval"), v.literal("open")) },
+  handler: async (ctx, { policy }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    await ctx.db.patch(userId, { followPolicy: policy });
   },
 });
 

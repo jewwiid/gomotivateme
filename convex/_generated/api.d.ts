@@ -16,6 +16,7 @@ import type * as badges from "../badges.js";
 import type * as crons from "../crons.js";
 import type * as emails from "../emails.js";
 import type * as emailsActions from "../emailsActions.js";
+import type * as follows from "../follows.js";
 import type * as goals from "../goals.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   emails: typeof emails;
   emailsActions: typeof emailsActions;
+  follows: typeof follows;
   goals: typeof goals;
   http: typeof http;
   "lib/auth": typeof lib_auth;

@@ -49,6 +49,8 @@ export default defineSchema({
     unsubscribeToken: v.optional(v.string()),
     /** Admin flag — gates access to moderation + admin functions. */
     isAdmin: v.optional(v.boolean()),
+    /** Who can follow this user: "approval" (default) or "open" (auto-accept). */
+    followPolicy: v.optional(v.union(v.literal("approval"), v.literal("open"))),
   })
     .index("email", ["email"])
     .index("phone", ["phone"])
@@ -121,7 +123,7 @@ export default defineSchema({
     pausedReason: v.optional(v.string()),
 
     /** "public" (indexed) | "unlisted" (link-only). */
-    visibility: v.union(v.literal("public"), v.literal("unlisted")),
+    visibility: v.union(v.literal("public"), v.literal("unlisted"), v.literal("private")),
 
     /**
      * When true, the owner's name / avatar / handle are stripped from all
@@ -642,4 +644,27 @@ export default defineSchema({
   })
     .index("by_status_created", ["status", "createdAt"])
     .index("by_user", ["userId"]),
+
+  /**
+   * Follow graph — approval-gated.
+   * A row represents a follow relationship (or request) from followerId
+   * to followeeId. Only accepted followers can see private goals.
+   */
+  follows: defineTable({
+    /** The person being followed. */
+    followeeId: v.id("users"),
+    /** The person requesting / holding the follow. */
+    followerId: v.id("users"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("declined"),
+      v.literal("removed")
+    ),
+    createdAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+  })
+    .index("by_followee_status", ["followeeId", "status"])
+    .index("by_follower_status", ["followerId", "status"])
+    .index("by_follower_followee", ["followerId", "followeeId"]),
 });

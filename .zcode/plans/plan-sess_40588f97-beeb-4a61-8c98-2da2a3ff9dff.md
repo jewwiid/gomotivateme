@@ -1,56 +1,87 @@
-# Change Progress Type feature
+# Followers + private goals (approval-gated)
 
-## Problem
-Goals are locked to their `progressType` at creation. A goal created as "number" (tracking users 8→100) can't switch to milestones later — the milestone UI is hidden, and there's no backend mutation to change the type or add milestones post-creation.
+## Product model
+- **Follow requires approval.** User A requests to follow User B. User B sees the request and accepts/declines. Only accepted followers can see private goals.
+- **Private goals are invisible to non-followers.** Not in discovery, not searchable, not in profile activity. Only accepted followers + the owner can see them.
+- Every user has a `followPolicy`: `"open"` (auto-accept) or `"approval"` (default). This is set in settings.
 
-## Design decisions
+## Step 1 — Schema (`convex/schema.ts`)
 
-**When to allow it:** Only when the goal has **no traction** — `supporterCount === 0 && currentValue === startValue` (no supporters, no logged progress). This matches the existing product philosophy in the codebase (lines 400-408 of goals.ts: "progressType mid-run would invalidate the commitment"). Once a goal has real activity, the type is locked. This keeps it clean — you can fix a miscreated goal, but can't pull the rug out from supporters.
-
-**What happens on switch:** Server-side coercion mirrors the `create` mutation:
-- → `milestones`: force `startValue=0`, `currentValue=0`, `targetValue=milestones.length`, `unit="milestones"`, `direction="increase"`, seed the `milestones` array with defaults
-- → `streak`: force `startValue=0`, `currentValue=0`, `unit="days"`, `direction="increase"`, clear milestones
-- → `number`: keep client-sent start/target/unit/direction, clear milestones
-
-## Implementation
-
-### Step 1 — Backend: new `changeProgressType` mutation (`convex/goals.ts`)
-
+### New table: `follows`
 ```
-changeProgressType(goalId, progressType, startValue?, targetValue?, unit?, direction?, milestones?)
+followeeId: v.id("users")   — the person being followed
+followerId: v.id("users")   — the person requesting to follow
+status: v.union(
+  v.literal("pending"),     — awaiting approval
+  v.literal("accepted"),    — approved follower
+  v.literal("declined"),    — request was declined
+  v.literal("removed")      — follower was removed by followee
+)
+createdAt: v.number()
+acceptedAt: v.optional(v.number())
 ```
+Indexes: `by_followee_status` (for "who wants to follow me"), `by_follower_status` (for "who do I follow"), `by_follower_followee` (for dedup / "am I following").
 
-- Auth check (owner only)
-- **Traction gate**: throw if `supporterCount > 0 || currentValue !== startValue`
-- Server-side coercion per type (same logic as `create` lines 150-187)
-- Patches the goal doc with new `progressType`, coerced values, and milestone array
-- Returns the updated goal
+### Schema changes
+- `goals.visibility`: add `v.literal("private")` to the union
+- `users.followPolicy`: add `v.optional(v.union(v.literal("open"), v.literal("approval")))` — defaults to `"approval"`
 
-### Step 2 — Backend: `addMilestone` + `removeMilestone` mutations (`convex/goals.ts`)
+All existing `visibility === "public"` filters automatically exclude private goals. No changes needed to existing public queries.
 
-Allow milestone list editing after creation (currently impossible):
-- `addMilestone(goalId, title)` — appends `{ id, title, done: false }` to the milestones array, increments `targetValue`
-- `removeMilestone(goalId, milestoneId)` — removes from array (only if not `done`), decrements `targetValue`
-- Both gated on `progressType === "milestones"`
+## Step 2 — `convex/follows.ts` (new module)
 
-### Step 3 — Frontend: progress type switcher in GoalSettings (`app/dashboard/[goalId]/page.tsx`)
+Mirrors the Motivation Circle approval pattern:
 
-Inside the existing `GoalSettings` component (lines 1245-1752), above the target-fields block:
-- A "Progress type" section with the 3-option card picker (reusing `PROGRESS_TEMPLATES` pattern from the create form)
-- **Gated behind the traction check** — if the goal has supporters or logged progress, show the lock banner ("This goal has activity — close it and start a new one to change the tracking method")
-- When switching to milestones, show the milestone list editor (add/remove/edit titles) — same UI as the create form step 3
-- When switching to number, show start/target/unit/direction fields
-- When switching to streak, show the days target field
-- "Save changes" button calls the new `changeProgressType` mutation
+- **`request`** (mutation) — follow someone. Checks: not already following, not self. If target's `followPolicy === "open"`, insert with `status: "accepted"` immediately. If `"approval"`, insert with `status: "pending"` and notify the target.
+- **`approve`** (mutation) — followee-only. Patches `status: "accepted"`, sets `acceptedAt`.
+- **`decline`** (mutation) — followee-only. Patches `status: "declined"`.
+- **`remove`** (mutation) — followee removes a follower. Patches `status: "removed"`.
+- **`cancelRequest`** (mutation) — follower cancels their own pending request.
+- **`listFollowers`** (query) — accepted followers of the current user (for the profile sidebar / follower count).
+- **`listFollowing`** (query) — people the current user follows (for the profile sidebar / following count).
+- **`listPendingRequests`** (query) — pending follow requests for the current user.
+- **`amIFollowing`** (query) — given a userId, returns the follow status from the current user's perspective (`"accepted"` | `"pending"` | `"declined"` | `null`). Used by the profile Follow button.
+- **`isApprovedFollower`** (internal query) — given a viewerId + ownerId, returns boolean. Used by private goal queries.
 
-### Step 4 — Frontend: milestone add/remove in the dashboard
+## Step 3 — Private goal access queries (`convex/public.ts`)
 
-Update `MilestonesList` component to include an "Add milestone" button and per-milestone remove/edit affordances — calls the new `addMilestone`/`removeMilestone` mutations. This makes milestones editable from both the settings panel AND the main dashboard view.
+New queries that are **identity-aware** (call `getAuthUserId`):
+
+- **`getPrivateGoal`** — like `getGoalBySlug` but for private goals. Checks: viewer is signed in AND has an accepted follow relationship with the owner. Returns the goal or null.
+- **`listVisibleForUser`** — returns goals visible to the current user: their own goals + public goals + private goals from people they follow. Powers the dashboard's "from people you follow" feed (future).
+- **`profileGoalsForViewer`** — returns goals from a profile that the viewer is allowed to see: public goals always, private goals only if viewer is an accepted follower. Used by the profile page.
+
+The existing anonymous public queries (`listRecentPublic`, `searchPublicGoals`, etc.) stay unchanged — they already filter `visibility === "public"`, which excludes private goals.
+
+## Step 4 — Profile page UI (`app/u/[handle]/page.tsx`)
+
+- **Follow button** — in the header strip next to Share, shown when viewing someone else's profile. States:
+  - Not following → "Follow" button
+  - Request pending → "Requested" (disabled, click to cancel)
+  - Accepted → "Following" (click to unfollow)
+- **Follower/following counts** — added to the stats row
+- **Private goals in activity tab** — uses `profileGoalsForViewer` instead of the current query. If the viewer isn't an approved follower, private goals simply don't appear.
+
+## Step 5 — Goal creation form (`app/dashboard/new/page.tsx`)
+
+Add a third visibility option:
+- **Private** (Lock icon): "Only your approved followers can see this goal. Not in discovery or search."
+
+## Step 6 — Follow requests in-app
+
+The follow request creates a notification row (via the existing `internal.emails.enqueue` pipeline with a new `followRequest` template). This also surfaces in the notification bell (which we're about to build). The followee sees "X wants to follow you" and can approve/decline from the notification or their profile.
+
+## Step 7 — Settings page
+
+Add a "Follow policy" toggle in the settings page:
+- "Approve followers" (default) — new followers need your approval
+- "Open" — anyone can follow you instantly
 
 ## Files touched
-**Edited:** `convex/goals.ts` (2-3 new mutations), `app/dashboard/[goalId]/page.tsx` (GoalSettings + milestone UI), `components/MilestonesList.tsx` (add/remove buttons)
-**No new files, no schema changes** (milestones array already exists on the goal doc)
+**New:** `convex/follows.ts`
+**Edited:** `convex/schema.ts` (follows table + visibility + followPolicy), `convex/public.ts` (identity-aware private queries), `convex/users.ts` (follower counts in profileSummary), `app/u/[handle]/page.tsx` (follow button + counts), `app/dashboard/new/page.tsx` (private visibility option), `app/settings/page.tsx` (follow policy toggle)
 
-## Not in scope
-- Converting existing progress history when switching types (old updates stay as-is — they're just notes at that point)
-- Allowing type changes after traction (deliberately locked — would confuse supporters)
+## Not in scope (flagging)
+- **DMs / messaging** — followers can comment on goals but can't message each other directly
+- **Follower-only feed** — a personalized "from people you follow" feed is a future enhancement; this pass just enables the privacy model + follow graph
+- **Follower notifications bell** — building separately in the in-app notifications work

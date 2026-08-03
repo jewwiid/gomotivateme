@@ -155,7 +155,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   );
   const [supporterTarget, setSupporterTarget] = useState("");
   const [supportTypes, setSupportTypes] = useState<string[]>(["encourage", "checkin"]);
-  const [visibility, setVisibility] = useState<"public" | "unlisted">("public");
+  const [visibility, setVisibility] = useState<"public" | "unlisted" | "private">("public");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -920,6 +920,26 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                     </div>
                   </div>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setVisibility("private")}
+                  className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+                    visibility === "private"
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                      : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                  }`}
+                >
+                  <Lock
+                    size={20}
+                    className={visibility === "private" ? "mt-0.5 text-[var(--color-primary)]" : "mt-0.5 text-[var(--color-text-muted)]"}
+                  />
+                  <div>
+                    <div className="text-sm font-semibold">Private</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                      Only your approved followers can see this goal. Not in discovery or search.
+                    </div>
+                  </div>
+                </button>
               </div>
 
               <label
@@ -1047,7 +1067,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 <ReviewItem label="Timeline" value={targetDate ? new Date(`${targetDate}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }) : "No date set"} onEdit={() => setStep(4)} />
                 <ReviewItem label="Story" value={story || "Add your story later"} onEdit={() => setStep(5)} />
                 <ReviewItem label="Support" value={`${supportTypes.length} ways to show up`} onEdit={() => setStep(6)} />
-                <ReviewItem label="Visibility" value={`${visibility === "public" ? "Public" : "Unlisted"}${isAnonymous ? " · Anonymous" : ""}`} onEdit={() => setStep(7)} />
+                <ReviewItem label="Visibility" value={`${visibility === "public" ? "Public" : visibility === "unlisted" ? "Unlisted" : "Private"}${isAnonymous ? " · Anonymous" : ""}`} onEdit={() => setStep(7)} />
               </div>
             </Step>
           )}

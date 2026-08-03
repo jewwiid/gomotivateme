@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -12,11 +12,14 @@ import {
   Copy,
   Edit3,
   Heart,
+  Loader2,
   Plus,
   Share2,
   Sparkles,
   Target,
   Trophy,
+  UserCheck,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -112,6 +115,8 @@ export default function ProfilePage() {
   const { user, stats, goals, motivations } = summary;
   const profileName = user.name ?? `@${user.handle ?? "user"}`;
   const initials = initialsOf(user.name, user.handle);
+  // Follower / following counts for this profile.
+  const followCounts = useQuery(api.follows.counts, { userId: user._id });
   const profileUrl =
     typeof window !== "undefined" && user.handle
       ? `${window.location.origin}/@${user.handle}`
@@ -218,12 +223,27 @@ export default function ProfilePage() {
                     </span>{" "}
                     supporters
                   </span>
+                  <span>
+                    <span className="font-display text-lg font-bold tabular-nums text-[var(--color-text)]">
+                      {formatNumber(followCounts?.following ?? 0)}
+                    </span>{" "}
+                    following
+                  </span>
+                  <span>
+                    <span className="font-display text-lg font-bold tabular-nums text-[var(--color-text)]">
+                      {formatNumber(followCounts?.followers ?? 0)}
+                    </span>{" "}
+                    {followCounts?.followers === 1 ? "follower" : "followers"}
+                  </span>
                 </div>
 
-                {/* Share button — uses Web Share API if available, falls back to clipboard. */}
+                {/* Share + follow buttons — uses Web Share API if available, falls back to clipboard. */}
                 {user.handle && (
                   <div className="flex items-center gap-2 pt-1">
                     <ShareProfileButton url={profileUrl} name={profileName} />
+                    {!isMe && (
+                      <FollowButton followeeId={user._id} />
+                    )}
                     {isMe && (
                       <Link
                         href="/settings"
@@ -445,6 +465,81 @@ function ShareProfileButton({ url, name }: { url: string; name: string }) {
     >
       {copied ? <Check size={13} /> : <Share2 size={13} />}
       {copied ? "Copied!" : "Share profile"}
+    </button>
+  );
+}
+
+/**
+ * Follow / Following / Requested button for another user's profile.
+ * - null / "declined" / "removed" → "Follow" (calls request)
+ * - "pending"                     → "Requested" (calls cancel)
+ * - "accepted"                    → "Following" (calls cancel / unfollow)
+ */
+function FollowButton({ followeeId }: { followeeId: Id<"users"> }) {
+  const status = useQuery(api.follows.amIFollowing, { followeeId });
+  const request = useMutation(api.follows.request);
+  const cancel = useMutation(api.follows.cancel);
+  const [busy, setBusy] = useState(false);
+
+  // While the status query is loading, render a placeholder with the same
+  // width as the Follow button so the header doesn't shift on resolve.
+  if (status === undefined) {
+    return (
+      <div className="h-[38px] w-[110px] animate-pulse rounded-xl bg-[var(--color-bg-sunken)]" />
+    );
+  }
+
+  const isFollowing = status === "accepted";
+  const isPending = status === "pending";
+
+  const onClick = async () => {
+    setBusy(true);
+    try {
+      if (isFollowing || isPending) {
+        await cancel({ followeeId });
+      } else {
+        await request({ followeeId });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (isFollowing) {
+    return (
+      <button
+        onClick={onClick}
+        disabled={busy}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border-strong)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger-text)] disabled:opacity-50"
+      >
+        {busy ? <Loader2 size={13} className="animate-spin" /> : <UserCheck size={13} />}
+        Following
+      </button>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <button
+        onClick={onClick}
+        disabled={busy}
+        className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border-strong)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:border-[var(--color-danger)] hover:text-[var(--color-danger-text)] disabled:opacity-50"
+      >
+        {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+        Requested
+      </button>
+    );
+  }
+
+  // null / "declined" / "removed" → primary Follow button, matching Share.
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy}
+      className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
+    >
+      {busy ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />}
+      Follow
     </button>
   );
 }

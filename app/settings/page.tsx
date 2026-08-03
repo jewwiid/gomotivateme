@@ -424,9 +424,99 @@ function AccountTab() {
         </p>
       </Section>
 
+      {/* Follow policy */}
+      <FollowPolicySection policy={me?.followPolicy ?? "approval"} />
+
       {/* Deactivate */}
       <DeactivateSection />
     </div>
+  );
+}
+
+/**
+ * Follow policy — controls who can follow the current user.
+ * "approval" (default): new followers send a request the user must approve.
+ * "open": follow requests are accepted automatically.
+ */
+function FollowPolicySection({
+  policy,
+}: {
+  policy: "approval" | "open";
+}) {
+  const updateFollowPolicy = useMutation(api.users.updateFollowPolicy);
+  const [busy, setBusy] = useState(false);
+
+  const choose = async (next: "approval" | "open") => {
+    if (next === policy) return;
+    setBusy(true);
+    try {
+      await updateFollowPolicy({ policy: next });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const options: Array<{
+    id: "approval" | "open";
+    label: string;
+    description: string;
+  }> = [
+    {
+      id: "approval",
+      label: "Approve followers",
+      description: "New followers send a request you accept or decline.",
+    },
+    {
+      id: "open",
+      label: "Open",
+      description: "Anyone can follow you instantly, no approval needed.",
+    },
+  ];
+
+  return (
+    <Section title="Follow policy">
+      <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+        Choose who can follow you and see your private goals.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((opt) => {
+          const active = policy === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => choose(opt.id)}
+              disabled={busy}
+              className={`flex items-start gap-3 rounded-xl border p-3 text-left transition disabled:opacity-50 ${
+                active
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                  : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+              }`}
+            >
+              <div
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                  active
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]"
+                    : "border-[var(--color-border-strong)] bg-white"
+                }`}
+              >
+                {active && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-[var(--color-text)]">
+                  {opt.label}
+                </div>
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  {opt.description}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </Section>
   );
 }
 

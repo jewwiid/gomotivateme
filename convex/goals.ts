@@ -85,7 +85,7 @@ export const create = mutation({
     ),
     supporterTarget: v.optional(v.number()),
     supportTypes: v.array(v.string()),
-    visibility: v.union(v.literal("public"), v.literal("unlisted")),
+    visibility: v.union(v.literal("public"), v.literal("unlisted"), v.literal("private")),
     isAnonymous: v.optional(v.boolean()),
     coverImageId: v.optional(v.id("_storage")),
 
@@ -378,7 +378,7 @@ export const update = mutation({
     targetDate: v.optional(v.number()),
     supporterTarget: v.optional(v.number()),
     supportTypes: v.optional(v.array(v.string())),
-    visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"))),
+    visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"), v.literal("private"))),
     isAnonymous: v.optional(v.boolean()),
     coverImageId: v.optional(v.id("_storage")),
     targetValue: v.optional(v.number()),
