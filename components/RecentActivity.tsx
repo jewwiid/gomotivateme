@@ -39,9 +39,11 @@ type ActivityItem =
  */
 export function RecentActivity({
   goalId,
+  unit,
   limit = 8,
 }: {
   goalId: Id<"goals">;
+  unit?: string;
   limit?: number;
 }) {
   const supporters = useQuery(api.supporters.listForGoal, { goalId, limit: 8 });
@@ -85,7 +87,14 @@ export function RecentActivity({
     }
     for (const u of (updates as any[]) ?? []) {
       let body = "";
-      if (u.type === "value") body = `logged a value${u.value ? ` (${u.value})` : ""}`;
+      if (u.type === "value") {
+        if (unit === "days") {
+          body = `reached a ${u.value ?? ""} day streak`.trim();
+        } else {
+          const label = unit || "value";
+          body = `reached ${u.value ?? ""} ${label}`.trim();
+        }
+      }
       else if (u.type === "milestone") body = "ticked a milestone";
       else if (u.type === "note") body = u.note ? `"${u.note.slice(0, 80)}"` : "shared a note";
       else if (u.type === "image") body = "shared a photo";

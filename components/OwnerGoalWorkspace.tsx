@@ -55,6 +55,7 @@ type WorkspaceUpdate = {
   _id: string;
   type: string;
   note?: string;
+  value?: number;
   createdAt: number;
 };
 
@@ -449,7 +450,13 @@ export function OwnerGoalWorkspace({
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <p className="text-sm font-bold text-[var(--color-text)]">
-                            {update.type === "milestone" ? "Milestone updated" : update.type === "value" ? "Progress logged" : "Update posted"}
+                            {update.type === "milestone"
+                              ? "Milestone updated"
+                              : update.type === "value"
+                              ? goal.unit === "days"
+                                ? `Day ${update.value ?? 0} streak`
+                                : `Reached ${update.value ?? 0} ${goal.unit ?? ""}`.trim()
+                              : "Update posted"}
                           </p>
                           <div className="flex items-center gap-2">
                             {(update.type === "value" || update.type === "milestone") && onUndoUpdate && (
