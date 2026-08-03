@@ -162,9 +162,14 @@ export function OwnerGoalWorkspace({
     }
   };
 
-  const nextAction = firstIncomplete?.title
-    ? `Define your ${firstIncomplete.title.toLowerCase()}`
-    : "Share what you learned";
+  const nextAction =
+    goal.progressType === "milestones" && firstIncomplete?.title
+      ? `Define your ${firstIncomplete.title.toLowerCase()}`
+      : goal.progressType === "streak"
+      ? "Mark today's progress"
+      : goal.progressType === "number"
+      ? `Log your ${goal.unit ?? "progress"}`
+      : "Share what you learned";
 
   const resolvedSupporterName =
     supporterName ??
@@ -493,14 +498,30 @@ export function OwnerGoalWorkspace({
                   <div className="mt-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5">
                     <p className="font-bold text-[var(--color-text)]">{nextAction}</p>
                     <p className="mt-1.5 text-xs leading-5 text-[var(--color-text-muted)]">
-                      Clarify the outcome, success metrics, and the next concrete step.
+                      {goal.progressType === "milestones"
+                        ? "Clarify the outcome, success metrics, and the next concrete step."
+                        : goal.progressType === "streak"
+                        ? "Keep your streak alive — log today and stay on track."
+                        : "Update your progress and keep your supporters in the loop."}
                     </p>
                     <button
                       type="button"
-                      onClick={() => onOpenUpdate("milestone")}
+                      onClick={() =>
+                        onOpenUpdate(
+                          goal.progressType === "milestones"
+                            ? "milestone"
+                            : goal.progressType === "streak"
+                            ? "streak"
+                            : "value"
+                        )
+                      }
                       className="workspace-button-primary mt-2 min-h-9"
                     >
-                      Create plan
+                      {goal.progressType === "milestones"
+                        ? "Create plan"
+                        : goal.progressType === "streak"
+                        ? "Mark today"
+                        : "Log progress"}
                     </button>
                   </div>
                 </div>
