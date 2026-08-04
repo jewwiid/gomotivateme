@@ -44,8 +44,9 @@ const EMOJI_LABELS: Record<EmojiKind, string> = {
 /**
  * Enqueue a "new reaction" email to the goal owner. Only fires on new
  * reactions (not toggles/updates). Uses lifecycle category so it respects
- * unsubscribedAll. Rate-limited via a simple count check: only email at
- * 1, 5, 10, 25, 50, 100, 200, 500... to avoid spamming popular goals.
+ * unsubscribedAll. Throttled to:
+ *   - Milestone counts only (1, 5, 10, 25, 50, 100, 200, 500...)
+ *   - At most 1 email per goal per hour (cooldown via lastReactionEmailAt)
  */
 async function maybeNotifyOwnerOfReaction(
   ctx: any,
@@ -58,6 +59,12 @@ async function maybeNotifyOwnerOfReaction(
   const owner = await ctx.db.get(goal.ownerId);
   if (!owner?.email) return;
 
+  // Cooldown: at most 1 reaction email per goal per hour.
+  const COOLDOWN_MS = 60 * 60 * 1000;
+  if (goal.lastReactionEmailAt && Date.now() - goal.lastReactionEmailAt < COOLDOWN_MS) {
+    return;
+  }
+
   // Count total emoji reactions on this goal (goal-level only, for rate limiting).
   const allReactions = await ctx.db
     .query("reactions")
@@ -68,6 +75,9 @@ async function maybeNotifyOwnerOfReaction(
   // Rate limit: only send at milestone counts to avoid spamming.
   const MILESTONES = new Set([1, 5, 10, 25, 50, 100, 200, 500, 1000]);
   if (!MILESTONES.has(total)) return;
+
+  // Stamp the cooldown timestamp so future reactions within the hour are suppressed.
+  await ctx.db.patch(goalId, { lastReactionEmailAt: Date.now() });
 
   const ownerName = owner.name ?? owner.handle ?? "there";
   await ctx.runMutation(internal.emails.enqueue, {

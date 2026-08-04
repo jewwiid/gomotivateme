@@ -176,6 +176,8 @@ export default defineSchema({
      * Prevents daily re-nagging. Reset when the owner posts an update.
      */
     lastStaleReminderAt: v.optional(v.number()),
+    /** Cooldown timestamp for reaction emails — at most 1 per goal per hour. */
+    lastReactionEmailAt: v.optional(v.number()),
     /** Last time a "deadline approaching" email was sent for this goal. */
     lastDeadlineWarningAt: v.optional(v.number()),
     /** True once the "deadline passed" email has been sent. */
