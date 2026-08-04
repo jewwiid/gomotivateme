@@ -12,6 +12,28 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 const EMOJI_KINDS = ["thumbsup", "muscle", "heart", "fire"] as const;
 type EmojiKind = (typeof EMOJI_KINDS)[number];
 
+/**
+ * Rate limit: max reactions per visitorKey in the rolling window.
+ * Prevents cycling visitorKeys to flood a goal with fake reactions.
+ */
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+
+/**
+ * Throws if the visitor has created too many reactions recently.
+ * Counts across ALL goals + updates (global per-visitor rate).
+ */
+async function enforceRateLimit(ctx: any, visitorKey: string) {
+  const since = Date.now() - RATE_LIMIT_WINDOW_MS;
+  const recent = await ctx.db
+    .query("reactions")
+    .withIndex("by_visitor_created", (q) => q.eq("visitorKey", visitorKey).gte("createdAt", since))
+    .take(RATE_LIMIT_MAX + 1);
+  if (recent.length > RATE_LIMIT_MAX) {
+    throw new Error("You're reacting too fast. Slow down a moment.");
+  }
+}
+
 const EMOJI_LABELS: Record<EmojiKind, string> = {
   thumbsup: "👍",
   muscle: "💪",
@@ -134,6 +156,8 @@ export const setEmoji = mutation({
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
     if (goal.visibility !== "public") throw new Error("This goal isn't public");
+
+    await enforceRateLimit(ctx, visitorKey);
 
     // Auto-resolve displayName from auth if the visitor is signed in.
     let resolvedName = displayName?.trim() || undefined;
@@ -267,6 +291,8 @@ export const setUpdateEmoji = mutation({
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
     if (goal.visibility !== "public") throw new Error("This goal isn't public");
+
+    await enforceRateLimit(ctx, visitorKey);
 
     // Auto-resolve displayName from auth if the visitor is signed in.
     let resolvedName = displayName?.trim() || undefined;

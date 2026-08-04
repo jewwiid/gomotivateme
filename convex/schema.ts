@@ -336,6 +336,7 @@ export default defineSchema({
     .index("by_goal", ["goalId"])
     .index("by_goal_kind", ["goalId", "kind"])
     .index("by_goal_kind_visitor", ["goalId", "kind", "visitorKey"])
+    .index("by_visitor_created", ["visitorKey", "createdAt"])
     .index("by_update", ["updateId"])
     .index("by_update_kind_visitor", ["updateId", "kind", "visitorKey"]),
 
