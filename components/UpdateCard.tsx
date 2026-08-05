@@ -88,6 +88,7 @@ export function UpdateCard({
               description={update.linkDescription}
               siteName={update.linkSiteName}
               imageUrl={update.linkImage ? imageUrlOf?.(update.linkImage) : null}
+              embedded
             />
           </div>
         )}

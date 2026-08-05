@@ -12,12 +12,15 @@ export function LinkPreviewCard({
   description,
   siteName,
   imageUrl,
+  embedded = false,
 }: {
   url: string;
   title?: string | null;
   description?: string | null;
   siteName?: string | null;
   imageUrl?: string | null;
+  /** When true, removes the outer card border (for use inside UpdateCard/workspace-card). */
+  embedded?: boolean;
 }) {
   const displayTitle = title || url;
   const domain = (() => {
@@ -28,7 +31,7 @@ export function LinkPreviewCard({
     }
   })();
 
-  // No image → simple text link (same as before).
+  // No image → simple text link.
   if (!imageUrl) {
     return (
       <a
@@ -44,15 +47,19 @@ export function LinkPreviewCard({
   }
 
   // Rich preview card with image.
+  const cardClass = embedded
+    ? "group block overflow-hidden rounded-xl transition hover:opacity-90"
+    : "group block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] transition hover:border-[var(--color-border-strong)] hover:shadow-md";
+
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] transition hover:border-[var(--color-border-strong)] hover:shadow-md"
+      className={cardClass}
     >
       {/* OG Image */}
-      <div className="relative aspect-[1.91/1] overflow-hidden bg-[var(--color-bg-elev)]">
+      <div className={`relative aspect-[1.91/1] overflow-hidden ${embedded ? "rounded-lg" : ""} bg-[var(--color-bg-elev)]`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
@@ -60,13 +67,12 @@ export function LinkPreviewCard({
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
           loading="lazy"
           onError={(e) => {
-            // If the image fails to load, hide it and fall back to text.
             (e.currentTarget.parentElement?.parentElement as HTMLElement).style.display = "none";
           }}
         />
       </div>
       {/* Text content */}
-      <div className="p-3">
+      <div className={embedded ? "pt-2" : "p-3"}>
         <p className="line-clamp-2 text-sm font-semibold leading-snug text-[var(--color-text)]">
           {displayTitle}
         </p>
