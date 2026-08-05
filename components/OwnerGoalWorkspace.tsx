@@ -495,7 +495,7 @@ export function OwnerGoalWorkspace({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-[var(--color-text)]">Next best action</p>
-                  <div className="mt-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5">
+                  <div className="mt-2">
                     <p className="font-bold text-[var(--color-text)]">{nextAction}</p>
                     <p className="mt-1.5 text-xs leading-5 text-[var(--color-text-muted)]">
                       {goal.progressType === "milestones"
