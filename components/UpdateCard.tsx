@@ -6,6 +6,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { CategoryIcon } from "./CategoryIcon";
 import { relativeTime } from "@/lib/format";
 import { UpdateMedia, UpdateMediaItem } from "./UpdateMedia";
+import { LinkPreviewCard } from "./LinkPreviewCard";
 
 interface UpdateDoc {
   _id: Id<"updates">;
@@ -16,6 +17,9 @@ interface UpdateDoc {
   media?: UpdateMediaItem[];
   linkUrl?: string;
   linkTitle?: string;
+  linkImage?: Id<"_storage">;
+  linkDescription?: string;
+  linkSiteName?: string;
   moderationStatus?: "pending" | "approved" | "review" | "rejected";
   moderationReason?: string;
   createdAt: number;
@@ -77,18 +81,15 @@ export function UpdateCard({
         )}
 
         {update.type === "link" && update.linkUrl && (
-          <a
-            href={update.linkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-3 flex items-center gap-2 workspace-card-soft px-3 py-2.5 text-sm transition hover:border-[var(--color-accent)]"
-          >
-            <LinkIcon size={14} className="shrink-0 text-[var(--color-text-muted)]" />
-            <span className="truncate font-medium">
-              {update.linkTitle || update.linkUrl}
-            </span>
-            <span className="ml-auto text-xs text-[var(--color-text-dim)]">↗</span>
-          </a>
+          <div className="mb-3">
+            <LinkPreviewCard
+              url={update.linkUrl}
+              title={update.linkTitle}
+              description={update.linkDescription}
+              siteName={update.linkSiteName}
+              imageUrl={update.linkImage ? imageUrlOf?.(update.linkImage) : null}
+            />
+          </div>
         )}
 
         {update.note && (

@@ -254,6 +254,12 @@ export default defineSchema({
     imageId: v.optional(v.id("_storage")),
     linkUrl: v.optional(v.string()),
     linkTitle: v.optional(v.string()),
+    /** OG preview image stored in Convex file storage (downloaded, not hotlinked). */
+    linkImage: v.optional(v.id("_storage")),
+    /** OG description or first paragraph text from the linked page. */
+    linkDescription: v.optional(v.string()),
+    /** OG site name (e.g. "GitHub", "YouTube"). */
+    linkSiteName: v.optional(v.string()),
     /** Visibility is only enabled after automated or manual safety review. */
     moderationStatus: v.optional(
       v.union(

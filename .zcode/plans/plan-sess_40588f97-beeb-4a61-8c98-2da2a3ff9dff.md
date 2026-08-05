@@ -1,87 +1,70 @@
-# Followers + private goals (approval-gated)
+# Link post OG previews (thumbnails + metadata)
 
-## Product model
-- **Follow requires approval.** User A requests to follow User B. User B sees the request and accepts/declines. Only accepted followers can see private goals.
-- **Private goals are invisible to non-followers.** Not in discovery, not searchable, not in profile activity. Only accepted followers + the owner can see them.
-- Every user has a `followPolicy`: `"open"` (auto-accept) or `"approval"` (default). This is set in settings.
+## What happens now
+When a user posts a link update, they type the URL and optionally a title. That's it — no image, no description, no site name. The link renders as plain text on the timeline and dashboard.
+
+## What we're building
+When a link is posted, the backend automatically:
+1. Fetches the page HTML
+2. Extracts OG metadata (`og:image`, `og:title`, `og:description`, `og:site_name`)
+3. Downloads the OG image and stores it in Convex file storage (not hotlinked — survives source site changes)
+4. Patches the update with the preview data
+5. The timeline + dashboard render a rich link card with the image, title, and description
+
+The user does nothing different — they paste a URL and the preview appears automatically within seconds.
 
 ## Step 1 — Schema (`convex/schema.ts`)
+Add 3 fields to the updates table (after `linkTitle`):
+- `linkImage: v.optional(v.id("_storage"))` — the downloaded OG image stored in Convex storage
+- `linkDescription: v.optional(v.string())` — `og:description` or first paragraph
+- `linkSiteName: v.optional(v.string())` — `og:site_name` (e.g. "YouTube", "GitHub")
 
-### New table: `follows`
+## Step 2 — Backend: `convex/linkPreview.ts` (new file)
+A `"use node"` internalAction `fetchPreview({ updateId })` that:
+1. Loads the update via `ctx.runQuery` to get the `linkUrl`
+2. `fetch`es the URL with a proper User-Agent header
+3. Parses OG meta tags from the HTML using regex (no heavy parsing deps — OG tags are simple `<meta property="og:..." content="...">`)
+4. If an `og:image` URL is found: downloads the image bytes and stores via `ctx.storage.store(blob)` → gets a `_storage` Id
+5. Patches the update via `ctx.runMutation` with `{ linkImage, linkDescription, linkSiteName }`
+6. If `linkTitle` is empty, fills it from `og:title` too
+7. Graceful failure: if fetch fails or no OG tags, silently no-ops (the link still works as text)
+
+Also: an `internalMutation` `applyPreview` that patches the update with the fetched data.
+
+## Step 3 — Trigger (`convex/updates.ts`)
+In the `add` mutation, after the insert + existing moderation scheduler call, add:
+```ts
+if (args.type === "link" && args.linkUrl) {
+  await ctx.scheduler.runAfter(0, internal.linkPreview.fetchPreview, { updateId });
+}
 ```
-followeeId: v.id("users")   — the person being followed
-followerId: v.id("users")   — the person requesting to follow
-status: v.union(
-  v.literal("pending"),     — awaiting approval
-  v.literal("accepted"),    — approved follower
-  v.literal("declined"),    — request was declined
-  v.literal("removed")      — follower was removed by followee
-)
-createdAt: v.number()
-acceptedAt: v.optional(v.number())
-```
-Indexes: `by_followee_status` (for "who wants to follow me"), `by_follower_status` (for "who do I follow"), `by_follower_followee` (for dedup / "am I following").
+The `LinkForm` client needs zero changes.
 
-### Schema changes
-- `goals.visibility`: add `v.literal("private")` to the union
-- `users.followPolicy`: add `v.optional(v.union(v.literal("open"), v.literal("approval")))` — defaults to `"approval"`
+## Step 4 — Render: rich link card
 
-All existing `visibility === "public"` filters automatically exclude private goals. No changes needed to existing public queries.
+**`components/EditorialTimeline.tsx`** (`EntryBody`, link branch):
+- If `linkImage` exists: render a clickable card with the OG image on top, title below, description truncated, site name + domain. Styled like a social media link preview (bordered card, rounded image, hover effect).
+- If no image: keep the current text-only link display.
+- The `linkImage` (storage Id) gets resolved via the existing `imageUrlOf` / `api.storage.getUrls` batch pattern already used for media images. Extend the `imageIds` set to include link images.
 
-## Step 2 — `convex/follows.ts` (new module)
+**`components/UpdateCard.tsx`** (dashboard):
+- Same rich card treatment for the owner's own link updates.
 
-Mirrors the Motivation Circle approval pattern:
+**Shared `LinkPreviewCard` component** (`components/LinkPreviewCard.tsx`):
+- A reusable card component that takes `{ url, title, description, siteName, imageUrl }` and renders the preview.
+- Used by both EditorialTimeline and UpdateCard to avoid duplication.
 
-- **`request`** (mutation) — follow someone. Checks: not already following, not self. If target's `followPolicy === "open"`, insert with `status: "accepted"` immediately. If `"approval"`, insert with `status: "pending"` and notify the target.
-- **`approve`** (mutation) — followee-only. Patches `status: "accepted"`, sets `acceptedAt`.
-- **`decline`** (mutation) — followee-only. Patches `status: "declined"`.
-- **`remove`** (mutation) — followee removes a follower. Patches `status: "removed"`.
-- **`cancelRequest`** (mutation) — follower cancels their own pending request.
-- **`listFollowers`** (query) — accepted followers of the current user (for the profile sidebar / follower count).
-- **`listFollowing`** (query) — people the current user follows (for the profile sidebar / following count).
-- **`listPendingRequests`** (query) — pending follow requests for the current user.
-- **`amIFollowing`** (query) — given a userId, returns the follow status from the current user's perspective (`"accepted"` | `"pending"` | `"declined"` | `null`). Used by the profile Follow button.
-- **`isApprovedFollower`** (internal query) — given a viewerId + ownerId, returns boolean. Used by private goal queries.
-
-## Step 3 — Private goal access queries (`convex/public.ts`)
-
-New queries that are **identity-aware** (call `getAuthUserId`):
-
-- **`getPrivateGoal`** — like `getGoalBySlug` but for private goals. Checks: viewer is signed in AND has an accepted follow relationship with the owner. Returns the goal or null.
-- **`listVisibleForUser`** — returns goals visible to the current user: their own goals + public goals + private goals from people they follow. Powers the dashboard's "from people you follow" feed (future).
-- **`profileGoalsForViewer`** — returns goals from a profile that the viewer is allowed to see: public goals always, private goals only if viewer is an accepted follower. Used by the profile page.
-
-The existing anonymous public queries (`listRecentPublic`, `searchPublicGoals`, etc.) stay unchanged — they already filter `visibility === "public"`, which excludes private goals.
-
-## Step 4 — Profile page UI (`app/u/[handle]/page.tsx`)
-
-- **Follow button** — in the header strip next to Share, shown when viewing someone else's profile. States:
-  - Not following → "Follow" button
-  - Request pending → "Requested" (disabled, click to cancel)
-  - Accepted → "Following" (click to unfollow)
-- **Follower/following counts** — added to the stats row
-- **Private goals in activity tab** — uses `profileGoalsForViewer` instead of the current query. If the viewer isn't an approved follower, private goals simply don't appear.
-
-## Step 5 — Goal creation form (`app/dashboard/new/page.tsx`)
-
-Add a third visibility option:
-- **Private** (Lock icon): "Only your approved followers can see this goal. Not in discovery or search."
-
-## Step 6 — Follow requests in-app
-
-The follow request creates a notification row (via the existing `internal.emails.enqueue` pipeline with a new `followRequest` template). This also surfaces in the notification bell (which we're about to build). The followee sees "X wants to follow you" and can approve/decline from the notification or their profile.
-
-## Step 7 — Settings page
-
-Add a "Follow policy" toggle in the settings page:
-- "Approve followers" (default) — new followers need your approval
-- "Open" — anyone can follow you instantly
+## Step 5 — Backfill
+A one-off action to fetch previews for existing link updates that don't have `linkImage` yet. Iterates over `type === "link"` updates where `linkImage` is undefined and calls `fetchPreview` for each.
 
 ## Files touched
-**New:** `convex/follows.ts`
-**Edited:** `convex/schema.ts` (follows table + visibility + followPolicy), `convex/public.ts` (identity-aware private queries), `convex/users.ts` (follower counts in profileSummary), `app/u/[handle]/page.tsx` (follow button + counts), `app/dashboard/new/page.tsx` (private visibility option), `app/settings/page.tsx` (follow policy toggle)
+**New:** `convex/linkPreview.ts`, `components/LinkPreviewCard.tsx`
+**Edited:** `convex/schema.ts` (3 fields), `convex/updates.ts` (trigger), `components/EditorialTimeline.tsx` (render), `components/UpdateCard.tsx` (render)
 
-## Not in scope (flagging)
-- **DMs / messaging** — followers can comment on goals but can't message each other directly
-- **Follower-only feed** — a personalized "from people you follow" feed is a future enhancement; this pass just enables the privacy model + follow graph
-- **Follower notifications bell** — building separately in the in-app notifications work
+## Edge cases handled
+- Non-HTML responses (PDFs, images, APIs) → skip gracefully
+- Slow/blocking URLs → 5-second fetch timeout, then give up
+- URLs that redirect → follow redirects (fetch default)
+- Missing OG tags → fall back to `<title>` + first `<p>` text
+- Rate limiting from target sites → graceful failure, link still works as text
+- Duplicate URLs → each update fetches independently (simpler, avoids a cache table)

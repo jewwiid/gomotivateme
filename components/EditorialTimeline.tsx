@@ -9,6 +9,7 @@ import { UpdateMedia, UpdateMediaItem } from "./UpdateMedia";
 import { UpdateReactions } from "./UpdateReactions";
 import { useMemo } from "react";
 import { ReportButton } from "./ReportButton";
+import { LinkPreviewCard } from "./LinkPreviewCard";
 
 interface UpdateDoc {
   _id: Id<"updates">;
@@ -19,6 +20,9 @@ interface UpdateDoc {
   media?: UpdateMediaItem[];
   linkUrl?: string;
   linkTitle?: string;
+  linkImage?: Id<"_storage">;
+  linkDescription?: string;
+  linkSiteName?: string;
   milestoneId?: string;
   createdAt: number;
 }
@@ -62,6 +66,7 @@ export function EditorialTimeline({
     const ids = new Set<Id<"_storage">>();
     for (const update of updates) {
       if (update.imageId) ids.add(update.imageId);
+      if (update.linkImage) ids.add(update.linkImage);
       for (const media of update.media ?? []) {
         if (media.kind === "image") {
           if (media.storageId) ids.add(media.storageId);
@@ -255,17 +260,15 @@ function EntryBody({
   }
   if (u.type === "link" && u.linkUrl) {
     return (
-      <a
-        href={u.linkUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-1 block rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-border-strong)]"
-      >
-        <div className="font-medium text-[var(--color-primary)]">
-          {u.linkTitle || u.linkUrl}
-        </div>
-        {u.linkTitle && <div className="truncate text-xs text-[var(--color-text-muted)]">{u.linkUrl}</div>}
-      </a>
+      <div className="mt-1">
+        <LinkPreviewCard
+          url={u.linkUrl}
+          title={u.linkTitle}
+          description={u.linkDescription}
+          siteName={u.linkSiteName}
+          imageUrl={u.linkImage ? imageUrlOf?.(u.linkImage) ?? null : null}
+        />
+      </div>
     );
   }
   return null;

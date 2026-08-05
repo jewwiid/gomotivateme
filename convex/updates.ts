@@ -252,6 +252,10 @@ export const add = mutation({
     // Reset stale-goal reminder so the next staleness window starts fresh.
     await ctx.db.patch(args.goalId, { lastStaleReminderAt: undefined });
     await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
+    // Fetch OG link preview for link-type updates.
+    if (args.type === "link" && args.linkUrl) {
+      await ctx.scheduler.runAfter(0, internal.linkPreview.fetchPreview, { updateId });
+    }
     return updateId;
   },
 });

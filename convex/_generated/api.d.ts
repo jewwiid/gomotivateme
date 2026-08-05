@@ -20,6 +20,8 @@ import type * as follows from "../follows.js";
 import type * as goals from "../goals.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as linkPreview from "../linkPreview.js";
+import type * as linkPreviewData from "../linkPreviewData.js";
 import type * as moderation from "../moderation.js";
 import type * as motivation from "../motivation.js";
 import type * as notificationPrefs from "../notificationPrefs.js";
@@ -53,6 +55,8 @@ declare const fullApi: ApiFromModules<{
   goals: typeof goals;
   http: typeof http;
   "lib/auth": typeof lib_auth;
+  linkPreview: typeof linkPreview;
+  linkPreviewData: typeof linkPreviewData;
   moderation: typeof moderation;
   motivation: typeof motivation;
   notificationPrefs: typeof notificationPrefs;
