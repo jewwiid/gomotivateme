@@ -1,12 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from "next/og";
+import { SITE_URL as siteUrl } from "@/lib/site";
 
 export const runtime = "edge";
-export const alt = "GoMotivateMe — Goals are harder to quit when people show up";
+export const alt = "GoMotivateMe — Big goals feel lighter with people beside you";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gomotivateme.com";
 
 /** Editorial social card for the homepage and other routes without their own image. */
 export default function OpengraphImage() {
@@ -19,14 +18,14 @@ export default function OpengraphImage() {
           display: "flex",
           position: "relative",
           overflow: "hidden",
-          background: "#f6f8f7",
-          color: "#101714",
+          background: "#fbfaf6",
+          color: "#18201c",
           fontFamily: "Arial, Helvetica, sans-serif",
         }}
       >
         <div
           style={{
-            width: 770,
+            width: 730,
             height: "100%",
             display: "flex",
             flexDirection: "column",
@@ -60,29 +59,30 @@ export default function OpengraphImage() {
           <div
             style={{
               display: "flex",
-              marginTop: 62,
-              color: "#2856d9",
-              fontFamily: "monospace",
-              fontSize: 17,
+              marginTop: 56,
+              color: "#1c419f",
+              background: "#e5ebfa",
+              borderRadius: 999,
+              padding: "9px 16px",
+              fontSize: 16,
               fontWeight: 600,
-              letterSpacing: 0.2,
             }}
           >
-            A public home for personal goals
+            A public home for goals worth finishing
           </div>
 
           <div
             style={{
               display: "flex",
-              marginTop: 22,
-              maxWidth: 660,
-              fontSize: 70,
+              marginTop: 26,
+              maxWidth: 625,
+              fontSize: 68,
               fontWeight: 700,
               lineHeight: 0.94,
               letterSpacing: -4.2,
             }}
           >
-            Goals are harder to quit when people show up.
+            Big goals feel lighter with people beside you.
           </div>
 
           <div
@@ -90,70 +90,83 @@ export default function OpengraphImage() {
               display: "flex",
               marginTop: "auto",
               maxWidth: 620,
-              borderTop: "1px solid #b9c1bd",
+              borderTop: "1px solid #cfc8bc",
               paddingTop: 20,
-              color: "#5d6763",
+              color: "#66706b",
               fontSize: 21,
               lineHeight: 1.35,
             }}
           >
-            Set the goal. Share the work. Let your people help you keep going.
+            Share honest progress. Ask for the support you need. Keep going together.
           </div>
         </div>
 
         <div
           style={{
-            width: 430,
+            width: 470,
             height: "100%",
             display: "flex",
             flexDirection: "column",
             position: "relative",
-            padding: "48px 48px 44px",
-            background: "#121816",
-            color: "#f4f7f5",
+            padding: "48px 40px 40px",
+            background: "#e5ebfa",
+            color: "#18201c",
           }}
         >
           <div
             style={{
               position: "absolute",
-              width: 68,
-              height: 68,
+              width: 82,
+              height: 82,
               right: 0,
               top: 0,
               display: "flex",
-              background: "#2856d9",
+              borderRadius: "0 0 0 36px",
+              background: "#2856c7",
             }}
           />
 
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              paddingRight: 44,
-              color: "#9eaaa5",
-              fontFamily: "monospace",
-              fontSize: 14,
+              maxWidth: 310,
+              color: "#2856c7",
+              fontSize: 17,
+              fontWeight: 700,
             }}
           >
-            <span>Goal record / 001</span>
-            <span style={{ color: "#8cabff" }}>Public</span>
+            People are better than push notifications.
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", marginTop: 104 }}>
-            <div style={{ display: "flex", color: "#aeb8b4", fontSize: 18 }}>
-              A goal worth finishing
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              marginTop: 58,
+              padding: "24px 26px",
+              borderRadius: 24,
+              background: "#fffefb",
+              boxShadow: "0 18px 40px rgba(51, 47, 38, 0.10)",
+              transform: "rotate(-2deg)",
+            }}
+          >
+            <div style={{ display: "flex", color: "#66706b", fontSize: 15 }}>
+              Jude is working on
             </div>
             <div
               style={{
                 display: "flex",
-                marginTop: 18,
-                fontSize: 44,
+                marginTop: 10,
+                fontSize: 34,
                 fontWeight: 700,
-                lineHeight: 0.98,
-                letterSpacing: -2.2,
+                lineHeight: 1,
+                letterSpacing: -1.5,
               }}
             >
-              One clear page. Real progress. People showing up.
+              Launch ReelClip
+            </div>
+            <div style={{ display: "flex", marginTop: 24, height: 7, borderRadius: 99, background: "#e8e3d8" }}>
+              <div style={{ display: "flex", width: "38%", height: "100%", borderRadius: 99, background: "#2856c7" }} />
             </div>
           </div>
 
@@ -161,25 +174,20 @@ export default function OpengraphImage() {
             style={{
               display: "flex",
               flexDirection: "column",
-              marginTop: "auto",
-              borderTop: "1px solid #35403c",
-              paddingTop: 20,
+              marginTop: 20,
+              marginLeft: 42,
+              padding: "22px 24px",
+              borderRadius: 24,
+              background: "#18201c",
+              color: "#fffefb",
+              transform: "rotate(2deg)",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                color: "#aeb8b4",
-                fontFamily: "monospace",
-                fontSize: 14,
-              }}
-            >
-              <span>Progress</span>
-              <span>Keep going</span>
+            <div style={{ display: "flex", color: "#c8d0cc", fontSize: 15 }}>
+              3 people showed up
             </div>
-            <div style={{ display: "flex", height: 5, marginTop: 16, background: "#35403c" }}>
-              <div style={{ display: "flex", width: "64%", height: "100%", background: "#6f91ff" }} />
+            <div style={{ display: "flex", marginTop: 10, fontSize: 27, fontWeight: 700, lineHeight: 1.05 }}>
+              “Keep going. The next version is closer.”
             </div>
           </div>
         </div>

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Community Guidelines: GoMotivateMe",
+  title: "Community Guidelines",
+  alternates: { canonical: "/legal/community-guidelines" },
   description:
     "How we keep gomotivateme.com a place for real encouragement: what to do, what not to do, and what happens when lines get crossed.",
 };

@@ -1,9 +1,24 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://gomotivateme.com";
+/**
+ * Cached per request so generateMetadata and the layout body share a single
+ * Convex round-trip.
+ */
+const fetchGoal = cache(async (handle: string, slug: string) => {
+  const convexUrl = process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!convexUrl) return null;
+  try {
+    const client = new ConvexHttpClient(convexUrl);
+    return await client.query(api.public.getGoalByHandleAndSlug, { handle, slug });
+  } catch {
+    // network/auth errors — callers fall back to defaults
+    return null;
+  }
+});
 
 /**
  * Server component layout for the public goal page.
@@ -21,33 +36,17 @@ export async function generateMetadata({
   const { handle, slug } = await params;
   const normalizedHandle = handle.toLowerCase();
 
-  const convexUrl = process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL;
-  if (!convexUrl) {
-    return {
-      title: "Goal on GoMotivateMe",
-      description: "Support someone's goal on GoMotivateMe.",
-    };
-  }
-
-  let goal: any = null;
-  try {
-    const client = new ConvexHttpClient(convexUrl);
-    goal = await client.query(api.public.getGoalByHandleAndSlug, {
-      handle: normalizedHandle,
-      slug,
-    });
-  } catch {
-    // network/auth errors — fall through to default metadata
-  }
+  const goal: any = await fetchGoal(normalizedHandle, slug);
 
   if (!goal) {
     return {
-      title: "Goal not found · GoMotivateMe",
+      title: "Goal not found",
       description: "This goal may be unlisted or the link is incorrect.",
+      robots: { index: false, follow: false },
     };
   }
 
-  const title = goal.title ?? "Goal on GoMotivateMe";
+  const title = goal.title ?? "Goal";
   const description =
     goal.summary ??
     (goal.story ? truncate(goal.story, 155) : "Support someone's goal on GoMotivateMe.");
@@ -55,11 +54,14 @@ export async function generateMetadata({
   const ogImagePath = `/o/${normalizedHandle}/${slug}/opengraph-image`;
   const ogImageUrl = new URL(ogImagePath, SITE_URL).toString();
 
+  const canonical = `/o/${normalizedHandle}/${slug}`;
+
   const openGraph = {
     title,
     description,
     type: "article" as const,
-    siteName: "GoMotivateMe",
+    siteName: SITE_NAME,
+    url: new URL(canonical, SITE_URL).toString(),
     images: [
       {
         url: ogImageUrl,
@@ -81,6 +83,7 @@ export async function generateMetadata({
     metadataBase: new URL(SITE_URL),
     title,
     description,
+    alternates: { canonical },
     openGraph,
     twitter,
   };
@@ -91,10 +94,51 @@ function truncate(s: string, max: number) {
   return s.slice(0, max - 1) + "…";
 }
 
-export default function GoalLayout({
+export default async function GoalLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ handle: string; slug: string }>;
 }) {
-  return children;
+  const { handle, slug } = await params;
+  const normalizedHandle = handle.toLowerCase();
+  const goal: any = await fetchGoal(normalizedHandle, slug);
+
+  if (!goal) return children;
+
+  /**
+   * BreadcrumbList so search results show "gomotivateme.com › Explore › @handle"
+   * instead of a raw URL.
+   */
+  const breadcrumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Explore", item: `${SITE_URL}/explore` },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: goal.ownerName ?? `@${normalizedHandle}`,
+        item: `${SITE_URL}/@${normalizedHandle}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: goal.title ?? "Goal",
+        item: `${SITE_URL}/o/${normalizedHandle}/${slug}`,
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
+      {children}
+    </>
+  );
 }

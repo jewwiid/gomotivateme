@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Cookie Policy: gomotivateme",
+  title: "Cookie Policy",
+  alternates: { canonical: "/legal/cookies" },
   description: "What cookies gomotivateme sets, why, and how to manage them.",
 };
 

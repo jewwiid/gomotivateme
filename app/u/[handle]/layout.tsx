@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gomotivateme.com";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 /**
  * Server component layout for the public profile page.
@@ -40,8 +38,9 @@ export async function generateMetadata({
 
   if (!summary) {
     return {
-      title: "Profile not found · GoMotivateMe",
+      title: "Profile not found",
       description: "This person may not be on GoMotivateMe yet.",
+      robots: { index: false, follow: false },
     };
   }
 
@@ -51,7 +50,7 @@ export async function generateMetadata({
   const supportersCount = summary.stats.supportersCount ?? 0;
   const motivatingCount = summary.stats.motivatingCount ?? 0;
 
-  const title = `${name} (@${summary.user.handle}) on GoMotivateMe`;
+  const title = `${name} (@${summary.user.handle})`;
   const description = bio
     ? truncate(bio, 155)
     : `${name} has ${goalsCount} ${goalsCount === 1 ? "goal" : "goals"} on GoMotivateMe with ${supportersCount} supporters. Join the team and help them get there.`;
@@ -59,11 +58,19 @@ export async function generateMetadata({
   const ogImagePath = `/u/${normalizedHandle}/opengraph-image`;
   const ogImageUrl = new URL(ogImagePath, SITE_URL).toString();
 
+  /**
+   * Profiles are linked as /@handle everywhere in the app (middleware rewrites
+   * to /u/handle), so /@handle is the canonical URL — otherwise both paths
+   * serve 200 and look like duplicate pages.
+   */
+  const canonical = `/@${summary.user.handle}`;
+
   const openGraph = {
     title,
     description,
     type: "profile" as const,
-    siteName: "GoMotivateMe",
+    siteName: SITE_NAME,
+    url: new URL(canonical, SITE_URL).toString(),
     images: [
       {
         url: ogImageUrl,
@@ -85,6 +92,7 @@ export async function generateMetadata({
     metadataBase: new URL(SITE_URL),
     title,
     description,
+    alternates: { canonical },
     openGraph,
     twitter,
   };

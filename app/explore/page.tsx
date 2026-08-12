@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ExploreContent } from "./ExploreContent";
+
+export const metadata: Metadata = {
+  title: "Explore goals and motivators",
+  description:
+    "Browse real goals people are working on right now — health, learning, launches, creative projects, habits — and find someone worth cheering on.",
+  alternates: { canonical: "/explore" },
+  openGraph: {
+    title: "Explore goals and motivators · GoMotivateMe",
+    description:
+      "Browse real goals people are working on right now and find someone worth cheering on.",
+    url: "/explore",
+  },
+};
 
 /**
  * Discover surface — Goals / Motivators / Categories.

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy: GoMotivateMe",
+  title: "Privacy Policy",
+  alternates: { canonical: "/legal/privacy" },
   description:
     "What gomotivateme.com collects, why, and what you can do about it.",
 };
@@ -86,10 +87,10 @@ export default function PrivacyPage() {
                 detection, retained for 90 days.
               </li>
               <li>
-                <strong>Email events</strong>: delivery, open, click
-                tracking for any emails we send you (only if you've opted
-                into the relevant category). We use Resend as our email
-                provider; they store the same metadata.
+                <strong>Email events</strong>: we store queue and delivery
+                status for emails we send. Our provider, Resend, may also
+                process delivery, open, click, bounce, and complaint metadata
+                for deliverability and campaign reporting.
               </li>
               <li>
                 <strong>Aggregated analytics</strong>: page views, feature
@@ -130,8 +131,19 @@ export default function PrivacyPage() {
               opted into).
             </li>
             <li>
-              Send you weekly digests and re-engagement emails (only if
-              you haven't opted out of that category).
+              Send goal activity summaries and accountability reminders
+              according to the choices in your email settings.
+            </li>
+            <li>
+              Send the optional Discover newsletter featuring approved public
+              goals only after you affirmatively choose Daily or Weekly. It is
+              off by default and can be turned off at any time.
+            </li>
+            <li>
+              Feature content from approved public goals in discovery surfaces,
+              including the optional Discover newsletter. Private, unlisted,
+              anonymous, rejected, and sensitive-category goals are excluded
+              from that newsletter.
             </li>
             <li>
               Investigate abuse, violations of our{" "}

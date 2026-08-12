@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service: GoMotivateMe",
+  title: "Terms of Service",
+  alternates: { canonical: "/legal/terms" },
   description:
     "The rules for using gomotivateme.com: your account, your content, what's allowed, and what's not.",
 };

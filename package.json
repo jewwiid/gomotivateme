@@ -19,6 +19,7 @@
     "@convex-dev/auth": "^0.0.94",
     "@convex-dev/rate-limiter": "^0.3.2",
     "@react-email/components": "^1.0.12",
+    "@vercel/analytics": "^2.0.1",
     "ai": "^6.0.237",
     "convex": "^1.42.3",
     "framer-motion": "^11.18.0",
