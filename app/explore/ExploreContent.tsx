@@ -11,6 +11,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CATEGORIES, FEATURED_CATEGORIES, getCategory } from "@/lib/categories";
 import { displayName, relativeTime } from "@/lib/format";
+import { journeyIllustrationForProgress } from "@/lib/journeyIllustrations";
 import { Header } from "@/components/Header";
 
 type Tab = "goals" | "motivators" | "categories";
@@ -457,7 +458,14 @@ function ExploreGoalRow({
             )}
           </div>
         ) : (
-          <div className="hidden aspect-[4/3] border border-[var(--color-border)] bg-[var(--color-bg-sunken)] sm:block" aria-hidden />
+          <div className="relative hidden aspect-[4/3] overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-elev)] sm:block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={journeyIllustrationForProgress(progress).src}
+              alt=""
+              className="h-full w-full object-cover mix-blend-multiply transition duration-500 group-hover:scale-[1.035]"
+            />
+          </div>
         )}
         <div className="grid min-w-0 gap-4 lg:contents">
           <span className="font-mono text-xs text-[var(--color-text-dim)]">{String(index + 1).padStart(2, "0")}</span>

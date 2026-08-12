@@ -458,6 +458,66 @@ export default defineSchema({
     .index("by_owner_awarded", ["ownerId", "awardedAt"]),
 
   /**
+   * Per-request AI usage ledger. No prompts or generated copy are stored here:
+   * only the feature, token counts, estimated cost, and whether the user used
+   * the draft. This keeps cost reporting useful without retaining goal text.
+   */
+  aiUsageEvents: defineTable({
+    userId: v.id("users"),
+    feature: v.union(
+      v.literal("formAssist"),
+      v.literal("supportDraft"),
+      v.literal("checkInDraft"),
+      v.literal("nextAction"),
+      v.literal("recoveryPlan"),
+      v.literal("weeklyRecap"),
+      v.literal("inviteDraft"),
+      v.literal("applicationSummary")
+    ),
+    model: v.string(),
+    source: v.union(v.literal("model"), v.literal("cache")),
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+    cachedInputTokens: v.number(),
+    /** Estimated spend in millionths of a US dollar. */
+    estimatedCostMicros: v.number(),
+    outcome: v.optional(
+      v.union(
+        v.literal("applied"),
+        v.literal("sent"),
+        v.literal("viewed"),
+        v.literal("dismissed")
+      )
+    ),
+    createdAt: v.number(),
+    outcomeAt: v.optional(v.number()),
+  })
+    .index("by_created", ["createdAt"])
+    .index("by_user_created", ["userId", "createdAt"])
+    .index("by_user_feature_created", ["userId", "feature", "createdAt"]),
+
+  /** Short-lived, user-scoped cache for identical AI requests. */
+  aiSuggestionCache: defineTable({
+    userId: v.id("users"),
+    feature: v.union(
+      v.literal("supportDraft"),
+      v.literal("checkInDraft"),
+      v.literal("nextAction"),
+      v.literal("recoveryPlan"),
+      v.literal("weeklyRecap"),
+      v.literal("inviteDraft"),
+      v.literal("applicationSummary")
+    ),
+    contextKey: v.string(),
+    value: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_user_feature_key", ["userId", "feature", "contextKey"])
+    .index("by_expiry", ["expiresAt"]),
+
+  /**
    * Motivation Circle — the creator's pre-launch team.
    * The creator sends up to six of these. Each invitee accepts, declines, or
    * asks a question. On accept, a motivatorPledge is created.

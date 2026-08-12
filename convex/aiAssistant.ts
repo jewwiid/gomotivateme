@@ -86,6 +86,13 @@ type Draft = {
   updateText?: string;
 };
 
+const MAX_OUTPUT_TOKENS: Record<Task, number> = {
+  shapeGoal: 320,
+  suggestMilestones: 420,
+  draftStory: 900,
+  rewriteUpdate: 360,
+};
+
 const FIELD_LIMITS: Array<[keyof Draft, number]> = [
   ["category", 40],
   ["title", 120],
@@ -210,9 +217,33 @@ export const suggest = action({
         message: "AI help is not configured yet.",
       });
     }
+    if (process.env.AI_DISABLED === "1") {
+      throw new ConvexError({
+        code: "AI_DISABLED",
+        message: "AI help is temporarily paused.",
+      });
+    }
 
     validateDraft(task, draft);
-    await ctx.runMutation(internal.aiRateLimits.consume, { userId });
+    const configuredBudget = Number(process.env.AI_DAILY_BUDGET_USD ?? "5");
+    const dailyBudgetMicros =
+      (Number.isFinite(configuredBudget) && configuredBudget > 0
+        ? configuredBudget
+        : 5) * 1_000_000;
+    const dailySpendMicros = await ctx.runQuery(
+      internal.aiOperations.dailySpendMicros,
+      {}
+    );
+    if (dailySpendMicros >= dailyBudgetMicros) {
+      throw new ConvexError({
+        code: "AI_BUDGET_LIMIT",
+        message: "AI help has reached today's service budget. Please try again tomorrow.",
+      });
+    }
+    await ctx.runMutation(internal.aiRateLimits.consume, {
+      userId,
+      feature: "formAssist",
+    });
 
     try {
       const result = await formAssistant.generateObject(
@@ -221,7 +252,7 @@ export const suggest = action({
         {
           prompt: buildPrompt(task, draft),
           schema: suggestionSchema,
-          maxOutputTokens: 900,
+          maxOutputTokens: MAX_OUTPUT_TOKENS[task],
           maxRetries: 2,
           providerOptions: {
             openai: {
@@ -238,6 +269,19 @@ export const suggest = action({
           storageOptions: { saveMessages: "none" },
         }
       );
+
+      await ctx.runMutation(internal.aiOperations.recordUsage, {
+        userId,
+        feature: "formAssist",
+        model: "gpt-5.6-luna",
+        source: "model",
+        inputTokens: result.usage.inputTokens ?? 0,
+        outputTokens: result.usage.outputTokens ?? 0,
+        cachedInputTokens:
+          result.usage.cachedInputTokens ??
+          result.usage.inputTokenDetails?.cacheReadTokens ??
+          0,
+      });
 
       return {
         task,

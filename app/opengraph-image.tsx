@@ -108,87 +108,35 @@ export default function OpengraphImage() {
             display: "flex",
             flexDirection: "column",
             position: "relative",
-            padding: "48px 40px 40px",
-            background: "#e5ebfa",
+            overflow: "hidden",
+            background: "#fbfaf6",
             color: "#18201c",
           }}
         >
+          <img
+            src={`${siteUrl}/illustrations/journey/home-community.webp`}
+            alt=""
+            width={630}
+            height={630}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "flex" }}
+          />
           <div
             style={{
               position: "absolute",
-              width: 82,
-              height: 82,
-              right: 0,
-              top: 0,
+              left: 28,
+              right: 28,
+              bottom: 28,
               display: "flex",
-              borderRadius: "0 0 0 36px",
-              background: "#2856c7",
-            }}
-          />
-
-          <div
-            style={{
-              display: "flex",
-              maxWidth: 310,
-              color: "#2856c7",
-              fontSize: 17,
+              padding: "16px 18px",
+              borderLeft: "4px solid #feb704",
+              background: "rgba(251,250,246,0.92)",
+              color: "#18201c",
+              fontSize: 19,
               fontWeight: 700,
+              lineHeight: 1.25,
             }}
           >
-            People are better than push notifications.
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              marginTop: 58,
-              padding: "24px 26px",
-              borderRadius: 24,
-              background: "#fffefb",
-              boxShadow: "0 18px 40px rgba(51, 47, 38, 0.10)",
-              transform: "rotate(-2deg)",
-            }}
-          >
-            <div style={{ display: "flex", color: "#66706b", fontSize: 15 }}>
-              Jude is working on
-            </div>
-            <div
-              style={{
-                display: "flex",
-                marginTop: 10,
-                fontSize: 34,
-                fontWeight: 700,
-                lineHeight: 1,
-                letterSpacing: -1.5,
-              }}
-            >
-              Launch ReelClip
-            </div>
-            <div style={{ display: "flex", marginTop: 24, height: 7, borderRadius: 99, background: "#e8e3d8" }}>
-              <div style={{ display: "flex", width: "38%", height: "100%", borderRadius: 99, background: "#2856c7" }} />
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              marginTop: 20,
-              marginLeft: 42,
-              padding: "22px 24px",
-              borderRadius: 24,
-              background: "#18201c",
-              color: "#fffefb",
-              transform: "rotate(2deg)",
-            }}
-          >
-            <div style={{ display: "flex", color: "#c8d0cc", fontSize: 15 }}>
-              3 people showed up
-            </div>
-            <div style={{ display: "flex", marginTop: 10, fontSize: 27, fontWeight: 700, lineHeight: 1.05 }}>
-              “Keep going. The next version is closer.”
-            </div>
+            Progress is personal. Support makes it shared.
           </div>
         </div>
       </div>

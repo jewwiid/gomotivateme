@@ -37,10 +37,10 @@ const FREQ_LABEL: Record<string, string> = {
 };
 
 const ROW_MEDIA = [
-  "/illustrations/steps/together-v3.webp",
-  "/illustrations/steps/share-v3.webp",
-  "/illustrations/steps/move-v3.webp",
-  "/illustrations/steps/plan-v3.webp",
+  "/illustrations/journey/support.webp",
+  "/illustrations/journey/move.webp",
+  "/illustrations/journey/return.webp",
+  "/illustrations/journey/milestone.webp",
 ];
 
 export default function MotivatePage() {
@@ -207,8 +207,14 @@ function timeAgoShort(ms: number): string {
 function EmptyState() {
   return (
     <div className="workspace-card mt-7 grid place-items-center border-dashed px-6 py-16 text-center">
-      <Sparkles size={28} className="text-[var(--color-gold-text)]" />
-      <h2 className="mt-4 font-display text-2xl font-bold tracking-[-0.035em]">No commitments yet</h2>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/illustrations/journey/support.webp"
+        alt=""
+        aria-hidden
+        className="h-40 w-40 object-cover mix-blend-multiply"
+      />
+      <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.035em]">No commitments yet</h2>
       <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--color-text-muted)]">When someone invites you into their circle, their goal will appear here.</p>
       <Link href="/explore" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]">
         Browse goals <ArrowRight size={15} />

@@ -8,7 +8,7 @@ export default function NotFound() {
       <main className="mx-auto flex max-w-2xl flex-col items-center justify-center px-5 py-16 text-center sm:px-8 sm:py-24">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/not-found.png"
+          src="/illustrations/journey/return.webp"
           alt=""
           aria-hidden
           width={240}

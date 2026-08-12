@@ -292,7 +292,7 @@ export default function InvitePage() {
 
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/illustrations/motivation-circle-v3.webp"
+            src="/illustrations/journey/support.webp"
             alt=""
             aria-hidden
             className="mx-auto mt-6 h-36 w-36 select-none object-contain sm:h-44 sm:w-44"

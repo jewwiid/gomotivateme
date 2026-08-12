@@ -39,6 +39,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { MotivationCircleManager } from "@/components/MotivationCircleManager";
 import { ApplicationQueue } from "@/components/ApplicationQueue";
+import { GoalMomentumCoach } from "@/components/GoalMomentumCoach";
 import { UpdateCard } from "@/components/UpdateCard";
 import { MilestonesList } from "@/components/MilestonesList";
 import {
@@ -61,6 +62,7 @@ import {
   aiAssistantErrorMessage,
   type AiSuggestion,
 } from "@/lib/aiAssistant";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 function targetDateInputValue(timestamp?: number) {
   if (!timestamp) return "";
@@ -128,7 +130,7 @@ function GoalDetailDesignPreview() {
       <Header previewUser={{ name: "Jude Okun", handle: "jude" }} />
       <OwnerGoalWorkspace
         goal={previewGoal}
-        coverUrl="/illustrations/hero-community-v3.webp"
+        coverUrl="/illustrations/journey/move.webp"
         progress={25}
         publicUrl={publicUrl}
         linkCopied={copied}
@@ -283,6 +285,41 @@ function GoalDetailContent() {
     motivators?.[0]?.user?.displayName ??
     motivators?.[0]?.user?.name ??
     undefined;
+  const firstIncomplete = (goal.milestones ?? []).find((milestone: any) => !milestone.done);
+  const streakOffset = goal.streakTimezoneOffsetMinutes ?? new Date().getTimezoneOffset();
+  const streakTodayKey = new Date(Date.now() - streakOffset * 60_000)
+    .toISOString()
+    .slice(0, 10);
+  const streakLoggedToday = goal.streakLastLoggedDay === streakTodayKey;
+  const nextUpdateKind: OwnerUpdateKind =
+    goal.progressType === "milestones"
+      ? "milestone"
+      : goal.progressType === "streak"
+      ? "streak"
+      : "progress";
+  const fallbackAction =
+    goal.progressType === "milestones" && firstIncomplete?.title
+      ? `Define your ${firstIncomplete.title.toLowerCase()}`
+      : goal.progressType === "streak"
+      ? streakLoggedToday
+        ? "Today's streak is safe"
+        : "Mark today's progress"
+      : goal.progressType === "number"
+      ? `Log your ${goal.unit ?? "progress"}`
+      : "Share what you learned";
+  const fallbackReason =
+    goal.progressType === "milestones"
+      ? "Clarify the outcome, success metrics, and the next concrete step."
+      : goal.progressType === "streak"
+      ? streakLoggedToday
+        ? "You showed up today. Come back tomorrow to keep the chain going."
+        : "Keep your streak alive — log today and stay on track."
+      : "Update your progress and keep your supporters in the loop.";
+  const lastActivityAt = Math.max(
+    goal.launchedAt ?? goal.createdAt,
+    ...(updates ?? []).filter((update: any) => !update.revertedAt).map((update: any) => update.createdAt)
+  );
+  const staleDays = Math.max(0, Math.floor((Date.now() - lastActivityAt) / 86_400_000));
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
@@ -319,6 +356,26 @@ function GoalDetailContent() {
         supporters={supporters}
         motivators={motivators}
         supporterName={supporterName}
+        nextActionPanel={
+          <GoalMomentumCoach
+            goalId={goalId}
+            fallbackAction={fallbackAction}
+            fallbackReason={fallbackReason}
+            updateKind={nextUpdateKind}
+            updateDisabled={goal.progressType === "streak" && streakLoggedToday}
+            updateLabel={
+              goal.progressType === "milestones"
+                ? "Create plan"
+                : goal.progressType === "streak"
+                ? streakLoggedToday
+                  ? "Done for today"
+                  : "Mark today"
+                : "Log progress"
+            }
+            staleDays={staleDays}
+            onOpenUpdate={(kind) => setShowUpdate(kind)}
+          />
+        }
         onCopyLink={onCopyLink}
         onOpenUpdate={(kind: OwnerUpdateKind) => setShowUpdate(kind)}
         onPostUpdate={postQuickUpdate}
@@ -465,6 +522,7 @@ function GoalDetailContent() {
                 goalId,
                 delta: goal.direction === "decrease" ? -1 : 1,
               });
+              trackDataFastGoal("goal_update_posted", { update_type: "quick" });
             }}
             onClose={() => setShowUpdate(null)}
           />
@@ -986,6 +1044,7 @@ function NoteForm({
         setBusy(true);
         try {
           await add({ goalId, type: "note", note: text });
+          trackDataFastGoal("goal_update_posted", { update_type: "note" });
           onDone();
         } finally {
           setBusy(false);
@@ -1134,6 +1193,7 @@ function MediaForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void
           }
           setBusyLabel("Posting update...");
           await addMedia({ goalId, note: caption || undefined, uploads, embedUrls: urls });
+          trackDataFastGoal("goal_update_posted", { update_type: "media" });
           onDone();
         } catch (e) {
           setErr(e instanceof Error ? e.message : "Upload failed");
@@ -1226,6 +1286,7 @@ function LinkForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void 
         setBusy(true);
         try {
           await add({ goalId, type: "link", linkUrl: url, linkTitle: title || undefined });
+          trackDataFastGoal("goal_update_posted", { update_type: "link" });
           onDone();
         } finally {
           setBusy(false);
@@ -1285,6 +1346,7 @@ function ValueForm({
             value: parseFloat(value),
             note: note || undefined,
           });
+          trackDataFastGoal("goal_update_posted", { update_type: "value" });
           onDone();
         } finally {
           setBusy(false);
@@ -1344,6 +1406,7 @@ function StreakForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => voi
             note: note || undefined,
             tzOffsetMinutes: new Date().getTimezoneOffset(),
           });
+          trackDataFastGoal("goal_update_posted", { update_type: "streak" });
           onDone();
         } catch (e) {
           setErr(e instanceof Error ? e.message : "Could not log streak day");
@@ -1406,6 +1469,7 @@ function MilestoneForm({
               setBusy(m.id);
               try {
                 await toggleMilestone({ goalId, milestoneId: m.id, done: true });
+                trackDataFastGoal("goal_update_posted", { update_type: "milestone" });
                 onDone();
               } finally {
                 setBusy(null);

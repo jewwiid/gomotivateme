@@ -91,6 +91,7 @@ export function OwnerGoalWorkspace({
   supporters,
   motivators,
   supporterName,
+  nextActionPanel,
   onCopyLink,
   onOpenUpdate,
   onPostUpdate,
@@ -111,6 +112,7 @@ export function OwnerGoalWorkspace({
   supporters: WorkspaceSupporter[] | undefined;
   motivators: WorkspaceMotivator[] | undefined;
   supporterName?: string;
+  nextActionPanel?: ReactNode;
   onCopyLink: () => void;
   onOpenUpdate: (kind: OwnerUpdateKind) => void;
   onPostUpdate: (note: string) => Promise<void>;
@@ -211,7 +213,7 @@ export function OwnerGoalWorkspace({
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={coverUrl || "/illustrations/hero-community-v3.webp"}
+                src={coverUrl || "/illustrations/journey/move.webp"}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -465,7 +467,7 @@ export function OwnerGoalWorkspace({
           </div>
 
           <aside className="space-y-4">
-            <section className="workspace-card p-3">
+            {nextActionPanel ?? <section className="workspace-card p-3">
               <div className="flex items-start gap-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]">
                   <Sparkles size={18} aria-hidden />
@@ -506,7 +508,7 @@ export function OwnerGoalWorkspace({
                   </div>
                 </div>
               </div>
-            </section>
+            </section>}
 
             <section className="workspace-card p-4">
               <div className="flex items-center justify-between">

@@ -19,6 +19,7 @@ import {
   validateHandleClient,
 } from "@/lib/handle";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 export default function SignupPage() {
   return (
@@ -153,6 +154,7 @@ function SignupForm() {
     }
 
     setBusy(true);
+    trackDataFastGoal("signup_started", { method: "password" });
     let waitingForSession = false;
     try {
       const result = await signIn("password", {
@@ -164,6 +166,7 @@ function SignupForm() {
       if (!result.signingIn) {
         throw new Error("Sign-up did not create a session");
       }
+      trackDataFastGoal("signup_completed", { method: "password" });
       waitingForSession = true;
       setAwaitingSession(true);
     } catch (e) {

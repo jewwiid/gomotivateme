@@ -11,16 +11,10 @@ import { Id } from "@/convex/_generated/dataModel";
 import { FEATURED_CATEGORIES } from "@/lib/categories";
 import { relativeTime, displayName } from "@/lib/format";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { JOURNEY_ILLUSTRATIONS, journeyIllustrationForProgress } from "@/lib/journeyIllustrations";
 import { Header } from "@/components/Header";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
-
-const HERO_SLIDES = [
-  { src: "/illustrations/hero-community-v3.webp", alt: "People supporting each other's goals" },
-  { src: "/illustrations/motivation-circle-v3.webp", alt: "A group planning together" },
-  { src: "/illustrations/steps/together-v3.webp", alt: "People working together" },
-  { src: "/illustrations/steps/share-v3.webp", alt: "Friends encouraging each other" },
-];
 
 export default function HomePage() {
   const { user } = useCurrentUser();
@@ -74,7 +68,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: easeOut }}
-                className="inline-flex rounded-full bg-[var(--color-primary-soft)] px-4 py-2 text-xs font-semibold text-[var(--color-primary-dark)]"
+                className="inline-flex border-l-2 border-[var(--color-sun)] py-1 pl-3 text-xs font-semibold text-[var(--color-primary-dark)]"
               >
                 A public home for goals worth finishing
               </motion.p>
@@ -102,6 +96,8 @@ export default function HomePage() {
               >
                 <Link
                   href={startGoalHref}
+                  data-fast-goal="start_goal_clicked"
+                  data-fast-goal-source="home_hero"
                   className="inline-flex min-h-13 items-center rounded-full bg-[var(--color-primary)] px-6 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)] active:translate-y-0"
                 >
                   Start your goal <span className="ml-3" aria-hidden>→</span>
@@ -129,7 +125,7 @@ export default function HomePage() {
               transition={{ duration: 0.7, delay: 0.12, ease: easeOut }}
               className="relative"
             >
-              <HeroCommunityCollage cards={HERO_SLIDES} />
+              <JourneyHero />
             </motion.div>
           </div>
         </section>
@@ -151,15 +147,18 @@ export default function HomePage() {
 
             <ol className="mt-12 border-t border-[var(--color-border-strong)] lg:mt-0">
               {[
-                ["1", "Say what you want to do", "Name the target, why it matters, and the next few steps. Clear beats impressive."],
-                ["2", "Invite the right kind of help", "Ask for encouragement, advice, check-ins, or someone to work alongside you."],
-                ["3", "Share the honest version", "Post the good weeks and the stuck ones. People can support what they can see."],
-              ].map(([number, title, body]) => (
-                <li key={number} className="grid gap-4 border-b border-[var(--color-border-strong)] py-7 sm:grid-cols-[3rem_1fr] sm:gap-5 sm:py-8">
-                  <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">{number}</span>
+                ["1", "Say what you want to do", "Name the target, why it matters, and the next few steps. Clear beats impressive.", JOURNEY_ILLUSTRATIONS.begin],
+                ["2", "Invite the right kind of help", "Ask for encouragement, advice, check-ins, or someone to work alongside you.", JOURNEY_ILLUSTRATIONS.support],
+                ["3", "Share the honest version", "Post the good weeks and the stuck ones. People can support what they can see.", JOURNEY_ILLUSTRATIONS.move],
+              ].map(([number, title, body, illustration]) => (
+                <li key={number as string} className="grid grid-cols-[3rem_minmax(0,1fr)_5rem] gap-4 border-b border-[var(--color-border-strong)] py-7 sm:grid-cols-[3rem_minmax(0,1fr)_6.5rem] sm:gap-5 sm:py-8">
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">{number as string}</span>
                   <div className="grid gap-3 md:grid-cols-[0.85fr_1.15fr] md:gap-8">
-                    <h3 className="text-xl font-semibold tracking-[-0.025em]">{title}</h3>
-                    <p className="max-w-md text-sm leading-6 text-[var(--color-text-secondary)]">{body}</p>
+                    <h3 className="text-xl font-semibold tracking-[-0.025em]">{title as string}</h3>
+                    <p className="max-w-md text-sm leading-6 text-[var(--color-text-secondary)]">{body as string}</p>
+                  </div>
+                  <div className="relative aspect-square self-center overflow-hidden rounded-[1rem] bg-[var(--color-surface)]">
+                    <Image src={(illustration as typeof JOURNEY_ILLUSTRATIONS.begin).src} alt="" fill sizes="104px" className="object-cover mix-blend-multiply" />
                   </div>
                 </li>
               ))}
@@ -233,6 +232,8 @@ export default function HomePage() {
 
             <Link
               href="/explore"
+              data-fast-goal="explore_goals_clicked"
+              data-fast-goal-source="home"
               className="mt-9 inline-flex min-h-11 items-center border-b border-[var(--color-text)] text-sm font-semibold transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
             >
               Browse all public goals <span className="ml-3" aria-hidden>→</span>
@@ -253,6 +254,8 @@ export default function HomePage() {
             </div>
             <Link
               href={startGoalHref}
+              data-fast-goal="start_goal_clicked"
+              data-fast-goal-source="home_footer_cta"
               className="inline-flex min-h-13 w-fit items-center rounded-full bg-[var(--color-text)] px-6 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[var(--color-primary)] active:translate-y-0"
             >
               Start your goal <span className="ml-4" aria-hidden>→</span>
@@ -306,7 +309,7 @@ function GoalTile({
         ) : (
           <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-bg-elev)]">
             <Image
-              src={HERO_SLIDES[index % HERO_SLIDES.length].src}
+              src={journeyIllustrationForProgress(progress).src}
               alt=""
               fill
               sizes="(min-width: 1280px) 600px, (min-width: 768px) 50vw, 100vw"
@@ -374,41 +377,20 @@ function formatCategory(category?: string) {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function HeroCommunityCollage({
-  cards,
-}: {
-  cards: Array<{ src: string; alt: string }>;
-}) {
-  const placements = [
-    "left-[2%] top-[1%] w-[51%] -rotate-[4deg]",
-    "right-[1%] top-[12%] w-[43%] rotate-[4deg]",
-    "bottom-[1%] left-[9%] w-[39%] rotate-[3deg]",
-    "bottom-[3%] right-[4%] w-[45%] -rotate-[3deg]",
-  ];
-
+function JourneyHero() {
   return (
-    <div className="relative mx-auto aspect-[1/1.02] w-full max-w-[43rem] sm:aspect-[1.08/1]">
-      <div className="absolute inset-[7%] rotate-2 rounded-[30%_45%_34%_48%] bg-[var(--color-primary-soft)]" aria-hidden />
-      {cards.map((card, index) => (
-        <motion.figure
-          key={`${card.src}-${index}`}
-          initial={{ opacity: 0, y: 22, rotate: 0 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.16 + index * 0.08, ease: easeOut }}
-          className={`absolute overflow-hidden rounded-[1.35rem] border-[5px] border-[var(--color-surface)] bg-[var(--color-surface)] shadow-[0_28px_70px_-38px_rgba(43,39,31,0.58)] ${placements[index]}`}
-        >
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[0.95rem] bg-[var(--color-bg-sunken)]">
-            <Image
-              src={card.src}
-              alt={card.alt}
-              fill
-              priority={index < 2}
-              sizes="(min-width: 1024px) 24vw, (min-width: 640px) 36vw, 48vw"
-              className="object-cover"
-            />
-          </div>
-        </motion.figure>
-      ))}
-    </div>
+    <figure className="relative mx-auto aspect-square w-full max-w-[43rem] overflow-hidden">
+      <Image
+        src={JOURNEY_ILLUSTRATIONS.homeCommunity.src}
+        alt={JOURNEY_ILLUSTRATIONS.homeCommunity.alt}
+        fill
+        priority
+        sizes="(min-width: 1024px) 52vw, 100vw"
+        className="object-contain mix-blend-multiply"
+      />
+      <figcaption className="absolute bottom-[3%] left-[4%] max-w-[15rem] border-l-2 border-[var(--color-sun)] bg-[color:rgba(251,250,246,0.88)] py-2 pl-3 pr-4 text-xs font-medium leading-5 text-[var(--color-text-secondary)] backdrop-blur-sm">
+        Progress is personal. Support makes it shared.
+      </figcaption>
+    </figure>
   );
 }

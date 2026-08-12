@@ -1,10 +1,13 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useState } from "react";
 import { Check, Loader2, X } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { trackDataFastGoal } from "@/lib/analytics";
+import { AiAssistButton, AiSuggestionPicker } from "@/components/AiAssist";
+import { aiAssistantErrorMessage } from "@/lib/aiAssistant";
 
 const CHECK_IN_TYPES = [
   { id: "encouragement", label: "Encouragement", hint: "Cheer them on" },
@@ -26,11 +29,38 @@ export function CheckInComposer({
   onDone?: () => void;
 }) {
   const createCheckIn = useMutation(api.motivation.createCheckIn);
+  const draftCheckIn = useAction(api.aiCoach.draftCheckIn);
+  const recordAiOutcome = useMutation(api.aiOperations.recordOutcome);
   const [type, setType] = useState<string>("encouragement");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<Array<{ text: string; angle: string }>>([]);
+  const [aiRationale, setAiRationale] = useState("");
+  const [aiUsageEventId, setAiUsageEventId] = useState<Id<"aiUsageEvents"> | null>(null);
+
+  const requestAiDraft = async () => {
+    setAiBusy(true);
+    setAiErr(null);
+    setAiSuggestions([]);
+    try {
+      const result = await draftCheckIn({
+        pledgeId,
+        type,
+        draftText: body.trim() || undefined,
+      });
+      setAiSuggestions(result.suggestions);
+      setAiRationale(result.rationale);
+      setAiUsageEventId(result.usageEventId);
+    } catch (error) {
+      setAiErr(aiAssistantErrorMessage(error));
+    } finally {
+      setAiBusy(false);
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +69,10 @@ export function CheckInComposer({
     setErr(null);
     try {
       await createCheckIn({ pledgeId, type, body });
+      if (aiUsageEventId) {
+        void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "sent" });
+      }
+      trackDataFastGoal("checkin_sent", { checkin_type: type });
       setDone(true);
       setTimeout(() => onDone?.(), 1200);
     } catch (e) {
@@ -107,6 +141,35 @@ export function CheckInComposer({
             {busy ? "Sending..." : "Send check-in"}
           </button>
         </div>
+      </div>
+      <div className="space-y-2 border-t border-[var(--color-border)] pt-3">
+        <AiAssistButton
+          label={body.trim() ? "Improve with AI" : "Help me write this"}
+          busyLabel="Drafting options…"
+          busy={aiBusy}
+          onClick={() => void requestAiDraft()}
+        />
+        {aiErr ? <p className="text-xs text-[var(--color-danger-text)]">{aiErr}</p> : null}
+        {aiSuggestions.length > 0 ? (
+          <AiSuggestionPicker
+            suggestions={aiSuggestions}
+            rationale={aiRationale}
+            onSelect={(text) => {
+              setBody(text);
+              if (aiUsageEventId) {
+                void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "applied" });
+              }
+              trackDataFastGoal("ai_suggestion_applied", { feature: "checkin_draft" });
+              setAiSuggestions([]);
+            }}
+            onDismiss={() => {
+              if (aiUsageEventId) {
+                void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "dismissed" });
+              }
+              setAiSuggestions([]);
+            }}
+          />
+        ) : null}
       </div>
       {err && (
         <div className="flex items-center gap-1.5 text-xs text-[var(--color-danger-text)]">

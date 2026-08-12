@@ -23,6 +23,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Header } from "@/components/Header";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 const ROLE_META: Record<
   string,
@@ -359,6 +360,9 @@ export default function ApplyPage() {
         message: message.trim(),
         pledgeText: pledgeText.trim() || undefined,
       });
+      trackDataFastGoal("motivation_application_submitted", {
+        outcome: result.kind === "auto-accepted" ? "accepted" : "pending",
+      });
       if (result.kind === "auto-accepted") {
         router.push("/motivate?from=" + goalId);
         return;
@@ -422,7 +426,7 @@ export default function ApplyPage() {
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/illustrations/motivation-circle-v3.webp"
+            src="/illustrations/journey/support.webp"
             alt="A circle of people showing up for a shared goal"
             className="mt-10 h-44 w-44 object-contain"
           />

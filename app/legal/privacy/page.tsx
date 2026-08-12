@@ -8,8 +8,8 @@ export const metadata: Metadata = {
     "What gomotivateme.com collects, why, and what you can do about it.",
 };
 
-const LAST_UPDATED = "July 22, 2026";
-const EFFECTIVE = "July 22, 2026";
+const LAST_UPDATED = "August 12, 2026";
+const EFFECTIVE = "August 12, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -30,8 +30,9 @@ export default function PrivacyPage() {
         <strong>The short version.</strong> We collect the minimum data we
         need to run gomotivateme.com: an email, a password (hashed), the
         goals and messages you create, and basic usage data to keep the
-        Service working. We don't sell your data. We don't show you ads.
-        You can export or delete your account anytime.
+        Service working. Optional DataFast analytics runs only with your
+        consent. We don't sell your data. We don't show you ads. You can
+        export or delete your account anytime.
       </p>
 
       <div className="space-y-10 text-[15px] leading-7 text-[var(--color-text)]">
@@ -93,9 +94,14 @@ export default function PrivacyPage() {
                 for deliverability and campaign reporting.
               </li>
               <li>
-                <strong>Aggregated analytics</strong>: page views, feature
-                usage, errors. Stored in aggregate form, not tied to your
-                account unless we explicitly need to debug your account.
+                <strong>Optional website analytics</strong>: after you consent,
+                DataFast processes page URLs, referrers and campaign parameters,
+                browser and device information, language, timezone, screen and
+                viewport size, IP-derived location, pseudonymous visitor/session
+                identifiers, external-link destination and link text, and selected
+                product actions. Page URLs can contain public handles and goal slugs.
+                We do not identify your DataFast profile with your account, name, or
+                email address.
               </li>
             </ul>
           </SubSection>
@@ -113,9 +119,10 @@ export default function PrivacyPage() {
                 accounts, or anything similar.
               </li>
               <li>
-                <strong>No location tracking.</strong> We use your IP
-                country for timezone on the weekly digest, not for any
-                other purpose.
+                <strong>No precise location tracking.</strong> Service providers
+                may derive an approximate country or region from your IP for
+                security, localisation, delivery, and—only after analytics
+                consent—traffic reporting. We do not collect GPS location.
               </li>
             </ul>
           </SubSection>
@@ -125,6 +132,11 @@ export default function PrivacyPage() {
           <p>We use the data we collect to:</p>
           <ul className="list-disc space-y-2 pl-6 marker:text-[var(--color-text-dim)]">
             <li>Operate, secure, and improve the Service.</li>
+            <li>
+              With your consent, measure traffic sources, page use, and a
+              deliberately limited set of conversion events so we can understand
+              which parts of the Service help people return and make progress.
+            </li>
             <li>
               Send you transactional emails (password reset, security
               alerts, account changes, goal-related notifications you've
@@ -165,6 +177,16 @@ export default function PrivacyPage() {
             scoring, insurance). We don't profile you for advertising. We
             don't sell it.
           </p>
+          <SubSection title="Our legal bases">
+            <p>
+              Where the GDPR applies, we process account and content data to perform
+              our contract with you; security and service-improvement data for our
+              legitimate interests in operating a safe, reliable Service; records we
+              must keep to comply with law; and optional analytics and marketing only
+              on the basis of consent. You can withdraw consent without affecting the
+              lawfulness of processing that occurred before withdrawal.
+            </p>
+          </SubSection>
         </Section>
 
         <Section title="3. Who we share it with">
@@ -196,6 +218,20 @@ export default function PrivacyPage() {
                 <strong>Cloudflare</strong>: DNS and (for our custom
                 domain) edge proxy. They see request metadata, not your
                 content.
+              </li>
+              <li>
+                <strong>DataFast</strong>: our optional website analytics
+                processor. After consent, it receives pseudonymous browser,
+                traffic, page, device, approximate location, and limited custom
+                event data. Our custom event properties do not include your email,
+                name, goal text, update text, or support messages. See DataFast's{" "}
+                <a href="https://datafa.st/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] underline">
+                  privacy information
+                </a>{" "}
+                and{" "}
+                <a href="https://datafa.st/dpa" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] underline">
+                  data processing terms
+                </a>.
               </li>
             </ul>
           </SubSection>
@@ -230,29 +266,35 @@ export default function PrivacyPage() {
 
         <Section title="4. Cookies and local storage">
           <p>
-            The Service uses the browser's <code>localStorage</code> to
-            persist your session token (so you stay signed in across page
-            reloads). We do not set any tracking cookies or share cookie
-            data with third parties.
+            The Service uses essential browser storage for authentication,
+            security, consent choices, and reaction integrity. With your permission,
+            DataFast sets analytics cookies with durations ranging from 30 minutes
+            to one year and loads its tracking script. It remains blocked if you
+            reject analytics.
           </p>
           <p>
-            If we ever add analytics that require cookies, we'll update this
-            policy and ask for your consent where required by law (e.g.
-            under the ePrivacy Directive in the EU).
+            You can change or withdraw that choice at any time through <strong>Cookie
+            settings</strong> in the footer. Withdrawal stops the tracker and removes
+            its cookies from this site. Our separate{" "}
+            <Link href="/legal/cookies" className="text-[var(--color-primary)] underline">
+              Cookie Policy
+            </Link>{" "}
+            lists the technologies, purposes, and durations in detail.
           </p>
         </Section>
 
         <Section title="5. International data transfers">
           <p>
             GoMotivateMe is operated from Ireland. Our service providers
-            (Convex, Vercel, Resend, Cloudflare) may process data in the
+            (Convex, Vercel, Resend, Cloudflare, and DataFast where you consent)
+            may process data in the
             United States, the European Economic Area, or other regions.
           </p>
           <p>
-            For transfers from the EEA, UK, or Switzerland to the United
-            States, we rely on the European Commission's Standard
-            Contractual Clauses and the provider's data processing
-            agreements. You can request a copy by emailing us.
+            Where information is transferred outside the EEA, UK, or Switzerland,
+            we use the safeguards made available by the relevant provider and our
+            data processing agreements, which may include Standard Contractual
+            Clauses. You can request more information by emailing us.
           </p>
         </Section>
 
@@ -269,6 +311,12 @@ export default function PrivacyPage() {
             <li>
               Backups are aged out within 90 days. Backups are encrypted
               and access-controlled.
+            </li>
+            <li>
+              Analytics cookies expire after 30 minutes to one year. Analytics
+              events are retained in our DataFast account according to our active
+              service plan and deletion settings, or deleted earlier when required
+              to honour a valid request.
             </li>
             <li>
               Some records may be retained longer if we have a legal
@@ -313,8 +361,8 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Withdraw consent</strong>: for any optional
-              processing, like marketing emails. Unsubscribe links are in
-              every email, or use the in-app toggle.
+              processing. Use Cookie settings for analytics; for marketing email,
+              use the unsubscribe link in every message or the in-app email setting.
             </li>
             <li>
               <strong>Complain</strong>: if you're in the EU, you can

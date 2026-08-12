@@ -9,6 +9,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useVisitorKey } from "@/lib/useVisitorKey";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import Link from "next/link";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 const REACTIONS: Array<{
   key: "thumbsup" | "muscle" | "heart" | "fire";
@@ -48,6 +49,7 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
     const displayName = !isAuthenticated && nameInput.trim() ? nameInput.trim() : undefined;
     try {
       await setEmoji({ goalId, visitorKey, emoji, displayName });
+      trackDataFastGoal("cheer_added", { reaction: emoji });
     } finally {
       setTimeout(() => setBurst(null), 700);
     }
@@ -57,6 +59,7 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
     setJoining(true);
     try {
       await joinSupport({ goalId, supportType: "encourage" });
+      trackDataFastGoal("support_joined", { support_type: "encourage" });
       setJoined(true);
     } finally {
       setJoining(false);

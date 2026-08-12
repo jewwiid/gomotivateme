@@ -22,6 +22,7 @@ import {
   MAX_HANDLE_LENGTH,
   validateHandleClient,
 } from "@/lib/handle";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 type Tab = "account" | "notifications";
 
@@ -717,9 +718,17 @@ function NotificationsTab() {
           />
           <PlatformDigestCadence
             value={prefs?.platformDigestCadence ?? "off"}
-            onChange={(platformDigestCadence) =>
-              void update({ platformDigestCadence })
-            }
+            onChange={(platformDigestCadence) => {
+              void (async () => {
+                await update({ platformDigestCadence });
+                if (platformDigestCadence !== "off") {
+                  trackDataFastGoal("marketing_email_opt_in", {
+                    category: "discover_digest",
+                    cadence: platformDigestCadence,
+                  });
+                }
+              })();
+            }}
           />
           <Toggle
             label="Urgent causes near you"

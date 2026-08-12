@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BarChart3, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
@@ -51,16 +52,44 @@ function clearDataFastCookies() {
   for (const name of DATAFAST_COOKIE_NAMES) {
     document.cookie = `${name}=; Max-Age=0; expires=${expires}; path=/`;
     document.cookie = `${name}=; Max-Age=0; expires=${expires}; path=/; domain=.gomotivateme.com`;
+    document.cookie = `${name}=; Max-Age=0; expires=${expires}; path=/; domain=.gomotivate.me`;
+    document.cookie = `${name}=; Max-Age=0; expires=${expires}; path=/; domain=.www.gomotivate.me`;
   }
   window.sessionStorage.removeItem("datafast_pageview_state");
 }
 
 function isLiveSite() {
   const hostname = window.location.hostname.toLowerCase();
-  return hostname === "gomotivateme.com" || hostname.endsWith(".gomotivateme.com");
+  return (
+    hostname === "gomotivateme.com" ||
+    hostname.endsWith(".gomotivateme.com") ||
+    hostname === "gomotivate.me" ||
+    hostname.endsWith(".gomotivate.me")
+  );
+}
+
+function isSensitiveLocation() {
+  const { pathname, search } = window.location;
+  if (
+    pathname.startsWith("/email/unsubscribe") ||
+    pathname.startsWith("/invite/") ||
+    pathname.startsWith("/reset/confirm") ||
+    pathname.startsWith("/verify")
+  ) {
+    return true;
+  }
+
+  const query = new URLSearchParams(search);
+  return (
+    query.has("token") ||
+    query.has("code") ||
+    query.has("email") ||
+    (query.get("redirect")?.startsWith("/invite/") ?? false)
+  );
 }
 
 export function CookieConsent() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
@@ -73,8 +102,23 @@ export function CookieConsent() {
       return;
     }
     setAnalyticsEnabled(stored.analytics);
-    setLoadAnalytics(stored.analytics && isLiveSite());
+    const canTrack = stored.analytics && isLiveSite() && !isSensitiveLocation();
+    if (stored.analytics && !canTrack) window.localStorage.setItem("datafast_ignore", "true");
+    setLoadAnalytics(canTrack);
   }, []);
+
+  useEffect(() => {
+    const stored = readCookieConsent();
+    if (!stored?.analytics) return;
+
+    if (isSensitiveLocation()) {
+      window.localStorage.setItem("datafast_ignore", "true");
+      return;
+    }
+
+    window.localStorage.removeItem("datafast_ignore");
+    if (isLiveSite()) setLoadAnalytics(true);
+  }, [pathname]);
 
   useEffect(() => {
     const openSettings = () => setVisible(true);
@@ -84,20 +128,21 @@ export function CookieConsent() {
 
   const choose = (analytics: boolean) => {
     const withdrawing = analyticsEnabled && !analytics;
+    const sensitiveLocation = isSensitiveLocation();
     try {
       writeConsent(analytics);
-      if (analytics) {
+      if (analytics && !sensitiveLocation) {
         window.localStorage.removeItem("datafast_ignore");
       } else {
         window.localStorage.setItem("datafast_ignore", "true");
-        clearDataFastCookies();
+        if (!analytics) clearDataFastCookies();
       }
     } catch {
       // If storage is unavailable, honour the choice for this page only.
     }
 
     setAnalyticsEnabled(analytics);
-    setLoadAnalytics(analytics && isLiveSite());
+    setLoadAnalytics(analytics && isLiveSite() && !sensitiveLocation);
     setVisible(false);
 
     // The loaded tracker patches browser navigation. Reloading fully removes
@@ -120,6 +165,7 @@ export function CookieConsent() {
             src="https://datafa.st/js/script.js"
             data-website-id="dfid_Fz3wZOPjx1AHWVQdEo7FK"
             data-domain="gomotivateme.com"
+            data-allowed-hostnames="gomotivate.me,www.gomotivate.me"
             data-disable-console="true"
             data-disable-payments="true"
             strategy="afterInteractive"
@@ -149,8 +195,8 @@ export function CookieConsent() {
                   <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
                     Essential storage keeps GoMotivateMe working. With your permission,
                     DataFast analytics helps us understand visits, traffic sources, and
-                    whether core features are useful. We do not send goal text, names, or
-                    email addresses to DataFast.
+                    whether core features are useful. Our custom events do not include
+                    names, email addresses, or the text of goals and messages.
                   </p>
 
                   <AnimatePresence>

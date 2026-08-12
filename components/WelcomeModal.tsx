@@ -101,18 +101,16 @@ export function WelcomeModal() {
               <X size={16} />
             </button>
 
-            {/* Original editorial image of a real-life support circle. */}
-            <div className="relative h-52 overflow-hidden bg-gradient-to-br from-[var(--color-primary-soft)] via-white to-[var(--color-accent-soft)]">
-              <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="relative h-52 overflow-hidden bg-[var(--color-bg-elev)]">
+              <div className="absolute inset-0 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/illustrations/motivation-circle-v3.webp"
+                  src="/illustrations/journey/home-community.webp"
                   alt=""
                   aria-hidden
-                  className="h-44 w-44 rotate-[-4deg] rounded-2xl object-cover shadow-lg ring-1 ring-[var(--color-border)]"
+                  className="h-full w-full object-cover object-[50%_58%] mix-blend-multiply"
                 />
               </div>
-              {/* Soft fade at the bottom so the cover melts into the white card body */}
               <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent" />
             </div>
 

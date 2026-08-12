@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart,
@@ -16,6 +16,9 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import Link from "next/link";
+import { trackDataFastGoal } from "@/lib/analytics";
+import { AiAssistButton, AiSuggestionPicker } from "@/components/AiAssist";
+import { aiAssistantErrorMessage } from "@/lib/aiAssistant";
 
 type SupportType = "encourage" | "experience" | "advice" | "checkin" | "join";
 
@@ -77,6 +80,8 @@ export function StructuredSupportComposer({
   const { user, isAuthenticated } = useCurrentUser();
   const joinSupport = useMutation(api.supporters.join);
   const createMessage = useMutation(api.supportMessages.create);
+  const draftSupport = useAction(api.aiCoach.draftSupport);
+  const recordAiOutcome = useMutation(api.aiOperations.recordOutcome);
   const amISupporting = useQuery(api.supporters.amISupporting, { goalId });
 
   const [open, setOpen] = useState(false);
@@ -97,8 +102,82 @@ export function StructuredSupportComposer({
   const [followUpBusy, setFollowUpBusy] = useState(false);
   const [followUpErr, setFollowUpErr] = useState<string | null>(null);
   const [followUpDone, setFollowUpDone] = useState(false);
+  const [aiTarget, setAiTarget] = useState<"message" | "followUp" | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<Array<{ text: string; angle: string }>>([]);
+  const [aiRationale, setAiRationale] = useState("");
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const [aiUsageEventId, setAiUsageEventId] = useState<Id<"aiUsageEvents"> | null>(null);
 
   const typesToShow = allowedTypes.length > 0 ? allowedTypes : (Object.keys(SUPPORT_META) as SupportType[]);
+
+  const requestAiDraft = async (
+    target: "message" | "followUp",
+    type: SupportType,
+    draftText: string
+  ) => {
+    setAiTarget(target);
+    setAiBusy(true);
+    setAiErr(null);
+    setAiSuggestions([]);
+    try {
+      const result = await draftSupport({
+        goalId,
+        supportType: type,
+        draftText: draftText.trim() || undefined,
+      });
+      setAiSuggestions(result.suggestions);
+      setAiRationale(result.rationale);
+      setAiUsageEventId(result.usageEventId);
+    } catch (error) {
+      setAiErr(aiAssistantErrorMessage(error));
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const applyAiDraft = (target: "message" | "followUp", text: string) => {
+    if (target === "message") setBody(text);
+    else setFollowUpBody(text);
+    if (aiUsageEventId) {
+      void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "applied" });
+    }
+    trackDataFastGoal("ai_suggestion_applied", { feature: "support_draft" });
+    setAiSuggestions([]);
+    setAiErr(null);
+  };
+
+  const aiDraftControls = (
+    target: "message" | "followUp",
+    type: SupportType,
+    draftText: string
+  ) => (
+    <div className="space-y-2">
+      <AiAssistButton
+        label={draftText.trim() ? "Improve with AI" : "Help me write this"}
+        busyLabel="Drafting options…"
+        busy={aiBusy && aiTarget === target}
+        disabled={aiBusy && aiTarget !== target}
+        onClick={() => void requestAiDraft(target, type, draftText)}
+      />
+      {aiErr && aiTarget === target ? (
+        <p className="text-xs text-[var(--color-danger-text)]">{aiErr}</p>
+      ) : null}
+      {aiTarget === target && aiSuggestions.length > 0 ? (
+        <AiSuggestionPicker
+          suggestions={aiSuggestions}
+          rationale={aiRationale}
+          onSelect={(text) => applyAiDraft(target, text)}
+          onDismiss={() => {
+            if (aiUsageEventId) {
+              void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "dismissed" });
+            }
+            setAiSuggestions([]);
+          }}
+        />
+      ) : null}
+    </div>
+  );
 
   if (!isAuthenticated) {
     const redirectPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
@@ -191,6 +270,11 @@ export function StructuredSupportComposer({
               <div className="text-right text-[10px] text-[var(--color-text-dim)]">
                 {followUpBody.length}/1000
               </div>
+              {aiDraftControls(
+                "followUp",
+                amISupporting.supportType as SupportType,
+                followUpBody
+              )}
               {followUpErr && (
                 <p className="text-xs text-[var(--color-danger)]">{followUpErr}</p>
               )}
@@ -219,6 +303,9 @@ export function StructuredSupportComposer({
                       setFollowUpDone(true);
                       setShowFollowUp(false);
                       setFollowUpBody("");
+                      if (aiUsageEventId && aiTarget === "followUp") {
+                        void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "sent" });
+                      }
                       setTimeout(() => setFollowUpDone(false), 2500);
                     } catch (e) {
                       setFollowUpErr(
@@ -296,7 +383,11 @@ export function StructuredSupportComposer({
       });
       if (body.trim()) {
         await createMessage({ goalId, supportType, body });
+        if (aiUsageEventId && aiTarget === "message") {
+          void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "sent" });
+        }
       }
+      trackDataFastGoal("support_joined", { support_type: supportType });
       setDone(true);
       setOpen(true); // keep open so the success card shows
       onJoined?.();
@@ -412,6 +503,7 @@ export function StructuredSupportComposer({
             <div className="text-right text-[10px] text-[var(--color-text-dim)]">
               {body.length}/1000
             </div>
+            {aiDraftControls("message", supportType, body)}
 
             <div className="border-t border-[var(--color-border)] pt-3">
               <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">

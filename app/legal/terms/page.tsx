@@ -8,8 +8,8 @@ export const metadata: Metadata = {
     "The rules for using gomotivateme.com: your account, your content, what's allowed, and what's not.",
 };
 
-const LAST_UPDATED = "July 22, 2026";
-const EFFECTIVE = "July 22, 2026";
+const LAST_UPDATED = "August 12, 2026";
+const EFFECTIVE = "August 12, 2026";
 
 export default function TermsPage() {
   return (
@@ -153,7 +153,27 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="8. Termination">
+        <Section title="8. Privacy, analytics, and cookies">
+          <p>
+            Our{" "}
+            <Link href="/legal/privacy" className="text-[var(--color-primary)] underline">
+              Privacy Policy
+            </Link>{" "}
+            explains how we process personal data, and our{" "}
+            <Link href="/legal/cookies" className="text-[var(--color-primary)] underline">
+              Cookie Policy
+            </Link>{" "}
+            explains the browser technologies used by the Service.
+          </p>
+          <p>
+            DataFast analytics is optional. We do not load it unless you consent,
+            and rejecting or later withdrawing consent does not prevent you from
+            using the Service. We use analytics to understand traffic and feature
+            effectiveness, not to make eligibility decisions or target advertising.
+          </p>
+        </Section>
+
+        <Section title="9. Termination">
           <p>
             You can delete your account at any time from{" "}
             <Link href="/settings" className="text-[var(--color-primary)] underline">
@@ -169,7 +189,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="9. Disclaimers">
+        <Section title="10. Disclaimers">
           <p>
             THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE." WE DISCLAIM
             ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING THE IMPLIED
@@ -185,7 +205,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="10. Limitation of liability">
+        <Section title="11. Limitation of liability">
           <p>
             TO THE MAXIMUM EXTENT PERMITTED BY LAW, GOMOTIVATEME WILL NOT BE
             LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
@@ -200,7 +220,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="11. Indemnification">
+        <Section title="12. Indemnification">
           <p>
             You agree to indemnify and hold harmless GoMotivateMe and its
             team from any claims, damages, or expenses (including reasonable
@@ -209,7 +229,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="12. Governing law and disputes">
+        <Section title="13. Governing law and disputes">
           <p>
             These Terms are governed by the laws of Ireland, without regard
             to conflict-of-laws principles.
@@ -222,7 +242,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="13. Changes to these Terms">
+        <Section title="14. Changes to these Terms">
           <p>
             We may update these Terms from time to time. If we make a
             material change, we'll let you know by email (if you have an
@@ -236,7 +256,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="14. Contact">
+        <Section title="15. Contact">
           <p>
             Questions? Email us at{" "}
             <a href="mailto:hello@gomotivateme.com">hello@gomotivateme.com</a>.

@@ -11,6 +11,8 @@
 import type * as achievements from "../achievements.js";
 import type * as admin from "../admin.js";
 import type * as aiAssistant from "../aiAssistant.js";
+import type * as aiCoach from "../aiCoach.js";
+import type * as aiOperations from "../aiOperations.js";
 import type * as aiRateLimits from "../aiRateLimits.js";
 import type * as auth from "../auth.js";
 import type * as badges from "../badges.js";
@@ -49,6 +51,8 @@ declare const fullApi: ApiFromModules<{
   achievements: typeof achievements;
   admin: typeof admin;
   aiAssistant: typeof aiAssistant;
+  aiCoach: typeof aiCoach;
+  aiOperations: typeof aiOperations;
   aiRateLimits: typeof aiRateLimits;
   auth: typeof auth;
   badges: typeof badges;

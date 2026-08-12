@@ -134,7 +134,9 @@ Then in Vercel → Project → Domains → add `gomotivateme.com` and `www.gomot
 | `NEXT_PUBLIC_SITE_URL` | Your domain | Absolute share links, OG metadata |
 | `RESEND_API_KEY` | Convex env (`npx convex env set`) | Email drain action |
 | `RESEND_FROM_ADDRESS` | Convex env | Email "from" header |
-| `OPENAI_API_KEY` | Convex env (`npx convex env set`) | Automated text/image moderation |
+| `OPENAI_API_KEY` | Convex env (`npx convex env set`) | Optional AI assistance and automated text/image moderation |
+| `AI_DAILY_BUDGET_USD` | Convex env (optional, defaults to `5`) | Global generated-assistance spend ceiling |
+| `AI_DISABLED` | Convex env (optional, `0` or `1`) | Emergency kill switch for generated assistance |
 
 > **Email is wired but dormant.** Until `RESEND_API_KEY` is set, the drain
 > cron runs every 2 min and no-ops — notifications stay `pending` in the
@@ -143,6 +145,11 @@ Then in Vercel → Project → Domains → add `gomotivateme.com` and `www.gomot
 > **Moderation is fail-closed.** Until `OPENAI_API_KEY` is set on Convex,
 > new goals, updates, and support messages remain in the manual review queue
 > instead of being published publicly.
+
+> **AI assistance is user-triggered and budgeted.** Generated drafts use
+> feature-specific rate limits, a shared daily request ceiling, short-lived
+> response caching, and the `AI_DAILY_BUDGET_USD` service ceiling. Set
+> `AI_DISABLED=1` to pause generation without disabling moderation.
 
 ### Email DNS (when you're ready to send)
 

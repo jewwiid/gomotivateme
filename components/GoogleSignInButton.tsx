@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 /**
  * "Continue with Google" button — triggers the @convex-dev/auth Google
@@ -34,6 +35,9 @@ export function GoogleSignInButton({ mode, redirectTo = "/dashboard" }: { mode: 
   const onClick = async () => {
     setErr(null);
     setBusy(true);
+    trackDataFastGoal(mode === "signUp" ? "signup_started" : "login_started", {
+      method: "google",
+    });
     try {
       const result = await signIn("google", { redirectTo });
       if (!result.redirect) {

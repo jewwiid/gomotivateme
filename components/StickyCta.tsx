@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Heart, Share2 } from "lucide-react";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 export function StickyCta({
   goalId,
@@ -23,6 +24,7 @@ export function StickyCta({
     try {
       if (navigator.share) {
         await navigator.share({ url, title: document.title });
+        trackDataFastGoal("goal_shared", { method: "native" });
         return;
       }
     } catch {
@@ -30,6 +32,7 @@ export function StickyCta({
     }
     try {
       await navigator.clipboard.writeText(url);
+      trackDataFastGoal("goal_shared", { method: "clipboard" });
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {

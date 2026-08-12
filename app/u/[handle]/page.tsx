@@ -29,6 +29,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { displayName, formatNumber, relativeTime } from "@/lib/format";
+import { JOURNEY_ILLUSTRATIONS, journeyIllustrationForProgress } from "@/lib/journeyIllustrations";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 type Tab = "activity" | "about";
@@ -162,7 +163,7 @@ export default function ProfilePage() {
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src="/illustrations/hero-community-v3.webp" alt="" className="h-full w-full object-cover opacity-90" />
+                    <img src="/illustrations/journey/home-community.webp" alt="" className="h-full w-full object-cover opacity-95" />
                   )}
                   {isMe && (
                     <Link
@@ -842,7 +843,14 @@ function GoalsGrid({
                   alt=""
                   className="h-full w-full object-cover transition group-hover:scale-105"
                 />
-              ) : null}
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={journeyIllustrationForProgress(progress).src}
+                  alt=""
+                  className="h-full w-full object-cover mix-blend-multiply transition group-hover:scale-105"
+                />
+              )}
               <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] backdrop-blur">
                 <CategoryIcon category={g.category} size={10} />
                 {g.category}
@@ -937,9 +945,12 @@ function MotivationsList({
                   className="h-14 w-14 shrink-0 rounded-[0.9rem] object-cover"
                 />
               ) : (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[0.9rem] bg-[var(--color-primary-soft)]">
-                  <CategoryIcon category={m.goal.category} size={20} />
-                </div>
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={JOURNEY_ILLUSTRATIONS.support.src}
+                  alt=""
+                  className="h-14 w-14 shrink-0 rounded-[0.9rem] object-cover mix-blend-multiply"
+                />
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">

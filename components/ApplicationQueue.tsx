@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -17,6 +17,9 @@ import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { displayName } from "@/lib/format";
+import { AiAssistButton, AiDraftDisclosure } from "@/components/AiAssist";
+import { aiAssistantErrorMessage } from "@/lib/aiAssistant";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 const ROLE_META: Record<
   string,
@@ -49,8 +52,21 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
   const apps = useQuery(api.motivation.listPendingApplications, { goalId });
   const approve = useMutation(api.motivation.approveApplication);
   const decline = useMutation(api.motivation.declineApplication);
+  const summarizeApplications = useAction(api.aiCoach.summarizeApplications);
+  const recordAiOutcome = useMutation(api.aiOperations.recordOutcome);
   const [busyId, setBusyId] = useState<Id<"motivatorApplications"> | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<{
+    overview: string;
+    applications: Array<{
+      index: number;
+      intent: string;
+      clarifyQuestion: string | null;
+      caution: string | null;
+    }>;
+  } | null>(null);
 
   const list = apps ?? [];
   const count = list.length;
@@ -77,6 +93,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
     setErr(null);
     try {
       await approve({ applicationId: appId });
+      setAiSummary(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't approve");
     } finally {
@@ -89,6 +106,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
     setErr(null);
     try {
       await decline({ applicationId: appId });
+      setAiSummary(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't decline");
     } finally {
@@ -96,25 +114,63 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
     }
   };
 
+  const requestSummary = async () => {
+    setAiBusy(true);
+    setAiErr(null);
+    try {
+      const result = await summarizeApplications({ goalId });
+      setAiSummary({ overview: result.overview, applications: result.applications });
+      void recordAiOutcome({ usageEventId: result.usageEventId, outcome: "viewed" });
+      trackDataFastGoal("ai_summary_viewed", { feature: "applications" });
+    } catch (error) {
+      setAiErr(aiAssistantErrorMessage(error));
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   return (
     <div className="workspace-card p-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Clock size={14} className="text-[var(--color-gold)]" />
           <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-dim)]">
             Public motivator applications
           </div>
         </div>
-        <span className="inline-flex items-center justify-center rounded-full bg-[var(--color-gold-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-gold)]">
-          {count} pending
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <AiAssistButton
+            label={aiSummary ? "Refresh summary" : "Summarize applications"}
+            busyLabel="Summarizing…"
+            busy={aiBusy}
+            onClick={() => void requestSummary()}
+          />
+          <span className="inline-flex items-center justify-center rounded-full bg-[var(--color-gold-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-gold)]">
+            {count} pending
+          </span>
+        </div>
       </div>
+
+      {aiErr ? <p className="mt-3 text-xs text-[var(--color-danger-text)]">{aiErr}</p> : null}
+      {aiSummary ? (
+        <div className="mt-4 rounded-2xl border border-[var(--color-primary)]/25 bg-[var(--color-primary-soft)] p-4">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-primary)]">
+            <Sparkles size={13} aria-hidden /> AI overview
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[var(--color-text)]">{aiSummary.overview}</p>
+          <p className="mt-2 text-[10px] leading-4 text-[var(--color-text-muted)]">
+            This summary does not recommend accepting or declining anyone. Review every original application.
+          </p>
+          <AiDraftDisclosure />
+        </div>
+      ) : null}
 
       <div className="mt-4 space-y-2">
         <AnimatePresence>
-          {list.map((app) => {
+          {list.map((app, index) => {
             const meta = ROLE_META[app.requestedRole] ?? ROLE_META.encourager;
             const Icon = meta.icon;
+            const summary = aiSummary?.applications.find((item) => item.index === index);
             const initials = (app.applicant?.name ?? app.applicant?.email ?? "?")
               .split(/\s+/)
               .map((w: string) => w[0])
@@ -160,6 +216,17 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
                     <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
                       "{app.message}"
                     </p>
+                    {summary ? (
+                      <div className="mt-2 border-l-2 border-[var(--color-primary)]/40 pl-3 text-[10px] leading-4 text-[var(--color-text-muted)]">
+                        <p><span className="font-bold text-[var(--color-text)]">Stated intent:</span> {summary.intent}</p>
+                        {summary.clarifyQuestion ? (
+                          <p className="mt-1"><span className="font-bold text-[var(--color-text)]">Ask:</span> {summary.clarifyQuestion}</p>
+                        ) : null}
+                        {summary.caution ? (
+                          <p className="mt-1 text-[var(--color-gold-text)]">{summary.caution}</p>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <div className="mt-3 flex items-center gap-2">
                       <button
                         onClick={() => onApprove(app._id)}

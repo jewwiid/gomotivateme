@@ -54,6 +54,7 @@ import {
   type AiSuggestion,
   type AiTask,
 } from "@/lib/aiAssistant";
+import { trackDataFastGoal } from "@/lib/analytics";
 
 /** Capitalize the first letter of a unit string for display. */
 function cap(s: string): string {
@@ -448,6 +449,10 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
         visibility,
         isAnonymous,
         coverImageId,
+      });
+      trackDataFastGoal("goal_created", {
+        progress_type: progressType,
+        visibility,
       });
       router.push(`/dashboard/${goalId}`);
     } catch (e) {

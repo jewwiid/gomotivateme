@@ -332,8 +332,8 @@ function IntroSlide({ summary, firstName }: { summary: RecapSummary; firstName?:
       <div className="mt-8 min-h-0 flex-1 overflow-hidden rounded-[2rem] bg-[var(--color-bg-elev)] sm:mt-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/empty-new-beginning-v3.webp"
-          alt="A new seedling growing beside an open notebook"
+          src="/illustrations/journey/begin.webp"
+          alt="A person taking their first step onto a mountain trail"
           className="h-full w-full object-cover"
         />
       </div>
@@ -357,8 +357,8 @@ function ShowingUpSlide({ summary }: { summary: RecapSummary }) {
       <div className="mt-5 min-h-0 flex-1 overflow-hidden rounded-[2rem] bg-[var(--color-bg-elev)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/steps/move-v3.webp"
-          alt="A person preparing to take the next step on a journey"
+          src="/illustrations/journey/move.webp"
+          alt="A person steadily climbing a rising mountain trail"
           className="h-full w-full object-cover"
         />
       </div>
@@ -391,8 +391,8 @@ function GoalSlide({ summary }: { summary: RecapSummary }) {
       <div className="min-h-0 flex-1">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/steps/track.png"
-          alt="A rising blue progress line reaching a star"
+          src="/illustrations/journey/move.webp"
+          alt="A person moving upward along a mountain trail"
           className="h-full w-full object-contain mix-blend-multiply"
         />
       </div>
@@ -452,8 +452,8 @@ function CommunitySlide({ summary }: { summary: RecapSummary }) {
       <div className="mt-6 min-h-0 flex-1 overflow-hidden rounded-[2rem] bg-[var(--color-bg-elev)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/hero-community-v3.webp"
-          alt="Friends encouraging one another while working toward a shared goal"
+          src="/illustrations/journey/support.webp"
+          alt="Two people helping one another climb a mountain ridge"
           className="h-full w-full object-cover"
         />
       </div>
@@ -482,8 +482,8 @@ function MilestoneSlide({ summary }: { summary: RecapSummary }) {
       <div className="mt-8 min-h-0 flex-1 overflow-hidden rounded-[2rem] bg-[var(--color-bg-elev)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/motivation-circle-v3.webp"
-          alt="A group reflecting together on the progress they made"
+          src="/illustrations/journey/milestone.webp"
+          alt="A person pausing beside a milestone flag before continuing"
           className="h-full w-full object-cover"
         />
       </div>
@@ -521,7 +521,7 @@ function FinalSlide({
       <div className="-mx-5 min-h-[10rem] w-[calc(100%+2.5rem)] flex-1 overflow-hidden sm:-mx-8 sm:w-[calc(100%+4rem)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/recap-summit.png"
+          src="/illustrations/journey/summit.webp"
           alt="A person standing at the summit of a blue mountain"
           className="h-full w-full scale-[1.04] object-cover object-[50%_58%] mix-blend-multiply [mask-image:radial-gradient(ellipse_88%_88%_at_50%_52%,black_66%,transparent_100%)]"
         />
@@ -618,7 +618,7 @@ async function renderShareImage(
 
   await document.fonts.ready;
   const [summit, logo] = await Promise.all([
-    loadImage("/illustrations/recap-summit.png"),
+    loadImage("/illustrations/journey/summit.webp"),
     loadImage("/brand/GoMotivateMe_Logo_Wordmark.png"),
   ]);
 

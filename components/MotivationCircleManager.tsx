@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -22,6 +22,9 @@ import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { displayName } from "@/lib/format";
+import { trackDataFastGoal } from "@/lib/analytics";
+import { AiAssistButton, AiDraftCard } from "@/components/AiAssist";
+import { aiAssistantErrorMessage } from "@/lib/aiAssistant";
 
 const ROLE_META: Record<
   string,
@@ -63,18 +66,25 @@ export function MotivationCircleManager({
   const revokeInvite = useMutation(api.motivation.revokeInvite);
   const removeMotivator = useMutation(api.motivation.removeMotivator);
   const launchGoal = useMutation(api.goals.launch);
+  const draftInvite = useAction(api.aiCoach.draftInvite);
+  const recordAiOutcome = useMutation(api.aiOperations.recordOutcome);
 
   const [showForm, setShowForm] = useState(false);
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formRole, setFormRole] = useState<string>("encourager");
   const [formFreq, setFormFreq] = useState<string>("weekly");
+  const [formMessage, setFormMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [launchErr, setLaunchErr] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const [aiDraft, setAiDraft] = useState<{ message: string; rationale: string } | null>(null);
+  const [aiUsageEventId, setAiUsageEventId] = useState<Id<"aiUsageEvents"> | null>(null);
 
   const isPreLaunch = goalStatus === "draft";
   const allInvites = invites ?? [];
@@ -94,9 +104,16 @@ export function MotivationCircleManager({
         email: formEmail.trim() || undefined,
         proposedRole: formRole as any,
         proposedFrequency: formFreq as any,
+        personalMessage: formMessage.trim() || undefined,
       });
+      if (aiUsageEventId) {
+        void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "sent" });
+      }
       setFormName("");
       setFormEmail("");
+      setFormMessage("");
+      setAiDraft(null);
+      setAiUsageEventId(null);
       setShowForm(false);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to add invite");
@@ -105,11 +122,34 @@ export function MotivationCircleManager({
     }
   };
 
+  const requestInviteDraft = async () => {
+    if (!formName.trim()) return;
+    setAiBusy(true);
+    setAiErr(null);
+    setAiDraft(null);
+    try {
+      const result = await draftInvite({
+        goalId,
+        name: formName.trim(),
+        role: formRole as any,
+        frequency: formFreq as any,
+        draftText: formMessage.trim() || undefined,
+      });
+      setAiDraft({ message: result.message, rationale: result.rationale });
+      setAiUsageEventId(result.usageEventId);
+    } catch (error) {
+      setAiErr(aiAssistantErrorMessage(error));
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   const onLaunch = async () => {
     setLaunching(true);
     setLaunchErr(null);
     try {
       await launchGoal({ goalId });
+      trackDataFastGoal("goal_launched");
     } catch (e) {
       setLaunchErr(e instanceof Error ? e.message : "Couldn't launch");
     } finally {
@@ -348,22 +388,28 @@ export function MotivationCircleManager({
             className="mt-4 overflow-hidden workspace-card-soft p-4"
           >
             <div className="grid gap-3 sm:grid-cols-2">
-              <input
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="Name (e.g. Maya)"
-                required
-                maxLength={60}
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
-              <input
-                type="email"
-                value={formEmail}
-                onChange={(e) => setFormEmail(e.target.value)}
-                placeholder="Email (optional)"
-                maxLength={120}
-                className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
-              />
+              <label className="grid gap-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
+                Name
+                <input
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="e.g. Maya"
+                  required
+                  maxLength={60}
+                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                />
+              </label>
+              <label className="grid gap-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
+                Email <span className="sr-only">optional</span>
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  placeholder="Optional"
+                  maxLength={120}
+                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                />
+              </label>
             </div>
             <div className="mt-3 grid grid-cols-5 gap-1.5">
               {Object.entries(ROLE_META).map(([id, m]) => {
@@ -404,11 +450,58 @@ export function MotivationCircleManager({
                 )
               )}
             </div>
+            <div className="mt-3 space-y-2">
+              <label className="grid gap-1.5 text-xs font-semibold text-[var(--color-text-muted)]">
+                Personal message <span className="font-normal text-[var(--color-text-dim)]">(optional)</span>
+                <textarea
+                  value={formMessage}
+                  onChange={(event) => setFormMessage(event.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder={`Tell ${formName.trim() || "them"} why their support would matter.`}
+                  className="w-full resize-none rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 text-sm font-normal text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+                />
+              </label>
+              <AiAssistButton
+                label={formMessage.trim() ? "Improve invitation" : "Draft invitation"}
+                busyLabel="Drafting invitation…"
+                busy={aiBusy}
+                disabled={!formName.trim()}
+                onClick={() => void requestInviteDraft()}
+              />
+              {aiErr ? <p className="text-xs text-[var(--color-danger-text)]">{aiErr}</p> : null}
+              {aiDraft ? (
+                <AiDraftCard
+                  rationale={aiDraft.rationale}
+                  onApply={() => {
+                    setFormMessage(aiDraft.message);
+                    if (aiUsageEventId) {
+                      void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "applied" });
+                    }
+                    trackDataFastGoal("ai_suggestion_applied", { feature: "invite_draft" });
+                    setAiDraft(null);
+                  }}
+                  onDismiss={() => {
+                    if (aiUsageEventId) {
+                      void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "dismissed" });
+                    }
+                    setAiDraft(null);
+                  }}
+                  applyLabel="Use this invitation"
+                >
+                  <p>{aiDraft.message}</p>
+                </AiDraftCard>
+              ) : null}
+            </div>
             {err && <p className="mt-2 text-[10px] text-[var(--color-danger)]">{err}</p>}
             <div className="mt-3 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false);
+                  setAiDraft(null);
+                  setAiErr(null);
+                }}
                 className="rounded-full border border-[var(--color-border-strong)] bg-transparent px-3 py-1.5 text-xs font-medium"
               >
                 Cancel

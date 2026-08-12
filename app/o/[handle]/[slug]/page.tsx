@@ -200,7 +200,7 @@ function PublicGoalView({
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={coverUrl || "/illustrations/hero-community-v3.webp"}
+                  src={coverUrl || "/illustrations/journey/move.webp"}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover"
                 />

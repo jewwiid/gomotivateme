@@ -7,6 +7,7 @@ import { ArrowRight, Calendar } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { formatDate, formatNumber } from "@/lib/format";
+import { journeyIllustrationForProgress } from "@/lib/journeyIllustrations";
 
 interface GoalDoc {
   _id: Id<"goals">;
@@ -25,13 +26,6 @@ interface GoalDoc {
   coverImageId?: Id<"_storage">;
 }
 
-const goalMedia = [
-  "/illustrations/steps/move-v3.webp",
-  "/illustrations/steps/plan-v3.webp",
-  "/illustrations/steps/share-v3.webp",
-  "/illustrations/steps/together-v3.webp",
-];
-
 function pct(start: number | undefined, current: number | undefined, target: number, dir: "increase" | "decrease") {
   const s = start ?? 0;
   const c = current ?? s;
@@ -46,7 +40,7 @@ export function GoalCard({ goal, index }: { goal: GoalDoc; index: number }) {
   const daysLeft = goal.targetDate
     ? Math.ceil((goal.targetDate - Date.now()) / (1000 * 60 * 60 * 24))
     : null;
-  const fallbackMedia = goalMedia[Math.abs(goal.category.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)) % goalMedia.length];
+  const fallbackMedia = journeyIllustrationForProgress(progress).src;
 
   // Look up the real cover image URL if the goal has one.
   const coverUrls = useQuery(

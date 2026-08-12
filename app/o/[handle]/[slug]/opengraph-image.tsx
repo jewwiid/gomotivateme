@@ -2,6 +2,7 @@
 import { ImageResponse } from "next/og";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
+import { SITE_URL as siteUrl } from "@/lib/site";
 
 export const runtime = "edge";
 export const alt = "Goal on GoMotivateMe";
@@ -70,7 +71,7 @@ export default async function OpengraphImage({
           position: "relative",
         }}
       >
-        {/* Cover or gradient background */}
+        {/* A real user cover stays real; the product-owned fallback uses the journey system. */}
         {coverUrl ? (
           <div
             style={{
@@ -93,10 +94,16 @@ export default async function OpengraphImage({
               position: "absolute",
               inset: 0,
               display: "flex",
-              background: "linear-gradient(135deg, #2541D8 0%, #82D9FF 100%)",
-              opacity: 0.95,
             }}
-          />
+          >
+            <img
+              src={`${siteUrl}/illustrations/journey/move.webp`}
+              alt=""
+              width={1200}
+              height={630}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </div>
         )}
         {/* Scrim */}
         <div
@@ -128,7 +135,8 @@ export default async function OpengraphImage({
                 alignItems: "center",
                 justifyContent: "center",
                 borderRadius: 8,
-                background: "linear-gradient(135deg, #2541D8 0%, #82D9FF 100%)",
+                background: "#2856c7",
+                border: "2px solid #feb704",
                 color: "#fff",
                 fontSize: 20,
                 fontWeight: 800,
@@ -213,8 +221,7 @@ export default async function OpengraphImage({
                   style={{
                     width: `${pct}%`,
                     height: "100%",
-                    background:
-                      "linear-gradient(90deg, #ff7849 0%, #fbbf24 100%)",
+                    background: "#feb704",
                     display: "flex",
                   }}
                 />

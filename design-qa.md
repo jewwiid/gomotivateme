@@ -97,7 +97,7 @@ No actionable P0, P1, or P2 findings remain. The deliberate illustration substit
 
 ## Follow-up polish
 
-- P3: A future image-export share card could reproduce the closing screen as a downloadable social image; the current release uses the platform share sheet or clipboard fallback.
+- This earlier P3 image-export opportunity is completed by the summit finale and social-card composer addendum below.
 
 final result: passed
 

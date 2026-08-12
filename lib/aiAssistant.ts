@@ -30,7 +30,7 @@ export type AiSuggestion = {
 
 type AiErrorData = {
   code?: string;
-  limit?: "burst" | "daily" | "service";
+  limit?: "burst" | "daily" | "service" | "feature";
   retryAfterMs?: number;
   message?: string;
 };
@@ -56,6 +56,9 @@ export function aiAssistantErrorMessage(error: unknown) {
     }
     if (data.limit === "service") {
       return `AI help is busy right now. Try again in ${retry}.`;
+    }
+    if (data.limit === "feature") {
+      return `You've reached today's limit for this kind of AI help. Try again in ${retry}.`;
     }
     return `You've used 5 AI assists in a short period. Try again in ${retry}.`;
   }
