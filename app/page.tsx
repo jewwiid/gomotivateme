@@ -38,6 +38,21 @@ export default function HomePage() {
     }
     return goals.slice(0, 6);
   }, [activeCategory, recent, searchQuery]);
+  const coverImageIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          ((recent ?? []) as any[])
+            .map((goal) => goal.coverImageId as Id<"_storage"> | undefined)
+            .filter((id): id is Id<"_storage"> => Boolean(id))
+        )
+      ),
+    [recent]
+  );
+  const coverImageUrls = useQuery(
+    api.storage.getUrls,
+    coverImageIds.length > 0 ? { ids: coverImageIds } : "skip"
+  );
 
   const startGoalHref = user ? "/dashboard/new" : "/signup";
 
@@ -210,6 +225,13 @@ export default function HomePage() {
                     key={goal._id}
                     goal={goal}
                     index={index}
+                    coverImageUrl={
+                      goal.coverImageId
+                        ? coverImageUrls === undefined
+                          ? undefined
+                          : coverImageUrls[goal.coverImageId] ?? null
+                        : null
+                    }
                   />
                 ))}
               </div>
@@ -255,9 +277,11 @@ export default function HomePage() {
 function GoalTile({
   goal,
   index,
+  coverImageUrl,
 }: {
   goal: any;
   index: number;
+  coverImageUrl?: string | null;
 }) {
   const goalId = goal._id as Id<"goals">;
   const publicDetail = useQuery(
@@ -304,14 +328,26 @@ function GoalTile({
         className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] transition duration-300 hover:-translate-y-1 hover:border-[var(--color-border)] hover:shadow-[0_26px_60px_-42px_rgba(55,47,35,0.5)] active:translate-y-0"
       >
         <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-bg-elev)]">
-          <Image
-            src={journeyIllustrationForProgress(progress).src}
-            alt=""
-            fill
-            sizes="(min-width: 1280px) 600px, (min-width: 768px) 50vw, 100vw"
-            loading="lazy"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
-          />
+          {coverImageUrl === undefined ? (
+            <div className="absolute inset-0 animate-pulse bg-[var(--color-bg-sunken)]" aria-hidden />
+          ) : coverImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverImageUrl}
+              alt={`${goal.title} cover`}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
+            />
+          ) : (
+            <Image
+              src={journeyIllustrationForProgress(progress).src}
+              alt=""
+              fill
+              sizes="(min-width: 1280px) 600px, (min-width: 768px) 50vw, 100vw"
+              loading="lazy"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
+            />
+          )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col p-5 sm:p-6">
           <div className="flex items-center justify-between gap-4 text-xs font-medium text-[var(--color-text-muted)]">
