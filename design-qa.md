@@ -103,6 +103,129 @@ final result: passed
 
 ---
 
+# Explore and goal-creation consistency QA
+
+## Evidence
+
+- Explore desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-redesign-desktop.png`
+- Explore goal cards and detail metrics: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-goal-cards-desktop.png` and `/Users/judeokun/Documents/GitHub/mie odyssey/explore-goal-metrics-desktop.png`
+- Explore mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-redesign-mobile.png`
+- Goal setup inputs desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-inputs-desktop.png`
+- Goal setup inputs mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-inputs-mobile.png`
+
+## Review
+
+- Explore hero, search, tab controls, category filters, loading states, and empty states use the homepage's warm paper surfaces, cobalt controls, golden journey sun, rounded geometry, and existing typography: passed.
+- Goal results use the same enriched journey card as the homepage, including creator avatar, supporter stack, progress metric, supporter target, reaction summary, and next milestone/checkpoint: passed.
+- Motivator and category results use the same surface depth, rounded corners, typography, and journey imagery rather than the former flat directory-row treatment and generic gradients: passed.
+- Goal setup inputs, selects, textareas, measurement choices, visibility choices, milestone actions, and direction toggle share one rounded control language and a consistent 3px focus treatment: passed.
+- Explore goals, motivators, and categories tabs remain interactive and semantically labelled: passed.
+- Desktop and 390px mobile rendering: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed.
+
+## Findings
+
+No actionable P0, P1, or P2 findings remain. The existing Next.js multiple-lockfile workspace-root warning is unrelated to the design changes.
+
+final result: passed
+
+---
+
+# Goal-setup journey artwork QA
+
+## Evidence
+
+- Desktop category step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-step-1-desktop.png`
+- Desktop target step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-milestone-desktop.png`
+- Desktop review step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-review-desktop.png`
+- Mobile category step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-step-1-mobile.png`
+- Mobile support step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-support-mobile.png`
+- Desktop viewport: 1440 × 1000 CSS px at 1×.
+- Mobile viewport: 390 × 844 CSS px at 1×.
+
+## Required surfaces
+
+- Step-to-image meaning: passed. The nine-step wizard maps beginning, movement, milestone, reflection, support, and summit artwork to the corresponding setup decisions.
+- Desktop layout: passed. The artwork, step context, form and navigation remain visually distinct without reducing form width below a comfortable working size.
+- Mobile layout: passed. A compact artwork-and-context band makes the active journey state visible without pushing the primary form controls excessively far down the page.
+- Review state: passed. The empty cover state now previews the branded summit artwork and clearly offers a personal-photo override.
+- Account handle setup: implemented with the beginning artwork on both desktop and mobile while preserving the user’s genuine account avatar.
+- Accessibility: passed. Desktop artwork retains descriptive alternative text and captions; compact duplicate mobile artwork is decorative beside equivalent step text.
+
+## Comparison history
+
+1. The first transition test revealed a P2 navigation issue inherited from the long wizard: advancing from the footer could preserve the previous document scroll position. Step changes now smoothly return the page to the top so the new context and artwork are visible immediately.
+
+## Interaction and runtime checks
+
+- Category selection and active styling: passed.
+- Required title validation: passed.
+- Continue navigation through all nine steps: passed.
+- Artwork changes with wizard state: passed.
+- Final branded-cover override control: passed.
+- Desktop and mobile responsive rendering: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed.
+
+## Findings
+
+No actionable P0, P1, or P2 findings remain.
+
+final result: passed
+
+---
+
+# Platform journey-illustration sweep QA
+
+## Evidence
+
+- Source visual truth and system sheet: `/Users/judeokun/Documents/GitHub/mie odyssey/journey-illustration-system-v2.jpg`
+- Homepage desktop hero: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-home-desktop.png`
+- Homepage mobile hero artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-home-art-mobile.png`
+- Homepage process artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-home-steps-desktop.png`
+- Homepage curated-goal artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-goals-final-desktop.png`
+- Authentication artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-auth-desktop.png`
+- Mobile 404 fallback: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-404-mobile.png`
+- Recap intro, finale, and share composer: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-recap-intro-mobile.png`, `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-recap-final-mobile.png`, and `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-recap-share-mobile.png`
+- Desktop viewport: 1440 × 1000 CSS px at 1×.
+- Mobile viewport: 390 × 844 CSS px at 1×.
+
+## Required fidelity surfaces
+
+- Art direction: passed. Product-owned imagery consistently uses tactile ivory paper, cobalt monoprint mountains, small journey figures, torn-paper paths, and a single `#FEB704` yellow-orange sun.
+- Meaning and placement: passed. Beginning, movement, support, milestone, return, community, and summit scenes are mapped to the product state they describe rather than used decoratively.
+- Typography and brand integration: passed. The existing app fonts, wordmark, cobalt controls, warm paper surfaces, and yellow accent are unchanged and visually integrated with the new assets.
+- Image quality: passed. All seven stable assets are 1254 × 1254 WebP sources with no generated text, logos, gradients, transparency seams, or crop distortion.
+- Responsive layout: passed. Hero, process cards, auth split layout, 404 fallback, recap finale, and share composer remain readable without horizontal overflow at the tested breakpoints.
+- User media boundary: passed. Genuine avatars, progress photos, link previews, and user-owned goal covers remain available on user and goal pages. The curated homepage uses journey artwork so uploaded or AI-photo-style covers cannot break its visual system.
+
+## Comparison history
+
+1. The first live homepage pass found a P2 consistency issue: a goal-owned AI-photo-style cover reappeared in the curated goal grid. The homepage grid now intentionally derives its image from goal progress using the journey manifest, while the original cover remains untouched on the owner’s goal page. Post-fix evidence: `platform-imagery-goals-final-desktop.png`.
+2. The first full-page browser capture returned a blank image because of a browser-capture limitation. Focused viewport captures were used for reliable evidence; this was a QA-tool issue, not an application defect.
+
+## Interaction and runtime checks
+
+- Homepage desktop and mobile rendering: passed.
+- Homepage process and curated-goal sections: passed.
+- Login split layout: passed.
+- Mobile 404 fallback: passed.
+- Recap direct seven-segment navigation: passed.
+- Recap finale and open/close share composer: passed.
+- Social format controls are exposed for Story 9:16, Post 4:5, and Square 1:1: passed.
+- Semantic image labels and controls are present in browser snapshots: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed.
+
+## Findings
+
+No actionable P0, P1, or P2 imagery or layout findings remain. The pre-existing Next.js multiple-lockfile workspace-root warning remains unrelated to this redesign.
+
+final result: passed
+
+---
+
 # Recap summit finale and social-card composer QA
 
 ## Evidence
@@ -158,5 +281,34 @@ No actionable P0, P1, or P2 findings remain. Native destination apps vary by ope
 ## Follow-up polish
 
 - P3: Add optional user-selectable metric combinations after product analytics show which cards are shared most often.
+
+final result: passed
+
+---
+
+# Public goal-detail consistency QA
+
+## Evidence
+
+- Desktop overview: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-redesign-desktop.png`
+- Desktop progress and milestones: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-redesign-progress.png`
+- Mobile overview: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-redesign-mobile.png`
+
+## Review
+
+- User-owned cover media remains intact while the surrounding hero adopts the platform's larger corner radius, warmer surface, stronger display typography, and clearer action hierarchy: passed.
+- Creator and supporter avatars have accessible labels, consistent white rims, and subtle shadows: passed.
+- Supporter and reaction proof is visible in both the hero and sticky support card: passed.
+- Goal and support progress use substantial rounded bars instead of one-pixel rules: passed.
+- Momentum metrics use nested rounded surfaces and preserve tabular data hierarchy across desktop and mobile: passed.
+- Milestones use a branded progress bar and readable rounded step cards without truncating milestone names: passed.
+- Reaction and supporter sections use the same rounded surface system without nested-card duplication or generic gradients: passed.
+- Production route smoke test: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed.
+
+## Findings
+
+No actionable P0, P1, or P2 findings remain. Genuine user-uploaded cover media is intentionally preserved on the goal page rather than replaced with platform artwork.
 
 final result: passed

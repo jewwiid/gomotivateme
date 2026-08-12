@@ -99,7 +99,11 @@ export function CheckInComposer({
             <button
               key={t.id}
               type="button"
-              onClick={() => setType(t.id)}
+              onClick={() => {
+                setType(t.id);
+                setAiSuggestions([]);
+                setAiErr(null);
+              }}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 type === t.id
                   ? "bg-[var(--color-primary)] text-white"

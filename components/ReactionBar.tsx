@@ -81,7 +81,7 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
       : "/";
 
   return (
-    <div className="workspace-card p-4">
+    <div className="rounded-[1.75rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4 sm:p-5">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[var(--color-text)]">
           Cheer them on
@@ -100,7 +100,7 @@ export function ReactionBar({ goalId }: { goalId: Id<"goals"> }) {
               key={e.key}
               onClick={() => onPick(e.key)}
               disabled={!visitorKey}
-              className={`group relative flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-sm font-medium transition disabled:cursor-not-allowed ${
+              className={`group relative flex flex-col items-center justify-center gap-1 rounded-[1.15rem] border px-2 py-3 text-sm font-medium transition active:scale-[0.98] disabled:cursor-not-allowed ${
                 active
                   ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
                   : "border-[var(--color-border)] bg-[var(--color-bg-elev)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-bg)]"

@@ -151,8 +151,10 @@ export default async function ProfileOpengraphImage({
             >
               m
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.3 }}>
-              GoMotivateMe
+            <div style={{ display: "flex", fontSize: 20, fontWeight: 700, letterSpacing: -0.3 }}>
+              <span style={{ color: "#2856c7" }}>Go</span>
+              <span style={{ color: "#feb704" }}>Motivate</span>
+              <span style={{ color: "#2856c7" }}>Me</span>
             </div>
           </div>
         </div>

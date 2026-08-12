@@ -25,9 +25,11 @@ const REACTIONS: {
 export function UpdateReactions({
   updateId,
   goalId,
+  className = "",
 }: {
   updateId: Id<"updates">;
   goalId: Id<"goals">;
+  className?: string;
 }) {
   const visitorKey = useVisitorKey();
   const stats = useQuery(api.reactions.updateStats, { updateId });
@@ -46,7 +48,7 @@ export function UpdateReactions({
   };
 
   return (
-    <div className="mt-2 flex items-center gap-1">
+    <div className={`flex items-center gap-1 ${className}`}>
       {REACTIONS.map(({ kind, icon: Icon, label }) => {
         const count = counts[kind] ?? 0;
         const active = myEmoji === kind;

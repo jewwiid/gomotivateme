@@ -3,6 +3,7 @@
 import { useAction, useMutation } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -55,6 +56,7 @@ import {
   type AiTask,
 } from "@/lib/aiAssistant";
 import { trackDataFastGoal } from "@/lib/analytics";
+import { JOURNEY_ILLUSTRATIONS } from "@/lib/journeyIllustrations";
 
 /** Capitalize the first letter of a unit string for display. */
 function cap(s: string): string {
@@ -99,6 +101,45 @@ const WIZARD_COPY = [
     detail: "Take a final look before you bring your circle together.",
   },
 ];
+
+const WIZARD_ART = [
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.begin,
+    caption: "Every meaningful goal starts by choosing a direction.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.begin,
+    caption: "A clear destination gives the first step somewhere to go.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.move,
+    caption: "Progress becomes visible when you decide what counts.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.milestone,
+    caption: "Milestones turn the climb into reachable ground.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.move,
+    caption: "A horizon can help you pace the journey.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.return,
+    caption: "Your reason is what helps you return to the work.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.support,
+    caption: "Support changes what you have to carry alone.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.support,
+    caption: "Choose how widely you want to open the trail.",
+  },
+  {
+    illustration: JOURNEY_ILLUSTRATIONS.summit,
+    caption: "The plan is ready. Your next step is to begin.",
+  },
+] as const;
 
 const PROGRESS_WIDTHS = ["w-[11.111%]", "w-[22.222%]", "w-1/3", "w-[44.444%]", "w-[55.555%]", "w-2/3", "w-[77.777%]", "w-[88.888%]", "w-full"];
 
@@ -206,6 +247,11 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
     setCoverPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [coverFile]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<AiTask | null>(null);
@@ -393,6 +439,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
 
   const totalSteps = WIZARD_COPY.length;
   const stepCopy = WIZARD_COPY[step];
+  const stepArt = WIZARD_ART[step];
 
   const onSubmit = async () => {
     setBusy(true);
@@ -463,13 +510,16 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   };
 
   return (
-    <div className="min-h-dvh bg-[var(--color-bg-elev)] text-[var(--color-text)] lg:grid lg:grid-cols-[minmax(20rem,33%)_1fr]">
-      <aside className="hidden min-h-dvh flex-col justify-between px-14 py-12 lg:flex xl:px-20">
+    <div className="min-h-dvh bg-[var(--color-bg-elev)] text-[var(--color-text)] lg:grid lg:grid-cols-[minmax(22rem,36%)_1fr]">
+      <aside className="hidden min-h-dvh flex-col px-12 py-10 lg:flex xl:px-16">
         <Wordmark href="/dashboard" size="xl" />
-        <div className="max-w-xs pb-16">
-          <p className="text-sm font-semibold text-[var(--color-primary)]">Step {step + 1} of {totalSteps}</p>
-          <h1 className="mt-5 title-hero">{stepCopy.title}</h1>
-          <p className="mt-8 text-base leading-7 text-[var(--color-text-secondary)]">{stepCopy.detail}</p>
+        <div className="flex flex-1 flex-col justify-center py-8">
+          <GoalSetupArtwork art={stepArt} />
+          <div className="mt-7 max-w-md">
+            <p className="text-sm font-semibold text-[var(--color-primary)]">Step {step + 1} of {totalSteps}</p>
+            <h1 className="mt-4 max-w-[12ch] text-balance font-display text-[clamp(2.6rem,4vw,4.6rem)] font-semibold leading-[0.91] tracking-[-0.055em]">{stepCopy.title}</h1>
+            <p className="mt-5 max-w-sm text-sm leading-6 text-[var(--color-text-secondary)] xl:text-base xl:leading-7">{stepCopy.detail}</p>
+          </div>
         </div>
         <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]">
           <ArrowLeft size={15} /> Leave setup
@@ -481,7 +531,31 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           <Wordmark href="/dashboard" size="md" />
           <span className="text-xs font-semibold text-[var(--color-primary)]">{step + 1} / {totalSteps}</span>
         </div>
-        <div className="flex-1 px-5 pb-10 pt-10 sm:px-12 sm:pt-16 lg:px-[10vw] lg:pt-28">
+        <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elev)] px-5 py-5 lg:hidden">
+          <div className="mx-auto grid max-w-[42rem] grid-cols-[5.75rem_minmax(0,1fr)] items-center gap-4">
+            <motion.div
+              key={stepArt.illustration.src}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="relative aspect-square overflow-hidden rounded-[1.25rem] bg-[var(--color-surface)]"
+            >
+              <Image
+                src={stepArt.illustration.src}
+                alt=""
+                fill
+                sizes="92px"
+                className="object-cover mix-blend-multiply"
+              />
+            </motion.div>
+            <div>
+              <p className="text-xs font-semibold text-[var(--color-primary)]">Your goal journey</p>
+              <h1 className="mt-1 text-balance font-display text-xl font-semibold leading-tight tracking-[-0.035em]">{stepCopy.title}</h1>
+              <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-[var(--color-text-muted)]">{stepCopy.detail}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 px-5 pb-10 pt-8 sm:px-12 sm:pt-12 lg:px-[8vw] lg:pt-24">
           <div className="mx-auto w-full max-w-[42rem]">
           {step === 0 && (
             <Step title="Pick a category">
@@ -494,7 +568,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                     className={`flex flex-col items-start gap-1.5 rounded-[var(--workspace-radius)] border p-3 text-left transition ${
                       category === c.id
                         ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                        : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                        : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
                     }`}
                   >
                     <CategoryIcon
@@ -609,11 +683,11 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                       className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
                         active
                           ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                          : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                          : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
                       }`}
                     >
                       <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] ${
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                           active
                             ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
                             : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
@@ -750,7 +824,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                           type="button"
                           onClick={() => setMilestones((arr) => arr.filter((_, idx) => idx !== i))}
                           disabled={milestones.length <= 1}
-                          className="rounded-md p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-danger)] disabled:opacity-30"
+                          className="rounded-xl p-2 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-danger)] disabled:opacity-30"
                           aria-label="Remove milestone"
                         >
                           <Trash2 size={14} />
@@ -766,7 +840,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                         ])
                       }
                       disabled={milestones.length >= 8}
-                      className="inline-flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-4 py-2.5 text-xs font-semibold text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:opacity-40"
                     >
                       <Plus size={12} />
                       Add milestone
@@ -822,7 +896,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   <button
                     type="button"
                     onClick={() => setTargetDate("")}
-                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 border-b border-[var(--color-border-strong)] px-2 text-sm font-semibold text-[var(--color-text-muted)] transition hover:border-[var(--color-text)] hover:text-[var(--color-text)] active:translate-y-px"
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[var(--color-border-strong)] px-4 text-sm font-semibold text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] active:translate-y-px"
                   >
                     <X size={15} aria-hidden />
                     Remove date
@@ -901,7 +975,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                       className={`flex items-start gap-3 rounded-[var(--workspace-radius)] border p-3 text-left transition ${
                         active
                           ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                          : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                          : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
                       }`}
                     >
                       <div
@@ -948,7 +1022,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
                     visibility === "public"
                       ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                      : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
                   }`}
                 >
                   <Globe
@@ -968,7 +1042,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
                     visibility === "unlisted"
                       ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                      : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
                   }`}
                 >
                   <Lock
@@ -988,7 +1062,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
                     visibility === "private"
                       ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                      : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
                   }`}
                 >
                   <Lock
@@ -1008,7 +1082,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 className={`mt-4 flex cursor-pointer items-start gap-3 rounded-[var(--workspace-radius)] border p-4 transition ${
                   isAnonymous
                     ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
-                    : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
                 }`}
               >
                 <input
@@ -1076,10 +1150,10 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   onDrop={handleCoverDrop}
                   onDragOver={handleCoverDragOver}
                   onDragLeave={handleCoverDragLeave}
-                  className={`block cursor-pointer rounded-2xl border border-dashed px-6 py-10 text-center transition ${
+                  className={`grid cursor-pointer overflow-hidden rounded-2xl border text-left transition sm:grid-cols-[1.05fr_0.95fr] ${
                     coverDragOver
                       ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] scale-[1.01]"
-                      : "border-[var(--color-border-strong)] bg-[var(--color-bg)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
+                      : "border-[var(--color-border)] bg-[var(--color-bg)] hover:border-[var(--color-primary)]"
                   }`}
                 >
                   <input
@@ -1089,15 +1163,26 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                     className="sr-only"
                     onChange={(event) => setCoverFile(event.target.files?.[0] ?? null)}
                   />
-                  <ImagePlus className="mx-auto text-[var(--color-primary)]" size={24} />
-                  <p className="mt-3 text-sm font-semibold">Add a cover photo</p>
-                  <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[var(--color-text-muted)]">
-                    {coverDragOver
-                      ? "Drop to add this image"
-                      : "Drag an image here or click to browse. A bright, clear image helps people connect with your goal."}
-                  </p>
-                  <span className="mt-5 inline-flex rounded-full border border-[var(--color-border-strong)] bg-white px-4 py-2 text-xs font-semibold text-[var(--color-text)]">
-                    Choose a photo
+                  <span className="relative min-h-44 overflow-hidden bg-[var(--color-surface)]">
+                    <Image
+                      src={JOURNEY_ILLUSTRATIONS.summit.src}
+                      alt="A person standing at the summit of a blue mountain"
+                      fill
+                      sizes="(min-width: 640px) 340px, 100vw"
+                      className="object-cover mix-blend-multiply"
+                    />
+                  </span>
+                  <span className="flex flex-col justify-center p-6">
+                    <ImagePlus className="text-[var(--color-primary)]" size={22} />
+                    <span className="mt-3 text-sm font-semibold">Your goal has a journey cover</span>
+                    <span className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                      {coverDragOver
+                        ? "Drop to use this image instead"
+                        : "Keep the branded artwork, or add a personal photo that makes the goal feel unmistakably yours."}
+                    </span>
+                    <span className="mt-4 inline-flex w-fit rounded-full border border-[var(--color-border-strong)] bg-white px-4 py-2 text-xs font-semibold text-[var(--color-text)]">
+                      Add my own photo
+                    </span>
                   </span>
                 </label>
               )}
@@ -1138,7 +1223,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           {err && <p className="mx-auto mt-4 w-full max-w-[42rem] text-sm text-[var(--color-danger)]">{err}</p>}
         </div>
 
-        <footer className="relative mt-auto border-t border-[var(--color-border)] bg-white px-5 py-5 sm:px-12 sm:py-7 lg:px-[4.5rem]">
+        <footer className="relative mt-auto border-t border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-5 sm:px-12 sm:py-7 lg:px-[4.5rem]">
           <div className="absolute inset-x-0 top-0 h-px bg-[var(--color-bg-sunken)]">
             <div className={`h-px bg-[var(--color-primary)] transition-[width] duration-300 ${PROGRESS_WIDTHS[step]}`} />
           </div>
@@ -1179,6 +1264,30 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
         </footer>
         </section>
     </div>
+  );
+}
+
+function GoalSetupArtwork({ art }: { art: (typeof WIZARD_ART)[number] }) {
+  return (
+    <motion.figure
+      key={art.illustration.src}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+      className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-[1.75rem] bg-[var(--color-surface)]"
+    >
+      <Image
+        src={art.illustration.src}
+        alt={art.illustration.alt}
+        fill
+        priority
+        sizes="(min-width: 1280px) 420px, 36vw"
+        className="object-cover mix-blend-multiply"
+      />
+      <figcaption className="absolute bottom-4 left-4 max-w-[15rem] border-l-2 border-[var(--color-sun)] bg-[color:rgba(251,250,246,0.9)] py-2 pl-3 pr-4 text-xs font-medium leading-5 text-[var(--color-text-secondary)] backdrop-blur-sm">
+        {art.caption}
+      </figcaption>
+    </motion.figure>
   );
 }
 
@@ -1259,13 +1368,13 @@ function DirectionToggle({
   onChange: (v: "increase" | "decrease") => void;
 }) {
   return (
-    <div className="inline-flex rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] p-0.5">
+    <div className="inline-flex rounded-full border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] p-1">
       {(["decrease", "increase"] as const).map((d) => (
         <button
           key={d}
           type="button"
           onClick={() => onChange(d)}
-          className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+          className={`rounded-full px-3.5 py-2 text-xs font-semibold transition ${
             value === d
               ? "bg-[var(--color-primary)] text-white"
               : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"

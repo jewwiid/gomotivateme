@@ -229,6 +229,9 @@ async function beginRequest(
       message: "AI help is temporarily paused.",
     });
   }
+  // Cached responses are still requests against our backend, so they consume
+  // the same abuse-protection quota even though they cost zero model tokens.
+  await ctx.runMutation(internal.aiRateLimits.consume, { userId, feature });
 
   const key = await contextKey(cacheValue);
   const cached = await ctx.runQuery(internal.aiOperations.getCache, {
@@ -256,7 +259,6 @@ async function beginRequest(
       message: "AI help has reached today's service budget. Please try again tomorrow.",
     });
   }
-  await ctx.runMutation(internal.aiRateLimits.consume, { userId, feature });
   return { key, cached: null, usageEventId: null };
 }
 

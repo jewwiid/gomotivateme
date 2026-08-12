@@ -2,6 +2,7 @@
 
 import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { AtSign, Check, Loader2, X } from "lucide-react";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/handle";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { JOURNEY_ILLUSTRATIONS } from "@/lib/journeyIllustrations";
 
 /**
  * One-time handle-setup gate for authenticated users who don't yet have a
@@ -87,7 +89,7 @@ function SetupHandleForm() {
   const firstName = user?.name?.split(" ")[0];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
+    <div className="min-h-dvh bg-[var(--color-bg)] text-[var(--color-text)] lg:grid lg:grid-cols-[0.9fr_1.1fr]">
       <main className="flex flex-1 items-center justify-center px-5 py-16 sm:px-8 sm:py-24">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -95,6 +97,16 @@ function SetupHandleForm() {
           transition={{ duration: 0.4 }}
           className="w-full max-w-md"
         >
+          <div className="relative mb-8 aspect-[16/9] overflow-hidden rounded-[1.5rem] bg-[var(--color-bg-elev)] lg:hidden">
+            <Image
+              src={JOURNEY_ILLUSTRATIONS.begin.src}
+              alt={JOURNEY_ILLUSTRATIONS.begin.alt}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover mix-blend-multiply"
+            />
+          </div>
           {/* Greeting with their Google identity for context */}
           <div className="mb-8 flex items-center gap-3">
             {user?.image ? (
@@ -183,6 +195,19 @@ function SetupHandleForm() {
           </form>
         </motion.div>
       </main>
+      <aside className="relative hidden min-h-dvh overflow-hidden bg-[var(--color-bg-elev)] lg:block" aria-label="The beginning of your GoMotivateMe journey">
+        <Image
+          src={JOURNEY_ILLUSTRATIONS.begin.src}
+          alt={JOURNEY_ILLUSTRATIONS.begin.alt}
+          fill
+          priority
+          sizes="55vw"
+          className="object-cover mix-blend-multiply"
+        />
+        <p className="absolute bottom-10 left-10 max-w-xs border-l-2 border-[var(--color-sun)] bg-[color:rgba(251,250,246,0.9)] py-3 pl-4 pr-5 text-sm font-medium leading-6 text-[var(--color-text-secondary)] backdrop-blur-sm">
+          Claim the name your people will recognize along the way.
+        </p>
+      </aside>
     </div>
   );
 }

@@ -628,6 +628,7 @@ export function MomentumStat({
   value,
   detail,
   progress,
+  variant = "joined",
   className = "",
 }: {
   icon: typeof CircleGauge;
@@ -635,10 +636,15 @@ export function MomentumStat({
   value: string;
   detail: string;
   progress?: number;
+  variant?: "joined" | "card";
   className?: string;
 }) {
+  const containerClass =
+    variant === "card"
+      ? "rounded-[1.25rem] bg-[var(--color-surface)] px-3 py-4 sm:px-4"
+      : "border-r border-b border-[var(--color-border)] px-3 py-3 last:border-r-0 sm:px-4 sm:py-4 xl:border-b-0";
   return (
-    <div className={`flex min-w-0 items-center gap-2.5 border-r border-b border-[var(--color-border)] px-3 py-3 last:border-r-0 sm:gap-3 sm:px-4 sm:py-4 xl:border-b-0 ${className}`}>
+    <div className={`flex min-w-0 items-center gap-2.5 sm:gap-3 ${containerClass} ${className}`}>
       <Icon
         size={32}
         strokeWidth={1.65}
@@ -658,9 +664,9 @@ export function MomentumStat({
         </div>
         <p className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">{detail}</p>
         {progress !== undefined ? (
-          <div className="mt-2 h-px w-24 overflow-hidden bg-[var(--color-bg-sunken)]">
+          <div className="mt-2 h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-bg-sunken)]">
             <div
-              className="h-full bg-[var(--color-primary)]"
+              className="h-full rounded-full bg-[var(--color-primary)]"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </div>
@@ -717,12 +723,12 @@ export function Avatar({
 
   if (image) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={image} alt="" className={`${dimensions} shrink-0 rounded-full object-cover`} />;
+    return <img src={image} alt={`${name}'s avatar`} className={`${dimensions} shrink-0 rounded-full border-2 border-white object-cover shadow-sm`} />;
   }
   return (
     <span
-      aria-hidden
-      className={`grid shrink-0 place-items-center rounded-full bg-[var(--color-primary)] font-bold text-white ${dimensions}`}
+      aria-label={`${name}'s avatar`}
+      className={`grid shrink-0 place-items-center rounded-full border-2 border-white bg-[var(--color-primary)] font-bold text-white shadow-sm ${dimensions}`}
     >
       {initials}
     </span>

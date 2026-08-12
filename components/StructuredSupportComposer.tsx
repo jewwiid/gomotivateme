@@ -15,7 +15,6 @@ import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useCurrentUser } from "@/lib/useCurrentUser";
-import Link from "next/link";
 import { trackDataFastGoal } from "@/lib/analytics";
 import { AiAssistButton, AiSuggestionPicker } from "@/components/AiAssist";
 import { aiAssistantErrorMessage } from "@/lib/aiAssistant";
@@ -70,12 +69,14 @@ interface StructuredSupportComposerProps {
   /** What the creator is asking for — only show those types. */
   allowedTypes: SupportType[];
   onJoined?: () => void;
+  onRequireSignIn?: () => void;
 }
 
 export function StructuredSupportComposer({
   goalId,
   allowedTypes,
   onJoined,
+  onRequireSignIn,
 }: StructuredSupportComposerProps) {
   const { user, isAuthenticated } = useCurrentUser();
   const joinSupport = useMutation(api.supporters.join);
@@ -180,28 +181,20 @@ export function StructuredSupportComposer({
   );
 
   if (!isAuthenticated) {
-    const redirectPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)] p-6 text-center">
+      <div className="rounded-[1.35rem] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-card)] p-5 text-center">
         <h3 className="text-base font-semibold">Sign in to support this goal</h3>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
           Supporters make a real commitment. That's why we ask you to sign in.
         </p>
-        <Link
-          href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
+        <button
+          type="button"
+          onClick={onRequireSignIn}
           className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
         >
           Sign in
-        </Link>
-        <p className="mt-3 text-xs text-[var(--color-text-dim)]">
-          New here?{" "}
-          <Link
-            href={`/signup?redirect=${encodeURIComponent(redirectPath)}`}
-            className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
-          >
-            Create an account
-          </Link>
-        </p>
+        </button>
+        <p className="mt-3 text-xs text-[var(--color-text-dim)]">New here? You can create an account in the next step.</p>
       </div>
     );
   }
@@ -437,6 +430,8 @@ export function StructuredSupportComposer({
                   onClick={() => {
                     setSupportType(t);
                     setStep("compose");
+                    setAiSuggestions([]);
+                    setAiErr(null);
                   }}
                   className={`flex min-w-0 w-full flex-col items-start gap-2 rounded-xl border p-3 text-left transition sm:flex-row sm:gap-3 ${
                     typesToShow.length % 2 === 1 && index === typesToShow.length - 1
@@ -472,7 +467,11 @@ export function StructuredSupportComposer({
             className="space-y-3"
           >
             <button
-              onClick={() => setStep("type")}
+              onClick={() => {
+                setStep("type");
+                setAiSuggestions([]);
+                setAiErr(null);
+              }}
               className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
             >
               ← Change support type

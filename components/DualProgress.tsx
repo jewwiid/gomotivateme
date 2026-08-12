@@ -83,7 +83,7 @@ export function DualProgress({
         icon={<TrendingUp size={11} />}
       />
       <ProgressBar
-        label="Support raised"
+        label="Support circle"
         valueLabel={
           supporterTarget
             ? `${supporterCount} of ${supporterTarget} supporters`
@@ -138,9 +138,9 @@ function ProgressBar({
           {valueLabel}
         </span>
       </div>
-      <div className="relative h-2.5 w-full overflow-hidden bg-[var(--color-bg-elev)]">
+      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-sunken)]">
         <motion.div
-          className={`absolute inset-y-0 left-0 ${tone}`}
+          className={`absolute inset-y-0 left-0 rounded-full ${tone}`}
           style={{ width }}
         />
       </div>

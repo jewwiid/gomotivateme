@@ -52,7 +52,9 @@ export default function OpengraphImage() {
               />
             </div>
             <div style={{ display: "flex", fontSize: 30, fontWeight: 700, letterSpacing: -1.2 }}>
-              GoMotivateMe
+              <span style={{ color: "#2856c7" }}>Go</span>
+              <span style={{ color: "#feb704" }}>Motivate</span>
+              <span style={{ color: "#2856c7" }}>Me</span>
             </div>
           </div>
 

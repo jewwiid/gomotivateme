@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BrandName } from "@/components/Wordmark";
 
 const STORAGE_KEY = "gomotivateme:welcome-seen";
 
@@ -121,7 +122,7 @@ export function WelcomeModal() {
                 className="font-display text-2xl font-bold tracking-tight text-[var(--color-text)] sm:text-[26px]"
                 style={{ letterSpacing: "-0.02em" }}
               >
-                Welcome to GoMotivateMe
+                Welcome to <BrandName />
               </h2>
               <p className="mx-auto mt-3 max-w-sm text-sm text-[var(--color-text-secondary)]">
                 Set a goal, share progress, and let a circle of

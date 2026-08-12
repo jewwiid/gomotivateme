@@ -20,6 +20,7 @@ import { useState, type ReactNode } from "react";
 import { api } from "@/convex/_generated/api";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Header } from "@/components/Header";
+import { BrandName } from "@/components/Wordmark";
 
 const ROLE_META: Record<
   string,
@@ -276,7 +277,7 @@ export default function InvitePage() {
           className="inline-flex items-center gap-2 text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]"
         >
           <ArrowLeft size={12} />
-          gomotivateme
+          <BrandName />
         </Link>
 
         <motion.div

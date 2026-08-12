@@ -144,15 +144,15 @@ export function EditorialTimeline({
 
   return (
     <section className="workspace-card overflow-hidden">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] px-5 py-6 sm:px-7">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] px-5 py-5 sm:px-6">
         <div>
           <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
             <Calendar size={14} aria-hidden /> Goal journal
           </span>
-          <h2 className="mt-3 font-display text-2xl font-bold tracking-[-0.04em] text-[var(--color-text)] sm:text-3xl">
+          <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.04em] text-[var(--color-text)] sm:text-[1.7rem]">
             The work behind the progress.
           </h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-text-muted)]">
+          <p className="mt-1 max-w-xl text-sm leading-5 text-[var(--color-text-muted)]">
             Updates, breakthroughs, and the days this goal moved forward.
           </p>
         </div>
@@ -161,7 +161,7 @@ export function EditorialTimeline({
         </span>
       </header>
 
-      <ol className="px-5 sm:px-7">
+      <ol className="px-4 sm:px-5">
         {groupedUpdates.map((group, groupIndex) => {
           const d = formatDay(group.createdAt);
           const hasAchievement = group.updates.some((update) => update.type === "milestone");
@@ -172,13 +172,13 @@ export function EditorialTimeline({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-30px" }}
               transition={{ type: "spring", stiffness: 120, damping: 22, delay: Math.min(groupIndex * 0.05, 0.35) }}
-              className="grid grid-cols-[3.5rem_1.25rem_minmax(0,1fr)] gap-x-3 border-b border-[var(--color-border)] py-6 last:border-b-0 sm:grid-cols-[4.5rem_1.5rem_minmax(0,1fr)] sm:gap-x-4 sm:py-7"
+              className="grid grid-cols-[3rem_0.85rem_minmax(0,1fr)] gap-x-2 border-b border-[var(--color-border)] py-4 last:border-b-0 sm:grid-cols-[3.75rem_1rem_minmax(0,1fr)] sm:gap-x-3 sm:py-5"
             >
               <div className="text-right">
                 <div className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-primary)] sm:text-[11px]">
                   {d.month}
                 </div>
-                <div className="font-display text-[1.75rem] font-bold leading-none tracking-[-0.05em] text-[var(--color-text)] sm:text-[2rem]">
+                <div className="font-display text-[1.45rem] font-bold leading-none tracking-[-0.05em] text-[var(--color-text)] sm:text-[1.65rem]">
                   {parseInt(d.day, 10)}
                 </div>
                 <div className="mt-1 font-mono text-[9px] text-[var(--color-text-dim)] sm:text-[10px]">{d.year}</div>
@@ -191,7 +191,7 @@ export function EditorialTimeline({
                   }`}
                 />
                 {groupIndex < groupedUpdates.length - 1 ? (
-                  <span className="absolute left-1/2 top-3 h-[calc(100%+1.75rem)] w-px -translate-x-1/2 bg-[var(--color-border-strong)]" />
+                  <span className="absolute left-1/2 top-3 h-[calc(100%+1.25rem)] w-px -translate-x-1/2 bg-[var(--color-border-strong)]" />
                 ) : null}
               </div>
 
@@ -211,9 +211,9 @@ export function EditorialTimeline({
                   return (
                     <article
                       key={u._id}
-                      className={`group relative py-5 first:pt-0 last:pb-0 ${
+                      className={`group relative py-3.5 first:pt-0 last:pb-0 ${
                         u.type === "milestone"
-                          ? "border-l-2 border-[var(--color-gold)] pl-4"
+                          ? "border-l-2 border-[var(--color-gold)] pl-3"
                           : ""
                       }`}
                     >
@@ -221,10 +221,10 @@ export function EditorialTimeline({
 
                       {u.type === "milestone" ? (
                         <div>
-                          <h3 className="max-w-[28ch] font-display text-xl font-bold leading-tight tracking-[-0.035em] text-[var(--color-text)] sm:text-2xl">
+                          <h3 className="max-w-[28ch] font-display text-lg font-bold leading-tight tracking-[-0.035em] text-[var(--color-text)] sm:text-xl">
                             {milestoneTitle}
                           </h3>
-                          <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">
+                          <p className="mt-1 text-sm leading-5 text-[var(--color-text-muted)]">
                             A milestone was completed and added to the journey.
                           </p>
                         </div>
@@ -242,19 +242,23 @@ export function EditorialTimeline({
                           ) : null}
                           <EntryBody u={u} unit={unit} imageUrlOf={imageUrlOf} />
                           {u.note ? (
-                            <p className="mt-2 max-w-[62ch] text-base leading-7 text-[var(--color-text-secondary)]">
+                            <p className="mt-1.5 max-w-[62ch] text-sm leading-6 text-[var(--color-text-secondary)]">
                               {u.note}
                             </p>
                           ) : null}
                         </>
                       )}
 
-                      <ReportButton
-                        goalId={goalId}
-                        updateId={u._id}
-                        className="mt-4 inline-flex items-center gap-1 font-mono text-[10px] text-[var(--color-text-dim)] opacity-60 transition hover:text-[var(--color-text-secondary)] hover:opacity-100 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                      />
-                      {!isOwner ? <UpdateReactions updateId={u._id} goalId={goalId} /> : null}
+                      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {!isOwner ? (
+                          <UpdateReactions updateId={u._id} goalId={goalId} />
+                        ) : null}
+                        <ReportButton
+                          goalId={goalId}
+                          updateId={u._id}
+                          className="inline-flex items-center gap-1 px-2 py-1 font-mono text-[10px] text-[var(--color-text-dim)] opacity-60 transition hover:text-[var(--color-text-secondary)] hover:opacity-100 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                        />
+                      </div>
                     </article>
                   );
                 })}
@@ -356,6 +360,7 @@ function EntryBody({
           description={u.linkDescription}
           siteName={u.linkSiteName}
           imageUrl={u.linkImage ? imageUrlOf?.(u.linkImage) ?? null : null}
+          compact
         />
       </div>
     );

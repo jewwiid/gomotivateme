@@ -2,7 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { Dumbbell, Flame, Heart, MessageCircle, Sparkles, ThumbsUp, TrendingUp, CheckCircle2, Image as ImageIcon, Images, Link as LinkIcon } from "lucide-react";
+import { Dumbbell, Flame, Heart, ThumbsUp } from "lucide-react";
 import { useMemo } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -24,8 +24,8 @@ const SUPPORT_LABEL: Record<string, string> = {
 };
 
 type ActivityItem =
-  | { kind: "supporter"; at: number; supportType: string; name: string | null; message?: string }
-  | { kind: "message"; at: number; name: string | null; supportType: string; body: string }
+  | { kind: "supporter"; at: number; supportType: string; name: string | null; image?: string | null; message?: string }
+  | { kind: "message"; at: number; name: string | null; image?: string | null; supportType: string; body: string }
   | { kind: "cheer"; at: number; emoji: string; name: string | null }
   | { kind: "update"; at: number; type: "value" | "milestone" | "note" | "image" | "media" | "link"; body: string };
 
@@ -41,23 +41,30 @@ export function RecentActivity({
   goalId,
   unit,
   ownerName,
+  ownerImage,
   limit = 8,
 }: {
   goalId: Id<"goals">;
   unit?: string;
   ownerName?: string;
+  ownerImage?: string | null;
   limit?: number;
 }) {
   const supporters = useQuery(api.supporters.listForGoal, { goalId, limit: 8 });
   const messages = useQuery(api.supportMessages.listForGoal, { goalId });
   const reactions = useQuery(api.reactions.recentEmoji, { goalId, limit: 8 });
   const updates = useQuery(api.updates.listRecentForGoal, { goalId, limit });
-  const profiles = useQuery(
-    api.users.profilesById,
-    supporters && supporters.length > 0
-      ? { ids: Array.from(new Set(supporters.map((s: any) => s.userId))) }
-      : "skip"
+  const profileIds = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...((supporters as any[]) ?? []).map((supporter) => supporter.userId),
+          ...((messages as any[]) ?? []).map((message) => message.authorId),
+        ])
+      ),
+    [supporters, messages]
   );
+  const profiles = useQuery(api.users.profilesById, profileIds.length > 0 ? { ids: profileIds } : "skip");
 
   const items: ActivityItem[] = useMemo(() => {
     const out: ActivityItem[] = [];
@@ -68,6 +75,7 @@ export function RecentActivity({
         at: s.createdAt,
         supportType: s.supportType,
         name: profiles?.[s.userId]?.name ?? null,
+        image: profiles?.[s.userId]?.image ?? null,
       });
     }
     for (const m of (messages as any[]) ?? []) {
@@ -75,6 +83,7 @@ export function RecentActivity({
         kind: "message",
         at: m.createdAt,
         name: profiles?.[m.authorId]?.name ?? null,
+        image: profiles?.[m.authorId]?.image ?? null,
         supportType: m.supportType,
         body: m.body,
       });
@@ -133,7 +142,7 @@ export function RecentActivity({
             transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.4) }}
             className="flex items-start gap-3 text-sm"
           >
-            <ActivityIcon item={it} />
+            <ActivityIcon item={it} ownerName={ownerName} ownerImage={ownerImage} />
             <div className="min-w-0 flex-1">
               <ActivityBody item={it} ownerName={ownerName} />
             </div>
@@ -150,68 +159,55 @@ export function RecentActivity({
   );
 }
 
-function ActivityIcon({ item }: { item: ActivityItem }) {
-  if (item.kind === "supporter") {
-    return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
-        <Sparkles size={13} />
-      </span>
-    );
+function ActivityIcon({
+  item,
+  ownerName,
+  ownerImage,
+}: {
+  item: ActivityItem;
+  ownerName?: string;
+  ownerImage?: string | null;
+}) {
+  if (item.kind === "update") {
+    return <ActivityAvatar name={ownerName ?? "Owner"} image={ownerImage} />;
   }
-  if (item.kind === "message") {
-    return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
-        <MessageCircle size={13} />
-      </span>
-    );
+  if (item.kind === "supporter" || item.kind === "message") {
+    return <ActivityAvatar name={displayName(item.name)} image={item.image} />;
   }
-  if (item.kind === "cheer") {
-    const Icon = (CHEER_META[item.emoji] ?? CHEER_META.thumbsup).icon;
+  const Icon = (CHEER_META[item.emoji] ?? CHEER_META.thumbsup).icon;
+  return (
+    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+      <Icon size={14} strokeWidth={1.8} aria-hidden />
+    </span>
+  );
+}
+
+function ActivityAvatar({ name, image }: { name: string; image?: string | null }) {
+  const initials =
+    name
+      .split(/\s+/)
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "?";
+
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
     return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
-        <Icon size={13} strokeWidth={1.8} aria-hidden />
-      </span>
-    );
-  }
-  // update
-  if (item.type === "value") {
-    return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-success-soft)] text-[var(--color-success)]">
-        <TrendingUp size={13} />
-      </span>
-    );
-  }
-  if (item.type === "milestone") {
-    return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-success-soft)] text-[var(--color-success)]">
-        <CheckCircle2 size={13} />
-      </span>
-    );
-  }
-  if (item.type === "image") {
-    return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
-        <ImageIcon size={13} />
-      </span>
-    );
-  }
-  if (item.type === "media") {
-    return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
-        <Images size={13} />
-      </span>
-    );
-  }
-  if (item.type === "link") {
-    return (
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
-        <LinkIcon size={13} />
-      </span>
+      <img
+        src={image}
+        alt={`${name}'s avatar`}
+        className="mt-0.5 h-8 w-8 shrink-0 rounded-full border-2 border-white object-cover shadow-sm"
+      />
     );
   }
   return (
-    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]">
-      <Heart size={13} />
+    <span
+      aria-label={`${name}'s avatar`}
+      className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 border-white bg-[var(--color-primary)] text-[10px] font-bold text-white shadow-sm"
+    >
+      {initials}
     </span>
   );
 }

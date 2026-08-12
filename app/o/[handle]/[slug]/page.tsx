@@ -34,6 +34,8 @@ import { MobileActionBar } from "@/components/MobileActionBar";
 import { ReportButton } from "@/components/ReportButton";
 import { MotivationCircleWidget } from "@/components/MotivationCircleWidget";
 import { CheckInList } from "@/components/CheckInList";
+import { DualProgress } from "@/components/DualProgress";
+import { SignInModal } from "@/components/SignInModal";
 import { Header } from "@/components/Header";
 import {
   Avatar,
@@ -88,12 +90,22 @@ function PublicGoalView({
   goalId: Id<"goals">;
   goal: any;
 }) {
-  const { user } = useCurrentUser();
+  const { user, isAuthenticated } = useCurrentUser();
   const isOwner = !!user && user._id === goal.ownerId;
   const updatesCount = useQuery(api.updates.countForGoal, { goalId });
   const badges = useQuery(api.badges.listForGoal, { goalId });
   const owner = useQuery(api.users.profilesById, { ids: [goal.ownerId] });
   const motivators = useQuery(api.motivation.listActiveMotivators, { goalId });
+  const supporterRows = useQuery(api.supporters.listForGoal, { goalId, limit: 4 });
+  const reactionStats = useQuery(api.reactions.publicStats, { goalId });
+  const supporterIds = useMemo(
+    () => (supporterRows ?? []).map((supporter: any) => supporter.userId),
+    [supporterRows]
+  );
+  const supporterProfiles = useQuery(
+    api.users.profilesById,
+    supporterIds.length > 0 ? { ids: supporterIds } : "skip"
+  );
 
   const imageIds = useMemo(() => {
     const ids = new Set<Id<"_storage">>();
@@ -116,6 +128,17 @@ function PublicGoalView({
       : null;
   const supporterCount = goal.supporterCount ?? 0;
   const supporterTarget = goal.supporterTarget ?? null;
+  const supporterPreview = (supporterRows ?? [])
+    .map((supporter: any) => {
+      const profile = supporterProfiles?.[supporter.userId];
+      if (!profile) return null;
+      return {
+        id: String(supporter.userId),
+        name: profile.name ?? profile.handle ?? "Supporter",
+        image: profile.image ?? null,
+      };
+    })
+    .filter(Boolean) as Array<{ id: string; name: string; image: string | null }>;
   const coreMotivators = (motivators ?? []).filter(
     (motivator: any) => motivator.isCoreMotivator
   );
@@ -136,6 +159,7 @@ function PublicGoalView({
   const supportSectionRef = useRef<HTMLElement>(null);
   const cheerSectionRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
 
   const onShare = async () => {
     if (typeof window === "undefined") return;
@@ -167,6 +191,13 @@ function PublicGoalView({
       behavior: "smooth",
       block: "start",
     });
+  const openSupport = () => {
+    if (!isAuthenticated) {
+      setSignInOpen(true);
+      return;
+    }
+    scrollToSupport();
+  };
 
   const navItems: WorkspaceNavItem[] = [
     { label: "Overview", href: "#overview", icon: Home, active: true },
@@ -193,8 +224,8 @@ function PublicGoalView({
         ariaLabel="Public goal navigation"
       >
         <div id="overview" className="scroll-mt-24 space-y-4">
-          <section className="workspace-card grid min-h-[11rem] gap-5 p-4 md:grid-cols-[19rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)_14rem]">
-            <div className="relative min-h-48 overflow-hidden rounded-[1rem] bg-[var(--color-bg-sunken)] md:min-h-0">
+          <section className="grid min-h-[12rem] gap-6 overflow-hidden rounded-[2rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-3 md:grid-cols-[19rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)_14rem]">
+            <div className="relative min-h-52 overflow-hidden rounded-[1.5rem] bg-[var(--color-bg-sunken)] md:min-h-0">
               {coverUrl === undefined ? (
                 <div className="absolute inset-0 animate-pulse bg-[var(--color-bg-sunken)]" />
               ) : (
@@ -224,7 +255,7 @@ function PublicGoalView({
                   {titleCase(goal.category || "Goal")}
                 </span>
               </div>
-              <h1 className="mt-5 title-page">
+              <h1 className="mt-5 max-w-[18ch] text-balance font-display text-[clamp(2.4rem,4vw,4rem)] font-semibold leading-[0.92] tracking-[-0.06em]">
                 {goal.title}
               </h1>
               <p className="mt-3 max-w-[42rem] text-sm leading-6 text-[var(--color-text-muted)]">
@@ -257,6 +288,11 @@ function PublicGoalView({
                   </>
                 ) : null}
               </div>
+              <GoalSocialProof
+                supporters={supporterPreview}
+                supporterCount={supporterCount}
+                reactionStats={reactionStats}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-2 md:col-span-2 xl:col-span-1 xl:flex xl:flex-col">
@@ -268,7 +304,7 @@ function PublicGoalView({
               ) : (
                 <button
                   type="button"
-                  onClick={scrollToSupport}
+                  onClick={openSupport}
                   className="workspace-button-primary"
                 >
                   <Heart size={16} aria-hidden />
@@ -319,14 +355,15 @@ function PublicGoalView({
             </div>
           )}
 
-          <section aria-label="Goal momentum" className="workspace-card overflow-hidden">
-            <div className="grid min-h-[7rem] grid-cols-2 sm:grid-cols-3 xl:grid-cols-[1.15fr_repeat(4,1fr)]">
+          <section aria-label="Goal momentum" className="overflow-hidden rounded-[1.75rem] bg-[var(--color-bg-elev)] p-3">
+            <div className="grid min-h-[7rem] grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-[1.15fr_repeat(4,1fr)]">
               <MomentumStat
                 icon={CircleGauge}
                 label="Goal progress"
                 value={`${Math.round(goalPct)}%`}
                 detail="On track"
                 progress={goalPct}
+                variant="card"
                 className="col-span-2 sm:col-span-1"
               />
               <MomentumStat
@@ -336,6 +373,7 @@ function PublicGoalView({
                   goal.targetValue ?? milestones.length
                 }`}
                 detail={firstIncomplete?.title ?? "All complete"}
+                variant="card"
               />
               <MomentumStat
                 icon={Users}
@@ -346,6 +384,7 @@ function PublicGoalView({
                     ? `${Math.max(0, supporterTarget - supporterCount)} to go`
                     : "people showing up"
                 }
+                variant="card"
               />
               <MomentumStat
                 icon={Target}
@@ -356,12 +395,14 @@ function PublicGoalView({
                     ? "core motivators"
                     : "motivators to add"
                 }
+                variant="card"
               />
               <MomentumStat
                 icon={MessageCircle}
                 label="Updates"
                 value={String(updatesCount ?? 0)}
                 detail="updates shared"
+                variant="card"
               />
             </div>
           </section>
@@ -404,6 +445,7 @@ function PublicGoalView({
                     <StructuredSupportComposer
                       goalId={goalId}
                       allowedTypes={(goal.supportTypes ?? []) as any}
+                      onRequireSignIn={() => setSignInOpen(true)}
                     />
                   ) : isOwner ? (
                     <div className="rounded-[var(--workspace-radius)] border border-dashed border-[var(--color-border-strong)] p-5 text-center text-sm text-[var(--color-text-muted)]">
@@ -420,7 +462,13 @@ function PublicGoalView({
               </section>
 
               <div id="updates" className="scroll-mt-24">
-                <RecentActivity goalId={goalId} unit={goal.unit} ownerName={displayName(ownerName)} limit={4} />
+                <RecentActivity
+                  goalId={goalId}
+                  unit={goal.unit}
+                  ownerName={displayName(ownerName)}
+                  ownerImage={ownerImage}
+                  limit={4}
+                />
               </div>
 
               <EditorialTimeline
@@ -431,11 +479,7 @@ function PublicGoalView({
               />
 
               {!isOwner ? (
-                <section
-                  ref={cheerSectionRef}
-                  id="cheer"
-                  className="workspace-card scroll-mt-24 p-5"
-                >
+                <section ref={cheerSectionRef} id="cheer" className="scroll-mt-24">
                   <ReactionBar goalId={goalId} />
                 </section>
               ) : null}
@@ -458,10 +502,13 @@ function PublicGoalView({
                 goalPct={goalPct}
                 supporterCount={supporterCount}
                 supporterTarget={supporterTarget}
+                supporterPreview={supporterPreview}
+                reactionStats={reactionStats}
                 badges={badges as any}
+                unit={titleCase(goal.unit || goal.progressType || "progress")}
                 copied={copied}
                 onShare={onShare}
-                onSupport={scrollToSupport}
+                onSupport={openSupport}
               />
               <MotivationCircleWidget
                 goalId={goalId}
@@ -496,11 +543,80 @@ function PublicGoalView({
       </WorkspaceShell>
 
       <MobileActionBar
-        onSupport={scrollToSupport}
-        onEncourage={scrollToSupport}
+        onSupport={openSupport}
+        onEncourage={openSupport}
         onCheer={scrollToCheer}
         isOwner={isOwner}
       />
+      <SignInModal
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        redirectPath={
+          typeof window !== "undefined"
+            ? `${window.location.pathname}${window.location.search}`
+            : `/o/${goal.ownerHandle}/${goal.slug}`
+        }
+      />
+    </div>
+  );
+}
+
+function GoalSocialProof({
+  supporters,
+  supporterCount,
+  reactionStats,
+  compact = false,
+}: {
+  supporters: Array<{ id: string; name: string; image: string | null }>;
+  supporterCount: number;
+  reactionStats?: { emojiCounts: Record<string, number>; emojiTotal: number };
+  compact?: boolean;
+}) {
+  const reactionGlyphs: Record<string, string> = {
+    thumbsup: "👍",
+    muscle: "💪",
+    heart: "♥",
+    fire: "🔥",
+  };
+  const activeGlyphs = Object.entries(reactionStats?.emojiCounts ?? {})
+    .filter(([, count]) => Number(count) > 0)
+    .sort(([, a], [, b]) => Number(b) - Number(a))
+    .slice(0, 3)
+    .map(([key]) => reactionGlyphs[key] ?? "");
+  const cheerCount = Number(reactionStats?.emojiTotal ?? 0);
+
+  return (
+    <div className={`${compact ? "mt-5" : "mt-5"} flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-[var(--color-border-subtle)] pt-4`}>
+      <div className="flex items-center gap-3">
+        {supporterCount > 0 ? (
+          <div className="flex items-center" aria-label={`${supporterCount} ${supporterCount === 1 ? "supporter" : "supporters"}`}>
+            {supporters.slice(0, 3).map((supporter, index) => (
+              <span key={supporter.id} className={index === 0 ? "" : "-ml-2"}>
+                <Avatar name={supporter.name} image={supporter.image} size="md" />
+              </span>
+            ))}
+            {supporterCount > supporters.slice(0, 3).length ? (
+              <span className="-ml-2 grid h-9 min-w-9 place-items-center rounded-full border-2 border-white bg-[var(--color-bg-sunken)] px-1.5 text-[10px] font-bold text-[var(--color-text-muted)] shadow-sm">
+                +{supporterCount - supporters.slice(0, 3).length}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]">
+            <Users size={16} aria-hidden />
+          </span>
+        )}
+        <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
+          {supporterCount > 0
+            ? `${supporterCount} ${supporterCount === 1 ? "person is" : "people are"} showing up`
+            : "Open for support"}
+        </span>
+      </div>
+      <span className="hidden h-5 w-px bg-[var(--color-border)] sm:block" aria-hidden />
+      <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text-secondary)]">
+        <span className="tracking-[-0.08em]" aria-hidden>{activeGlyphs.length > 0 ? activeGlyphs.join("") : "♡"}</span>
+        <span>{cheerCount} {cheerCount === 1 ? "cheer" : "cheers"}</span>
+      </div>
     </div>
   );
 }
@@ -516,42 +632,41 @@ function PublicMilestonePath({
   }>;
 }) {
   const nextIndex = milestones.findIndex((milestone) => !milestone.done);
+  const completedCount = milestones.filter((milestone) => milestone.done).length;
+  const completedPct = milestones.length > 0 ? (completedCount / milestones.length) * 100 : 0;
 
   return (
     <section
       id="milestones"
-      className="workspace-card scroll-mt-24 p-4 pb-3"
+      className="scroll-mt-24 rounded-[1.75rem] bg-[var(--color-bg-elev)] p-4 sm:p-5"
     >
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-base font-bold text-[var(--color-text)]">Milestone path</h2>
-        <span className="text-xs font-bold text-[var(--color-primary)]">
-          {milestones.filter((milestone) => milestone.done).length} of{" "}
-          {milestones.length} complete
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-primary)]">The route ahead</p>
+          <h2 className="mt-1 font-display text-xl font-semibold tracking-[-0.03em] text-[var(--color-text)]">Milestone path</h2>
+        </div>
+        <span className="rounded-full bg-[var(--color-primary-soft)] px-3 py-1.5 text-xs font-bold text-[var(--color-primary)]">
+          {completedCount} of {milestones.length} complete
         </span>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-4 lg:grid-cols-4">
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--color-bg-sunken)]">
+        <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${completedPct}%` }} />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
         {milestones.map((milestone, index) => (
-          <div key={milestone.id} className="relative min-w-0">
-            {index < milestones.length - 1 ? (
-              <span
-                aria-hidden
-                className={`absolute left-9 right-[-1rem] top-[1.125rem] hidden h-px sm:block ${
-                  milestone.done ? "bg-[var(--color-success)]" : "bg-[var(--color-bg-sunken)]"
-                }`}
-              />
-            ) : null}
+          <div key={milestone.id} className="relative min-w-0 rounded-[1.15rem] bg-[var(--color-surface)] p-3.5">
             <span
-              className={`relative z-10 grid h-9 w-9 place-items-center rounded-full border-2 bg-white text-sm font-bold ${
+              className={`relative z-10 grid h-9 w-9 place-items-center rounded-full border-2 text-sm font-bold ${
                 milestone.done
                   ? "border-[var(--color-success)] bg-[var(--color-success-soft)] text-[var(--color-success-text)]"
                   : index === nextIndex
-                  ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-muted)]"
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)]"
               }`}
             >
               {milestone.done ? <Check size={18} aria-hidden /> : index + 1}
             </span>
-            <span className="mt-2 block truncate text-sm font-bold text-[var(--color-text)]">
+            <span className="mt-3 block text-sm font-bold leading-5 text-[var(--color-text)]">
               {milestone.title}
             </span>
             <span
@@ -586,13 +701,16 @@ function PublicSupportCard({
   goalPct,
   supporterCount,
   supporterTarget,
+  supporterPreview,
+  reactionStats,
   badges,
+  unit,
   copied,
   onShare,
   onSupport,
 }: any) {
   return (
-    <section className="workspace-card p-5">
+    <section className="rounded-[1.75rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-5">
       <div className="flex items-center justify-between gap-4">
         <p className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-text)]">
           <Heart size={17} className="text-[var(--color-gold-text)]" aria-hidden />
@@ -603,18 +721,22 @@ function PublicSupportCard({
         </span>
       </div>
 
-      <p className="mt-5 font-semibold text-[var(--color-text)]">{goalLabel}</p>
-      <div className="mt-2 h-px bg-[var(--color-border-strong)]">
-        <div
-          className="h-px bg-[var(--color-primary)]"
-          style={{ width: `${Math.max(0, Math.min(100, goalPct))}%` }}
+      <div className="mt-5">
+        <DualProgress
+          goalPct={goalPct}
+          supporterCount={supporterCount}
+          supporterTarget={supporterTarget}
+          goalLabel={goalLabel}
+          unit={unit}
         />
       </div>
-      <p className="mt-3 text-xs leading-5 text-[var(--color-text-muted)]">
-        {supporterCount}
-        {supporterTarget ? ` of ${supporterTarget}` : ""}{" "}
-        {supporterCount === 1 ? "supporter is" : "supporters are"} already showing up.
-      </p>
+
+      <GoalSocialProof
+        supporters={supporterPreview}
+        supporterCount={supporterCount}
+        reactionStats={reactionStats}
+        compact
+      />
 
       <div className="mt-4 flex items-center gap-3">
         {isOwner ? (
