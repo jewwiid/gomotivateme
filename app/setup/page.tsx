@@ -205,7 +205,7 @@ function SetupHandleForm() {
           className="object-cover mix-blend-multiply"
         />
         <p className="absolute bottom-10 left-10 max-w-xs border-l-2 border-[var(--color-sun)] bg-[color:rgba(251,250,246,0.9)] py-3 pl-4 pr-5 text-sm font-medium leading-6 text-[var(--color-text-secondary)] backdrop-blur-sm">
-          Claim the name your people will recognize along the way.
+          Claim the name your people will recognize.
         </p>
       </aside>
     </div>

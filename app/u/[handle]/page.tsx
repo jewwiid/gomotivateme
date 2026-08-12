@@ -744,7 +744,7 @@ function DiscoverSidebar({
       <ul className="mt-6 space-y-4">
         {motivators.length === 0 ? (
           <li className="border-y border-dashed border-[var(--color-border)] py-5 text-center text-xs text-[var(--color-text-muted)]">
-            New motivators show up here as the community grows.
+            New motivators show up here.
           </li>
         ) : (
           motivators.map((m) => {
