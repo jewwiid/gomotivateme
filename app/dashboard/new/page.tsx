@@ -660,7 +660,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           {step === 2 && (
             <Step title="How will you measure progress?">
               <p className="mb-5 max-w-xl text-sm leading-6 text-[var(--color-text-muted)]">
-                These measurements fit {getCategory(category).label.toLowerCase()} goals. Choose what you can update consistently—not merely what sounds impressive.
+                These measurements fit {getCategory(category).label.toLowerCase()} goals. Choose what you can update consistently, not merely what sounds impressive.
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {measurementOptions.map((measurement) => {
@@ -904,7 +904,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 ) : null}
               </div>
               <p className="mt-3 text-sm text-[var(--color-text-muted)]">
-                Optional. Leave this blank for an open-ended goal—you can add a
+                Optional. Leave this blank for an open-ended goal. You can add a
                 date later from goal settings.
               </p>
             </Step>

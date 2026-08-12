@@ -5,7 +5,7 @@ import { ExploreContent } from "./ExploreContent";
 export const metadata: Metadata = {
   title: "Explore goals and motivators",
   description:
-    "Browse real goals people are working on right now — health, learning, launches, creative projects, habits — and find someone worth cheering on.",
+    "Browse real goals people are working on right now: health, learning, launches, creative projects, habits. Find someone worth cheering on.",
   alternates: { canonical: "/explore" },
   openGraph: {
     title: "Explore goals and motivators · GoMotivateMe",

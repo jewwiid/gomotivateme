@@ -40,12 +40,12 @@ const SECTIONS: FaqSection[] = [
       {
         q: "What is GoMotivateMe?",
         answer:
-          "It's a public home for personal goals. You set a goal, say what progress actually means for it, and invite people to back you — with encouragement, accountability, practical advice, or a review of how you're doing. The idea is simple: goals kept in a private notes app quietly die, and goals people can see tend to get finished.",
+          "It's a public home for personal goals. You set a goal, say what progress actually means for it, and invite people to back you with encouragement, accountability, practical advice, or a review of how you're doing. Goals kept in a private notes app quietly die. Goals people can see tend to get finished.",
       },
       {
         q: "Is it free?",
         answer:
-          "Yes. There are no payments and no subscriptions. We don't take a cut of anything, because there's nothing to take a cut of — this isn't a fundraising site.",
+          "Yes. There are no payments and no subscriptions. We don't take a cut of anything, because there's nothing to take a cut of. This isn't a fundraising site.",
         links: [{ label: "Read the Terms", href: "/legal/terms" }],
       },
       {
@@ -57,7 +57,7 @@ const SECTIONS: FaqSection[] = [
       {
         q: "What kinds of goals belong here?",
         answer:
-          "Personal ones you're actually working on: health, learning, career, launching something, creative projects, habits, sports, community, travel, family, and faith. Anything where the work happens over weeks or months rather than in one sitting. It doesn't need to be impressive — clear beats impressive.",
+          "Personal ones you're actually working on: health, learning, career, launching something, creative projects, habits, sports, community, travel, family, and faith. Anything where the work happens over weeks or months rather than in one sitting. It doesn't need to be impressive.",
       },
     ],
   },
@@ -68,7 +68,7 @@ const SECTIONS: FaqSection[] = [
       {
         q: "How do I measure progress?",
         answer:
-          "Three ways, and you pick what fits. A number counts toward a target in whatever unit makes sense — kilometres, pages, users, kilograms. A streak counts consecutive days you showed up. Milestones are a checklist of named steps. You can change the measurement later if you picked the wrong one.",
+          "Three ways, and you pick what fits. A number counts toward a target in whatever unit makes sense: kilometres, pages, users, kilograms. A streak counts consecutive days you showed up. Milestones are a checklist of named steps. You can change the measurement later if you picked the wrong one.",
       },
       {
         q: "Can I keep a goal private?",
@@ -83,7 +83,7 @@ const SECTIONS: FaqSection[] = [
       {
         q: "What happens when I hit my target?",
         answer:
-          "The goal is marked complete, everyone who backed you is told, and the page keeps the full record of how you got there — the stuck weeks included. Finished goals stay up unless you delete them.",
+          "The goal is marked complete, everyone who backed you is told, and the page keeps the full record of how you got there, the stuck weeks included. Finished goals stay up unless you delete them.",
       },
     ],
   },
@@ -104,7 +104,7 @@ const SECTIONS: FaqSection[] = [
       {
         q: "How do I get people onto my support team?",
         answer:
-          "Share your goal link, or send a private invite to specific people. Anyone browsing a public goal can also apply to support it, and you approve or decline each application — nobody joins your team without your say-so.",
+          "Share your goal link, or send a private invite to specific people. Anyone browsing a public goal can also apply to support it, and you approve or decline each application. Nobody joins your team without your say-so.",
       },
       {
         q: "What if a goal touches on something sensitive?",
@@ -212,7 +212,7 @@ export default function FaqPage() {
             >
               email us
             </a>{" "}
-            and we&rsquo;ll answer — and add it to this page.
+            and we&rsquo;ll answer, then add it to this page.
           </p>
 
           {SECTIONS.map((section) => (

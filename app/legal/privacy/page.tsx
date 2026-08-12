@@ -121,8 +121,8 @@ export default function PrivacyPage() {
               <li>
                 <strong>No precise location tracking.</strong> Service providers
                 may derive an approximate country or region from your IP for
-                security, localisation, delivery, and—only after analytics
-                consent—traffic reporting. We do not collect GPS location.
+                security, localisation, delivery, and, only after analytics
+                consent, traffic reporting. We do not collect GPS location.
               </li>
             </ul>
           </SubSection>

@@ -482,7 +482,7 @@ export function OwnerGoalWorkspace({
                         : goal.progressType === "streak"
                         ? streakLoggedToday
                           ? "You showed up today. Come back tomorrow to keep the chain going."
-                          : "Keep your streak alive — log today and stay on track."
+                          : "Keep your streak alive. Log today and stay on track."
                         : "Update your progress and keep your supporters in the loop."}
                     </p>
                     <button

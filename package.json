@@ -2,7 +2,7 @@
   "name": "gomotivateme",
   "version": "0.1.0",
   "private": true,
-  "description": "gomotivateme — public motivation app. Set a goal, share the journey, crowdsource encouragement.",
+  "description": "gomotivateme \u2014 public motivation app. Set a goal, share the journey, crowdsource encouragement.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "convex": "convex",
     "convex:dev": "convex dev",
-    "convex:deploy": "convex deploy"
+    "convex:deploy": "convex deploy",
+    "check:copy": "node scripts/check-copy.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.89",

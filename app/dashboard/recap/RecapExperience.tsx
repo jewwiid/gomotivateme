@@ -314,7 +314,7 @@ function RecapExperience({
 function StoryLabel({ year }: { year: number }) {
   return (
     <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-[var(--color-primary)] sm:text-xs">
-      Your year in motion — {year}
+      Your year in motion, {year}
     </p>
   );
 }
@@ -416,7 +416,7 @@ function RhythmSlide({ summary }: { summary: RecapSummary }) {
       </h2>
       <p className="mt-5 max-w-md text-base leading-7 text-[var(--color-text-secondary)]">
         {summary.mostActiveMonth
-          ? `You posted ${summary.mostActiveMonth.updates} updates—the strongest rhythm of your year.`
+          ? `You posted ${summary.mostActiveMonth.updates} updates, the strongest rhythm of your year.`
           : "There’s no perfect month to begin. The day you return becomes the start."}
       </p>
       <div className="mt-10 border-y border-[var(--color-border)]">

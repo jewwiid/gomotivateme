@@ -23,7 +23,7 @@ export function SiteFooter() {
         <div>
           <Wordmark href="/" size="xl" />
           <p className="mt-5 max-w-md text-sm leading-6 text-[var(--color-text-secondary)]">
-            A public place for the goals that matter—and the people helping you keep them.
+            A public place for the goals that matter, and the people helping you keep them.
           </p>
         </div>
 

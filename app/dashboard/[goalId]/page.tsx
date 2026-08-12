@@ -102,7 +102,7 @@ function GoalDetailDesignPreview() {
     {
       _id: "preview-update-2",
       type: "milestone",
-      note: "Research complete — seven interviews captured.",
+      note: "Research complete. Seven interviews captured.",
       createdAt: Date.now() - 20 * 60 * 60 * 1000,
     },
   ]);
@@ -313,7 +313,7 @@ function GoalDetailContent() {
       : goal.progressType === "streak"
       ? streakLoggedToday
         ? "You showed up today. Come back tomorrow to keep the chain going."
-        : "Keep your streak alive — log today and stay on track."
+        : "Keep your streak alive. Log today and stay on track."
       : "Update your progress and keep your supporters in the loop.";
   const lastActivityAt = Math.max(
     goal.launchedAt ?? goal.createdAt,

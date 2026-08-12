@@ -97,7 +97,7 @@ function MotivateContent() {
           </div>
           <h2 className="mt-6 font-display text-3xl font-bold tracking-[-0.045em]">Keep it simple</h2>
           <p className="mt-4 text-base leading-7 text-[var(--color-text-muted)]">
-            Small, consistent check-ins make a real difference. A few words can keep someone going.
+            A few words can keep someone going.
           </p>
         </aside>
       </main>

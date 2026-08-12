@@ -477,7 +477,7 @@ function ShareProfileButton({ url, name }: { url: string; name: string }) {
       className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
     >
       {copied ? <Check size={13} /> : <Share2 size={13} />}
-      {copied ? "Copied!" : "Share profile"}
+      {copied ? "Copied" : "Share profile"}
     </button>
   );
 }
