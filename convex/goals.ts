@@ -7,7 +7,7 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { buildSlug, computeProgress, newMilestoneTiers } from "./utils";
-import { resolveAvatarUrl } from "./users";
+import { firstNameOf, resolveAvatarUrl } from "./users";
 import {
   MEASUREMENT_VERSION,
   getMeasurementMetric,
@@ -393,7 +393,7 @@ export const create = mutation({
         category: "lifecycle",
         preferenceKey: "accountActivity",
         payload: JSON.stringify({
-          firstName: ownerName?.split(" ")[0],
+          firstName: firstNameOf(user),
           goalTitle: cleanTitle,
           slug,
           ownerHandle: (user as { handle?: string } | null)?.handle,

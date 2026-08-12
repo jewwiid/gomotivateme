@@ -68,6 +68,29 @@ async function sendVerificationRequest(
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
+      /**
+       * Without this, the library's defaultProfile returns `{ email }` only —
+       * so the name the signup form collected was accepted, validated, and
+       * then silently dropped, leaving password accounts with no name at all.
+       *
+       * Fields are spread conditionally because this runs for signIn and the
+       * reset/verify flows too, where the params carry no name: emitting
+       * `name: undefined` there would blank out a name already on record.
+       */
+      profile(params) {
+        const firstName = String(params.firstName ?? "").trim();
+        const lastName = String(params.lastName ?? "").trim();
+        const composed = [firstName, lastName].filter(Boolean).join(" ");
+        return {
+          email: params.email as string,
+          ...(firstName ? { firstName } : null),
+          ...(lastName ? { lastName } : null),
+          // displayName is set here too so the name is protected from the
+          // OAuth overwrite from the very first session (see the callback
+          // below), not only after the user visits settings.
+          ...(composed ? { name: composed, displayName: composed } : null),
+        };
+      },
       verify: Email({
         sendVerificationRequest: sendVerificationRequest as any,
       }),

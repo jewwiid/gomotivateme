@@ -36,7 +36,8 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
   const setHandle = useMutation(api.users.setHandle);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,14 +54,16 @@ function SignupForm() {
     null | "ok" | "mismatch"
   >(null);
 
+  const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+
   // Auto-suggest handle from the name until the user touches the handle
   // field. Once they've edited it, the suggestion is frozen so we don't
   // keep overwriting their choice.
   useEffect(() => {
     if (!handleDirtyRef.current) {
-      setHandleInput(suggestHandle(name));
+      setHandleInput(suggestHandle(fullName));
     }
-  }, [name]);
+  }, [fullName]);
 
   // Wait until Convex has validated the fresh token before either making the
   // authenticated handle mutation or moving to the guarded dashboard route.
@@ -139,8 +142,12 @@ function SignupForm() {
       setErr("Enter your email");
       return;
     }
-    if (!name.trim()) {
-      setErr("Enter your name");
+    if (!firstName.trim()) {
+      setErr("Enter your first name");
+      return;
+    }
+    if (!lastName.trim()) {
+      setErr("Enter your last name");
       return;
     }
     // Handle is OPTIONAL. Only validate + persist if they typed one.
@@ -160,7 +167,11 @@ function SignupForm() {
       const result = await signIn("password", {
         email,
         password,
-        name,
+        // Read by the Password provider's profile() in convex/auth.ts, which
+        // composes `name` from the two. Passing a bare `name` here would be
+        // dropped by the library's default profile.
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         flow: "signUp",
       });
       if (!result.signingIn) {
@@ -207,18 +218,41 @@ function SignupForm() {
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3" noValidate>
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-[var(--color-text)]">
-            Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="name"
-            className="workspace-input px-4 py-3"
-            placeholder="Your name"
-          />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label
+              htmlFor="signup-first-name"
+              className="mb-2 block text-sm font-semibold text-[var(--color-text)]"
+            >
+              First name
+            </label>
+            <input
+              id="signup-first-name"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              autoComplete="given-name"
+              className="workspace-input px-4 py-3"
+              placeholder="Jane"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="signup-last-name"
+              className="mb-2 block text-sm font-semibold text-[var(--color-text)]"
+            >
+              Last name
+            </label>
+            <input
+              id="signup-last-name"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              autoComplete="family-name"
+              className="workspace-input px-4 py-3"
+              placeholder="Doe"
+            />
+          </div>
         </div>
 
         <div>
@@ -259,7 +293,7 @@ function SignupForm() {
                 Your profile lives at{" "}
                 <span className="font-mono text-[var(--color-text-muted)]">
                   gomotivateme.com/@
-                  {handle.trim() || suggestHandle(name) || "your-handle"}
+                  {handle.trim() || suggestHandle(fullName) || "your-handle"}
                 </span>
               </>
             )}

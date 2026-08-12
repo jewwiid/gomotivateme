@@ -17,6 +17,7 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { computeProgress } from "./utils";
+import { firstNameOf } from "./users";
 
 type LifecyclePreferenceKey =
   | "goalActivity"
@@ -236,7 +237,7 @@ export const getDigestData = internalQuery({
   handler: async (ctx, { userId, sinceMs }) => {
     const since = sinceMs ?? Date.now() - 7 * 24 * 60 * 60 * 1000;
     const user = await ctx.db.get(userId);
-    const firstName = (user as any)?.name?.split(" ")[0] ?? null;
+    const firstName = firstNameOf(user) ?? null;
 
     // Active + paused + completed goals (exclude draft + closed).
     const allGoals = await ctx.db
@@ -441,7 +442,7 @@ export const getPlatformDigestData = internalQuery({
     }));
 
     return {
-      firstName: user?.name?.split(" ")[0] ?? undefined,
+      firstName: firstNameOf(user),
       cadence,
       goals,
       totalNewGoals: eligible.length,

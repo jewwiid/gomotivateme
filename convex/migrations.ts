@@ -82,6 +82,79 @@ export const backfillGoalMeasurements = internalMutation({
 });
 
 /**
+ * Split the existing `name` into firstName / lastName.
+ *
+ * Signup only ever captured one name field, and password signups didn't even
+ * persist that (the library's defaultProfile returns `{ email }` only, so the
+ * name was dropped) — so most accounts have no name at all and are simply
+ * skipped here. Google accounts have the full name from the OAuth profile.
+ *
+ * The split is first token = firstName, remainder = lastName, which keeps
+ * compound surnames ("van der Berg", "Garcia Marquez") intact on the last
+ * name rather than truncating them. It is a guess for anyone with a middle
+ * name; the settings form now lets people correct it, and everything that
+ * matters reads the composed `name`, which this does not change.
+ *
+ *   npx convex run --prod migrations:backfillNameParts \
+ *     '{"cursor":null,"batchSize":100,"dryRun":true}'
+ */
+export const backfillNameParts = internalMutation({
+  args: {
+    cursor: v.union(v.string(), v.null()),
+    batchSize: v.optional(v.number()),
+    dryRun: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const requestedBatchSize = args.batchSize ?? 100;
+    const batchSize = Math.max(1, Math.min(500, Math.floor(requestedBatchSize)));
+    const dryRun = args.dryRun ?? true;
+    const page = await ctx.db.query("users").paginate({
+      cursor: args.cursor,
+      numItems: batchSize,
+    });
+
+    let patched = 0;
+    let alreadySplit = 0;
+    let noName = 0;
+    const samples: Array<{ first: string; last: string | null }> = [];
+
+    for (const user of page.page) {
+      const u = user as any;
+      if (u.firstName) {
+        alreadySplit += 1;
+        continue;
+      }
+      const name = typeof u.name === "string" ? u.name.trim() : "";
+      if (!name) {
+        noName += 1;
+        continue;
+      }
+
+      const parts = name.split(/\s+/);
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(" ") || undefined;
+
+      patched += 1;
+      if (samples.length < 10) samples.push({ first: firstName, last: lastName ?? null });
+      if (!dryRun) {
+        await ctx.db.patch(user._id, { firstName, lastName });
+      }
+    }
+
+    return {
+      dryRun,
+      scanned: page.page.length,
+      patched,
+      alreadySplit,
+      noName,
+      samples,
+      continueCursor: page.continueCursor,
+      isDone: page.isDone,
+    };
+  },
+});
+
+/**
  * Seed users.displayName from the name currently on record.
  *
  * The auth library re-patches `name` from the OAuth profile on every sign-in,

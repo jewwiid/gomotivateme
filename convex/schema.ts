@@ -44,6 +44,17 @@ export default defineSchema({
      */
     handleChangesRemaining: v.optional(v.number()),
     /**
+     * Given and family name, captured separately at signup.
+     *
+     * `name` stays the composed "First Last" because ~18 read sites and every
+     * denormalized ownerName snapshot depend on it; these two are the source
+     * of truth it's composed from. Keeping firstName explicit also removes the
+     * `name.split(" ")[0]` guessing that email greetings used to do, which got
+     * middle names and compound surnames wrong.
+     */
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    /**
      * The display name the user chose for themselves.
      *
      * `name` is owned by @convex-dev/auth, which re-patches it from the OAuth

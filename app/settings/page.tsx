@@ -143,7 +143,8 @@ function AccountTab() {
     ? coverUrl?.[me.coverImageId as Id<"_storage">] ?? null
     : null;
 
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
   const [handle, setHandleInput] = useState("");
   const [handleErr, setHandleErr] = useState<string | null>(null);
@@ -154,7 +155,8 @@ function AccountTab() {
   // Once the user query resolves, populate the form.
   useEffect(() => {
     if (!me) return;
-    setName(me.name ?? "");
+    setFirstName(me.firstName ?? "");
+    setLastName(me.lastName ?? "");
     setBio(me.bio ?? "");
     setHandleInput(me.handle ?? "");
   }, [me]);
@@ -164,8 +166,12 @@ function AccountTab() {
     setBusy(true);
     setErr(null);
     try {
+      const nameChanged =
+        firstName !== (me?.firstName ?? "") || lastName !== (me?.lastName ?? "");
       await updateProfile({
-        name: name !== (me?.name ?? "") ? name : undefined,
+        // Sent as a pair — the mutation recomposes `name` from both.
+        firstName: nameChanged ? firstName : undefined,
+        lastName: nameChanged ? lastName : undefined,
         bio: bio !== (me?.bio ?? "") ? bio : undefined,
         // image is set via the avatar uploader below, not the form
         image: undefined,
@@ -355,14 +361,22 @@ function AccountTab() {
       {/* Name + handle */}
       <Section title="Public identity">
         <form onSubmit={onSave} className="space-y-3">
-          <Field
-            label="Name"
-            value={name}
-            onChange={setName}
-            placeholder="Your name"
-            maxLength={80}
-            hint={`${name.length}/80`}
-          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field
+              label="First name"
+              value={firstName}
+              onChange={setFirstName}
+              placeholder="Jane"
+              maxLength={40}
+            />
+            <Field
+              label="Last name"
+              value={lastName}
+              onChange={setLastName}
+              placeholder="Doe"
+              maxLength={40}
+            />
+          </div>
           <Field
             label="Handle"
             value={handle}

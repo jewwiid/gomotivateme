@@ -28,6 +28,18 @@ export async function resolveAvatarUrl(ctx: any, user: any): Promise<string | nu
 }
 
 /**
+ * The name to greet someone by in email.
+ *
+ * Prefers the stored firstName over splitting the composed name on the first
+ * space, which mis-greets anyone with a middle name or a compound given name.
+ * The split is kept only as a fallback for records predating firstName.
+ */
+export function firstNameOf(user: any): string | undefined {
+  if (!user) return undefined;
+  return user.firstName ?? user.name?.split(" ")[0] ?? undefined;
+}
+
+/**
  * Delete a superseded upload so replacing a profile image is a replace rather
  * than an accumulation — otherwise every avatar or cover a user ever picked
  * stays in file storage forever, billable and unreachable.
@@ -99,6 +111,8 @@ export const me = query({
     return {
       _id: user._id,
       name: (user as { name?: string }).name ?? null,
+      firstName: (user as { firstName?: string }).firstName ?? null,
+      lastName: (user as { lastName?: string }).lastName ?? null,
       email: (user as { email?: string }).email ?? null,
       image: await resolveAvatarUrl(ctx, user),
       handle: (user as { handle?: string }).handle ?? null,
@@ -384,7 +398,11 @@ export const updateFollowPolicy = mutation({
  */
 export const updateProfile = mutation({
   args: {
+    /** Full name. Still accepted so existing callers keep working; when
+     * firstName/lastName are supplied they take precedence. */
     name: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
     bio: v.optional(v.string()),
     image: v.optional(v.string()),
     /** Optional handle sync (usually handled by setHandle, but supported
@@ -396,7 +414,23 @@ export const updateProfile = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
     const patch: Record<string, unknown> = {};
-    if (args.name !== undefined) {
+
+    // firstName/lastName are the source of truth; `name` is the composed
+    // form the rest of the app reads. Either may be supplied — when the
+    // split fields come in, they win and `name` is recomposed from them.
+    if (args.firstName !== undefined || args.lastName !== undefined) {
+      const existing = await ctx.db.get(userId);
+      const first = (args.firstName ?? (existing as any)?.firstName ?? "").trim();
+      const last = (args.lastName ?? (existing as any)?.lastName ?? "").trim();
+      if (first.length === 0) throw new Error("First name can't be empty");
+      if (first.length > 40) throw new Error("First name is too long (max 40 chars)");
+      if (last.length > 40) throw new Error("Last name is too long (max 40 chars)");
+      const composed = [first, last].filter(Boolean).join(" ");
+      patch.firstName = first;
+      patch.lastName = last || undefined;
+      patch.name = composed;
+      patch.displayName = composed;
+    } else if (args.name !== undefined) {
       const trimmed = args.name.trim();
       if (trimmed.length === 0) throw new Error("Name can't be empty");
       if (trimmed.length > 80) throw new Error("Name is too long (max 80 chars)");
@@ -404,6 +438,10 @@ export const updateProfile = mutation({
       // Mirrored onto the field the auth library doesn't own, so the next
       // Google sign-in can't revert it. See schema users.displayName.
       patch.displayName = trimmed;
+      // Keep the split fields coherent with the composed name.
+      const [first, ...restParts] = trimmed.split(/\s+/);
+      patch.firstName = first;
+      patch.lastName = restParts.join(" ") || undefined;
     }
     if (args.bio !== undefined) {
       const trimmed = args.bio.trim();
@@ -472,7 +510,7 @@ export const updateProfile = mutation({
         templateId: "welcome",
         category: "lifecycle",
         preferenceKey: "accountActivity",
-        payload: JSON.stringify({ firstName: (patch.name as string)?.split(" ")[0] }),
+        payload: JSON.stringify({ firstName: (patch.firstName as string) ?? (patch.name as string)?.split(" ")[0] }),
       });
     }
 
