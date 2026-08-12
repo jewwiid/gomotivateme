@@ -103,6 +103,54 @@ final result: passed
 
 ---
 
+# Homepage FAQ CTA QA
+
+## Evidence
+
+- Desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/home-how-it-works-faq-cta.png`
+- Mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/home-how-it-works-faq-cta-mobile.png`
+
+## Review
+
+- “How it works” includes a visible FAQ call-to-action beside contextual privacy and support copy: passed.
+- CTA uses the established cobalt, warm-paper, rounded-control, hover, active, and focus treatment: passed.
+- Destination resolves to `/faq` and the FAQ heading renders after navigation: passed.
+- CTA remains visible and readable at 1044 × 1264 and 390 × 844: passed.
+
+final result: passed
+
+---
+
+# Public goal-detail participation QA
+
+## Evidence
+
+- Shared-link thumbnail and condensed journal, desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-condensed-journal.png`
+- Recent-activity avatars and condensed journal, mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-condensed-journal-mobile.png`
+- Support sign-in modal, desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-signin-modal.png`
+- Support sign-in modal, mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-signin-modal-mobile.png`
+
+## Review
+
+- Stored Open Graph images render as link thumbnails; links without an available image render a stable branded domain thumbnail instead of collapsing to plain text: passed.
+- Open Graph parsing accepts metadata attributes in either HTML attribute order and decodes common entities: passed.
+- Goal-owner updates and attributed supporter activity show profile avatars or accessible initial fallbacks: passed.
+- Hero, sidebar, mobile, and inline support entry points use the same sign-in dialog for signed-out visitors: passed.
+- Sign-in and account-creation links preserve the public goal path as their redirect: passed.
+- Dialog has a labelled close control, backdrop close, Escape handling, initial focus, and body-scroll lock: implemented; close-button interaction was browser-verified.
+- Journal header, date rail, entries, achievement copy, and reaction/report footer use a tighter vertical rhythm at desktop and mobile widths: passed.
+- Browser DOM and visual smoke tests at 1044 × 1264 and 390 × 844: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed.
+
+## Findings
+
+No actionable P0, P1, or P2 findings remain. Provider-hosted thumbnail fetching can fail or be blocked; the branded domain thumbnail is the intentional stable fallback.
+
+final result: passed
+
+---
+
 # Explore and goal-creation consistency QA
 
 ## Evidence

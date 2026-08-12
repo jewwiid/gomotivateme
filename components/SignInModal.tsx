@@ -45,6 +45,12 @@ export function SignInModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="support-sign-in-title"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              onClose();
+            }
+          }}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) onClose();
           }}
@@ -77,8 +83,8 @@ export function SignInModal({
               <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--color-surface)] to-transparent" />
             </div>
 
-            <div className="px-6 pb-7 text-center sm:px-8">
-              <span className="mx-auto -mt-5 grid h-11 w-11 place-items-center rounded-full bg-[var(--color-primary)] text-white shadow-md">
+            <div className="relative px-6 pb-7 text-center sm:px-8">
+              <span className="relative z-10 mx-auto -mt-5 grid h-11 w-11 place-items-center rounded-full bg-[var(--color-primary)] text-white shadow-md">
                 <Heart size={18} fill="currentColor" aria-hidden />
               </span>
               <h2

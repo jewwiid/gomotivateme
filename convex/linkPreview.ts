@@ -18,12 +18,19 @@ const MAX_IMAGE_BYTES = 5_000_000; // 5MB cap
  */
 function parseOgTags(html: string): Record<string, string> {
   const result: Record<string, string> = {};
-  const metaRegex =
-    /<meta\s+(?:property|name)=["'](?:og:|twitter:)?([a-z_:]+)["']\s+content=["']([^"']*)["']/gi;
-  let match;
+  const metaRegex = /<meta\b[^>]*>/gi;
+  let match: RegExpExecArray | null;
   while ((match = metaRegex.exec(html)) !== null) {
-    const key = match[1].toLowerCase();
-    const value = match[2].trim();
+    const attributes: Record<string, string> = {};
+    const attributeRegex = /([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g;
+    let attribute: RegExpExecArray | null;
+    while ((attribute = attributeRegex.exec(match[0])) !== null) {
+      attributes[attribute[1].toLowerCase()] = attribute[2] ?? attribute[3] ?? attribute[4] ?? "";
+    }
+    const property = (attributes.property || attributes.name || "").toLowerCase();
+    if (!property.startsWith("og:") && !property.startsWith("twitter:")) continue;
+    const key = property.replace(/^(?:og|twitter):/, "");
+    const value = decodeHtmlEntities(attributes.content || "").trim();
     if (value && !result[key]) {
       result[key] = value;
     }
@@ -38,6 +45,15 @@ function parseOgTags(html: string): Record<string, string> {
     result["image"] = result["image:src"];
   }
   return result;
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
 }
 
 function resolveUrl(url: string, base: string): string {

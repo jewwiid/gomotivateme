@@ -5,7 +5,6 @@
  */
 import { v } from "convex/values";
 import { internalQuery, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
 
 /** Internal query: get the linkUrl for an update. */
 export const getLinkUrl = internalQuery({

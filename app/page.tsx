@@ -128,6 +128,19 @@ export default function HomePage() {
               <p className="mt-9 max-w-sm rounded-[1.25rem] bg-[var(--color-surface)] p-5 text-lg font-medium leading-7 text-[var(--color-text)] shadow-[0_18px_45px_-35px_rgba(55,47,35,0.45)]">
                 “It&apos;s easier to return to a goal when someone remembers why you started.”
               </p>
+              <div className="mt-6 flex max-w-sm flex-wrap items-center justify-between gap-4 border-t border-[var(--color-border-strong)] pt-5">
+                <p className="max-w-[19rem] text-sm leading-6 text-[var(--color-text-muted)]">
+                  Questions about privacy, supporters, or what happens after you start?
+                </p>
+                <Link
+                  href="/faq"
+                  data-fast-goal="faq_clicked"
+                  data-fast-goal-source="home_how_it_works"
+                  className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-surface)] px-5 text-sm font-semibold text-[var(--color-primary)] transition duration-200 hover:-translate-y-0.5 hover:bg-[var(--color-primary)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 active:translate-y-0"
+                >
+                  Read the FAQs <span className="ml-3" aria-hidden>→</span>
+                </Link>
+              </div>
             </div>
 
             <ol className="mt-12 border-t border-[var(--color-border-strong)] lg:mt-0">
