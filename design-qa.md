@@ -103,6 +103,56 @@ final result: passed
 
 ---
 
+# Owner dashboard mosaic and hierarchy QA
+
+## Evidence
+
+- Desktop overview: `/Users/judeokun/Documents/GitHub/mie odyssey/dashboard-mosaic-desktop.png`
+- Mobile overview: `/Users/judeokun/Documents/GitHub/mie odyssey/dashboard-mosaic-mobile.png`
+- Mobile work flow: `/Users/judeokun/Documents/GitHub/mie odyssey/dashboard-mosaic-mobile-flow.png`
+
+## Review
+
+- The owner workspace now uses a consistent 12-column system with an 8/4 primary-to-secondary rhythm for active work, updates, supporter tools, and motivation tools: passed.
+- Goal progress is the featured four-column metric; milestones, supporters, motivation circle, and updates are intentionally smaller two-column metrics: passed.
+- The layout remains balanced when the milestone-path component is absent; secondary cards stay in a compact right rail instead of leaving an empty grid row: passed.
+- Long update history is bounded within a scrollable archive and uses the compact update-card variant: passed.
+- Goal lifecycle and public-page appearance use a 3/9 hierarchy instead of two unrelated full-width blocks: passed.
+- The public-page preview combines cover, copy, metadata, and progress into one compact composition: passed.
+- Mobile collapses to one work column with paired secondary metrics and no horizontal overflow at 390 × 844: passed.
+- Browser console: no application errors.
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
+
+## Findings
+
+No actionable P0, P1, or P2 responsive-layout findings remain.
+
+final result: passed
+
+---
+
+# Explore goal-cover QA
+
+## Evidence
+
+- Desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-cover-images-desktop.png`
+- Mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-cover-images-mobile.png`
+
+## Review
+
+- Explore cards resolve and render each goal's stored `coverImageId`: passed.
+- Cover URLs are resolved in one batch for the visible result set rather than one storage query per card: passed.
+- Goals without a valid stored cover retain the branded journey illustration fallback: passed.
+- Cover images use descriptive alternative text and preserve the existing 16:10 crop and hover treatment: passed.
+- Desktop and mobile layouts remain stable while cover data loads: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed.
+
+final result: passed
+
+---
+
 # Homepage FAQ CTA QA
 
 ## Evidence
@@ -279,7 +329,7 @@ final result: passed
 ## Evidence
 
 - Source visual truth: `/Users/judeokun/.codex/generated_images/019ff5d2-978c-76a1-ab59-695654157177/exec-ea7e5037-136b-4e6e-b29c-a32187d0851f.png`
-- Generated summit asset: `/Users/judeokun/Documents/GitHub/mie odyssey/public/illustrations/recap-summit.png` (1254 × 1254)
+- Generated summit asset: `/Users/judeokun/Documents/GitHub/mie odyssey/public/illustrations/journey/summit.webp` (1254 × 1254)
 - Browser-rendered finale: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-summit-finale-mobile.png`
 - Browser-rendered composer: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-share-composer-mobile.png`
 - Full-view finale comparison: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-summit-comparison-final.jpg`

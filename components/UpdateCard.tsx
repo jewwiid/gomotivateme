@@ -32,6 +32,7 @@ export function UpdateCard({
   unit,
   direction,
   index = 0,
+  compact = false,
 }: {
   update: UpdateDoc;
   imageUrl?: string | null;
@@ -39,6 +40,7 @@ export function UpdateCard({
   unit: string;
   direction: "increase" | "decrease";
   index?: number;
+  compact?: boolean;
 }) {
   const arrow = direction === "decrease" ? "↓" : "↑";
 
@@ -49,8 +51,8 @@ export function UpdateCard({
       transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.4) }}
       className="relative"
     >
-      <div className="workspace-card p-4 sm:p-5">
-        <div className="mb-2.5 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+      <div className={`workspace-card ${compact ? "p-3.5" : "p-4 sm:p-5"}`}>
+        <div className={`${compact ? "mb-2" : "mb-2.5"} flex items-center gap-2 text-xs text-[var(--color-text-muted)]`}>
           <UpdateIcon type={update.type} />
           <span className="font-mono tabular-nums">{relativeTime(update.createdAt)}</span>
           {update.moderationStatus && update.moderationStatus !== "approved" && (
@@ -71,7 +73,7 @@ export function UpdateCard({
           <img
             src={imageUrl}
             alt=""
-            className="mb-3 max-h-96 w-full rounded-xl object-cover"
+            className={`${compact ? "max-h-56" : "max-h-96"} mb-3 w-full rounded-xl object-cover`}
             loading="lazy"
           />
         )}
@@ -88,13 +90,14 @@ export function UpdateCard({
               description={update.linkDescription}
               siteName={update.linkSiteName}
               imageUrl={update.linkImage ? imageUrlOf?.(update.linkImage) : null}
-              embedded
+              embedded={!compact}
+              compact={compact}
             />
           </div>
         )}
 
         {update.note && (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text)]">
+          <p className={`${compact ? "line-clamp-3" : ""} whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text)]`}>
             {update.note}
           </p>
         )}

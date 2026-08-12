@@ -401,7 +401,15 @@ function GoalDetailContent() {
         }
         updatesArchive={
           <div className="workspace-card p-5">
-            <h2 className="text-lg font-bold text-[var(--color-text)]">All updates</h2>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="workspace-eyebrow">Goal journal</p>
+                <h2 className="mt-1 text-lg font-bold text-[var(--color-text)]">All updates</h2>
+              </div>
+              <span className="font-mono text-xs text-[var(--color-text-dim)]">
+                {updates?.length ?? 0} entries
+              </span>
+            </div>
             {updates === undefined ? (
               <div className="mt-4 h-32 animate-pulse rounded-2xl bg-[var(--color-bg-elev)]" />
             ) : updates.length === 0 ? (
@@ -409,7 +417,7 @@ function GoalDetailContent() {
                 No updates yet. Share what moved forward to start the timeline.
               </div>
             ) : (
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 max-h-[48rem] space-y-2 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
                 {updates.map((update: any, index: number) => (
                   <UpdateCard
                     key={update._id}
@@ -419,6 +427,7 @@ function GoalDetailContent() {
                     unit={goal.unit}
                     direction={goal.direction}
                     index={index}
+                    compact
                   />
                 ))}
               </div>
@@ -447,10 +456,11 @@ function GoalDetailContent() {
           ) : undefined
         }
         settingsPanel={
-          <>
-            <div className="workspace-card flex flex-wrap items-center justify-between gap-4 p-5">
+          <div className="grid items-start gap-4 xl:grid-cols-12">
+            <div className="workspace-card p-5 xl:col-span-3">
               <div>
-                <p className="text-sm font-bold text-[var(--color-text)]">Goal status</p>
+                <p className="workspace-eyebrow">Lifecycle</p>
+                <p className="mt-1 text-base font-bold text-[var(--color-text)]">Goal status</p>
                 <div className="mt-2 flex items-center gap-2">
                   <StatusPill status={goal.status} />
                   {goal.status === "paused" && goal.pausedReason ? (
@@ -464,7 +474,7 @@ function GoalDetailContent() {
                 <button
                   type="button"
                   onClick={() => setShowStatus(true)}
-                  className="workspace-button-secondary w-auto px-5"
+                  className="workspace-button-secondary mt-5 w-full px-4"
                 >
                   {goal.status === "paused" ? (
                     <PlayCircle size={15} aria-hidden />
@@ -475,28 +485,30 @@ function GoalDetailContent() {
                 </button>
               ) : null}
             </div>
-            <GoalSettings
-              goalId={goalId}
-              title={goal.title}
-              summary={goal.summary}
-              story={goal.story}
-              coverImageId={goal.coverImageId}
-              supporterTarget={goal.supporterTarget}
-              supportTypes={goal.supportTypes ?? []}
-              visibility={goal.visibility}
-              isAnonymous={goal.isAnonymous}
-              targetValue={goal.targetValue}
-              startValue={goal.startValue}
-              unit={goal.unit}
-              direction={goal.direction}
-              progressType={goal.progressType}
-              category={goal.category}
-              targetDate={goal.targetDate}
-              supporterCount={goal.supporterCount ?? 0}
-              currentValue={goal.currentValue ?? 0}
-              onDeleted={() => router.push("/dashboard")}
-            />
-          </>
+            <div className="min-w-0 xl:col-span-9">
+              <GoalSettings
+                goalId={goalId}
+                title={goal.title}
+                summary={goal.summary}
+                story={goal.story}
+                coverImageId={goal.coverImageId}
+                supporterTarget={goal.supporterTarget}
+                supportTypes={goal.supportTypes ?? []}
+                visibility={goal.visibility}
+                isAnonymous={goal.isAnonymous}
+                targetValue={goal.targetValue}
+                startValue={goal.startValue}
+                unit={goal.unit}
+                direction={goal.direction}
+                progressType={goal.progressType}
+                category={goal.category}
+                targetDate={goal.targetDate}
+                supporterCount={goal.supporterCount ?? 0}
+                currentValue={goal.currentValue ?? 0}
+                onDeleted={() => router.push("/dashboard")}
+              />
+            </div>
+          </div>
         }
       />
 
@@ -1691,7 +1703,7 @@ function GoalSettings({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.05 }}
-      className="workspace-card mt-6 overflow-hidden"
+      className="workspace-card overflow-hidden"
     >
       <header className="flex flex-col gap-4 border-b border-[var(--color-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
@@ -1745,17 +1757,17 @@ function GoalSettings({
         ) : null}
 
         {!editing ? (
-          <>
-            <figure className="relative mt-6 overflow-hidden rounded-[var(--workspace-radius)] border border-[var(--color-border)] bg-[var(--color-bg-elev)]">
+          <div className="grid gap-6 py-6 lg:grid-cols-12 lg:items-start">
+            <figure className="relative overflow-hidden rounded-[var(--workspace-radius)] border border-[var(--color-border)] bg-[var(--color-bg-elev)] lg:col-span-5">
               {currentCoverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={currentCoverUrl}
                   alt="Goal cover"
-                  className="aspect-[16/6] max-h-[25rem] min-h-48 w-full object-cover sm:aspect-[16/5]"
+                  className="aspect-[4/3] min-h-56 w-full object-cover"
                 />
               ) : (
-                <div className="grid aspect-[16/5] min-h-48 place-items-center">
+                <div className="grid aspect-[4/3] min-h-56 place-items-center">
                   <div className="text-center">
                     <ImageIcon className="mx-auto text-[var(--color-text-dim)]" size={24} aria-hidden />
                     <p className="mt-2 text-sm text-[var(--color-text-muted)]">No cover image yet</p>
@@ -1767,24 +1779,22 @@ function GoalSettings({
               </figcaption>
             </figure>
 
-            <div className="grid gap-8 py-7 lg:grid-cols-[minmax(0,1.55fr)_minmax(17rem,0.65fr)] lg:gap-12">
-              <article>
-                <p className="workspace-eyebrow">Goal page copy</p>
-                <h3 className="mt-2 max-w-[24ch] text-2xl font-bold tracking-[-0.035em] text-[var(--color-text)] sm:text-3xl">
-                  {title}
-                </h3>
-                <p className="mt-3 max-w-[62ch] text-base leading-7 text-[var(--color-text-secondary)]">
-                  {summary || "No one-line pitch has been added yet."}
+            <article className="min-w-0 lg:col-span-7">
+              <p className="workspace-eyebrow">Goal page copy</p>
+              <h3 className="mt-2 max-w-[24ch] text-2xl font-bold tracking-[-0.035em] text-[var(--color-text)] sm:text-3xl">
+                {title}
+              </h3>
+              <p className="mt-3 max-w-[62ch] text-base leading-7 text-[var(--color-text-secondary)]">
+                {summary || "No one-line pitch has been added yet."}
+              </p>
+              <div className="mt-5 border-t border-[var(--color-border)] pt-4">
+                <p className="workspace-eyebrow">Why this matters</p>
+                <p className="mt-2 line-clamp-5 max-w-[72ch] whitespace-pre-wrap text-sm leading-6 text-[var(--color-text-muted)]">
+                  {story || "Add the reason behind this goal so people know what they are showing up for."}
                 </p>
-                <div className="mt-7 border-t border-[var(--color-border)] pt-5">
-                  <p className="workspace-eyebrow">Why this matters</p>
-                  <p className="mt-2 max-w-[72ch] whitespace-pre-wrap text-sm leading-7 text-[var(--color-text-muted)]">
-                    {story || "Add the reason behind this goal so people know what they are showing up for."}
-                  </p>
-                </div>
-              </article>
+              </div>
 
-              <div className="grid grid-cols-2 content-start gap-x-6 gap-y-6 border-t border-[var(--color-border)] pt-6 lg:grid-cols-1 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+              <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
                 <SettingsReadout
                   icon={Calendar}
                   label="Target date"
@@ -1802,30 +1812,30 @@ function GoalSettings({
                   value={isAnonymous ? "Anonymous" : "Name shown"}
                 />
               </div>
-            </div>
 
-            <section className="border-t border-[var(--color-border)] py-7">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+              <section className="mt-5 border-t border-[var(--color-border)] pt-5">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                 <div>
                   <p className="workspace-eyebrow">Progress tracking</p>
-                  <h3 className="mt-1 text-lg font-bold tracking-[-0.02em] text-[var(--color-text)]">
+                  <h3 className="mt-1 text-base font-bold tracking-[-0.02em] text-[var(--color-text)]">
                     {progressTypeLabel}
                   </h3>
                 </div>
-                <p className="text-sm text-[var(--color-text-muted)]">
+                <p className="text-xs text-[var(--color-text-muted)]">
                   {supportTypes.length
                     ? `Support: ${supportTypes.map(titleCase).join(" · ")}`
                     : "General encouragement"}
                 </p>
               </div>
-              <div className="mt-5 grid grid-cols-2 border-y border-[var(--color-border)] sm:grid-cols-4 sm:divide-x sm:divide-[var(--color-border)]">
+              <div className="mt-4 grid grid-cols-2 rounded-[var(--workspace-radius-sm)] bg-[var(--color-bg-elev)] sm:grid-cols-4 sm:divide-x sm:divide-[var(--color-border)]">
                 <SettingsMetric label="Start" value={formatNumber(startValue ?? 0)} />
                 <SettingsMetric label="Current" value={formatNumber(currentValue)} />
                 <SettingsMetric label="Target" value={targetValue !== undefined ? formatNumber(targetValue) : "—"} />
                 <SettingsMetric label="Unit" value={unit || (progressType === "streak" ? "days" : "steps")} />
               </div>
-            </section>
-          </>
+              </section>
+            </article>
+          </div>
         ) : (
           <>
             <section className="py-6">

@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Users, ArrowRight, Grid3X3, ChevronRight, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { PublicGoalCard } from "@/components/PublicGoalCard";
 import { CATEGORIES, getCategory } from "@/lib/categories";
@@ -161,6 +162,21 @@ function GoalsTab({
     category: activeCategory ?? undefined,
     limit: 60,
   });
+  const coverImageIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          ((goals ?? []) as any[])
+            .map((goal) => goal.coverImageId as Id<"_storage"> | undefined)
+            .filter((id): id is Id<"_storage"> => Boolean(id))
+        )
+      ),
+    [goals]
+  );
+  const coverImageUrls = useQuery(
+    api.storage.getUrls,
+    coverImageIds.length > 0 ? { ids: coverImageIds } : "skip"
+  );
 
   return (
     <div>
@@ -204,7 +220,18 @@ function GoalsTab({
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {goals.map((goal: any, index: number) => (
-            <PublicGoalCard key={goal._id} goal={goal} index={index} />
+            <PublicGoalCard
+              key={goal._id}
+              goal={goal}
+              index={index}
+              coverImageUrl={
+                goal.coverImageId
+                  ? coverImageUrls === undefined
+                    ? undefined
+                    : coverImageUrls[goal.coverImageId] ?? null
+                  : null
+              }
+            />
           ))}
         </div>
       )}

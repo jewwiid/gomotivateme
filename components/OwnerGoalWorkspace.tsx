@@ -206,8 +206,8 @@ export function OwnerGoalWorkspace({
   return (
     <WorkspaceShell items={navItems}>
       <div id="overview" className="scroll-mt-24 space-y-4">
-        <section className="workspace-card grid min-h-[11rem] gap-5 p-4 md:grid-cols-[17.5rem_minmax(0,1fr)] xl:grid-cols-[17.5rem_minmax(0,1fr)_14rem]">
-          <div className="relative min-h-40 overflow-hidden rounded-[2px] bg-[var(--color-bg-sunken)] md:min-h-0">
+        <section className="grid min-h-[12rem] gap-5 overflow-hidden rounded-[1.75rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:grid-cols-[19rem_minmax(0,1fr)] xl:grid-cols-[19rem_minmax(0,1fr)_14rem]">
+          <div className="relative min-h-48 overflow-hidden rounded-[1.25rem] bg-[var(--color-bg-sunken)] md:min-h-0">
             {coverUrl === undefined ? (
               <div className="absolute inset-0 animate-pulse bg-[var(--color-bg-sunken)]" />
             ) : (
@@ -229,7 +229,7 @@ export function OwnerGoalWorkspace({
                 {titleCase(goal.category || "Goal")}
               </span>
             </div>
-            <h1 className="mt-5 font-display text-[clamp(2rem,3vw,2.65rem)] font-bold leading-[0.96] tracking-[-0.055em] text-[var(--color-text)]">
+            <h1 className="mt-5 max-w-[19ch] text-balance font-display text-[clamp(2.35rem,3.8vw,3.5rem)] font-semibold leading-[0.94] tracking-[-0.06em] text-[var(--color-text)]">
               {goal.title}
             </h1>
             <p className="mt-3 max-w-[42rem] text-sm leading-6 text-[var(--color-text-muted)]">
@@ -257,16 +257,17 @@ export function OwnerGoalWorkspace({
 
         <section
           aria-label="Goal momentum"
-          className="workspace-card !mt-[1.125rem] overflow-hidden"
+          className="!mt-[1.125rem] overflow-hidden rounded-[1.5rem] bg-[var(--color-bg-elev)] p-3"
         >
-          <div className="grid min-h-[7rem] grid-cols-2 sm:grid-cols-3 xl:grid-cols-[1.15fr_repeat(4,1fr)]">
+          <div className="grid min-h-[7rem] grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-12">
             <MomentumStat
               icon={CircleGauge}
               label="Goal progress"
               value={`${Math.round(safeProgress)}%`}
               detail={safeProgress >= 100 ? "Complete" : "On track"}
               progress={safeProgress}
-              className="col-span-2 sm:col-span-1"
+              variant="card"
+              className="col-span-2 sm:col-span-1 xl:col-span-4"
             />
             <MomentumStat
               icon={goal.progressType === "streak" ? Flame : goal.progressType === "number" ? CircleGauge : Flag}
@@ -283,30 +284,38 @@ export function OwnerGoalWorkspace({
                   ? `best ${goal.streakBest ?? goal.currentValue ?? 0}d`
                   : goal.unit ?? "units"
               }
+              variant="card"
+              className="xl:col-span-2"
             />
             <MomentumStat
               icon={Users}
               label="Supporters"
               value={String(supporterCount)}
               detail={resolvedSupporterName}
+              variant="card"
+              className="xl:col-span-2"
             />
             <MomentumStat
               icon={Target}
               label="Motivation circle"
               value={`${coreMotivators.length} of 6`}
               detail={coreMotivators.length ? "motivators set" : "motivators to add"}
+              variant="card"
+              className="xl:col-span-2"
             />
             <MomentumStat
               icon={MessageCircle}
               label="Updates"
               value={String(updates?.length ?? 0)}
               detail="updates shared"
+              variant="card"
+              className="xl:col-span-2"
             />
           </div>
         </section>
 
-        <div className="!mt-[1.3125rem] grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,0.94fr)]">
-          <div className="space-y-3">
+        <div className="!mt-[1.3125rem] grid items-start gap-4 xl:grid-cols-12">
+          <div className="space-y-3 xl:col-span-8">
             <form onSubmit={postNote} className="workspace-card p-4">
               <h2 className="text-base font-bold text-[var(--color-text)]">Share an update</h2>
               <textarea
@@ -466,7 +475,8 @@ export function OwnerGoalWorkspace({
             </section>
           </div>
 
-          <aside className="space-y-4">
+          <aside className="space-y-4 xl:col-span-4">
+            <div>
             {nextActionPanel ?? <section className="workspace-card p-3">
               <div className="flex items-start gap-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--color-gold-soft)] text-[var(--color-gold-text)]">
@@ -509,6 +519,7 @@ export function OwnerGoalWorkspace({
                 </div>
               </div>
             </section>}
+            </div>
 
             <section className="workspace-card p-4">
               <div className="flex items-center justify-between">
@@ -577,34 +588,36 @@ export function OwnerGoalWorkspace({
           </aside>
         </div>
 
+        <div className="!mt-4 grid items-start gap-4 xl:grid-flow-row-dense xl:grid-cols-12">
         {milestoneEditor ? (
-          <section id="milestone-editor" className="workspace-detail-section scroll-mt-24">
+          <section id="milestone-editor" className="scroll-mt-24 xl:col-span-8">
             {milestoneEditor}
           </section>
         ) : null}
         {updatesArchive ? (
-          <section id="all-updates" className="workspace-detail-section scroll-mt-24">
+          <section id="all-updates" className="scroll-mt-24 xl:col-span-8">
             {updatesArchive}
           </section>
         ) : null}
         {supporterInbox ? (
-          <section id="supporters" className="workspace-detail-section scroll-mt-24">
+          <section id="supporters" className="scroll-mt-24 xl:col-span-4">
             {supporterInbox}
           </section>
         ) : null}
         {circleManager || applicationQueue ? (
-          <section id="circle-manager" className="workspace-detail-section scroll-mt-24">
-            <div className="grid gap-4 xl:grid-cols-2">
+          <section id="circle-manager" className="scroll-mt-24 xl:col-span-4">
+            <div className="grid gap-4">
               {circleManager}
               {applicationQueue}
             </div>
           </section>
         ) : null}
         {settingsPanel ? (
-          <section id="settings" className="workspace-detail-section scroll-mt-24">
+          <section id="settings" className="scroll-mt-24 xl:col-span-12">
             {settingsPanel}
           </section>
         ) : null}
+        </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] py-5 text-xs text-[var(--color-text-dim)] lg:hidden">
           <span>{publicLabel}</span>
