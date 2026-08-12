@@ -166,7 +166,7 @@ function DashboardContent() {
               <h2 className="font-display text-xl font-bold tracking-[-0.035em]">Post an update</h2>
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--color-text-muted)]">
-              Even a quick update gives your supporters something to rally around.
+              Even a quick update gives your supporters a reason to come back.
             </p>
             {user?.handle && (
               <Link
@@ -359,7 +359,7 @@ function EmptyState() {
         height={150}
         className="mb-5 w-48 select-none object-contain"
       />
-      <h3 className="font-display text-2xl font-bold tracking-[-0.035em]">Start where you are.</h3>
+      <h3 className="font-display text-2xl font-bold tracking-[-0.035em]">Create your first goal</h3>
       <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--color-text-muted)]">
         Pick something you want to achieve, decide what progress looks like, and invite the people you want beside you.
       </p>

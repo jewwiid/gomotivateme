@@ -289,7 +289,7 @@ export default async function ProfileOpengraphImage({
                 {motivatingCount}
               </span>
               <span style={{ opacity: 0.7, display: "flex" }}>
-                {motivatingCount === 1 ? "motivator" : "motivating"}
+                {motivatingCount === 1 ? "motivator" : "motivators"}
               </span>
             </div>
           </div>

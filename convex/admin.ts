@@ -289,7 +289,7 @@ export const mergeDuplicateUsers = internalMutation({
   },
   handler: async (ctx, { toUserId, fromUserId }) => {
     if (toUserId === fromUserId) {
-      throw new Error("toUserId and fromUserId are the same — refusing");
+      throw new Error("toUserId and fromUserId are the same. Refusing.");
     }
     const to = await ctx.db.get(toUserId);
     const from = await ctx.db.get(fromUserId);

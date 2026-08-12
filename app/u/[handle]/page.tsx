@@ -739,7 +739,7 @@ function DiscoverSidebar({
         People to meet
       </h3>
       <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">
-        Active motivators finding their rhythm here.
+        Active motivators on GoMotivateMe.
       </p>
       <ul className="mt-6 space-y-4">
         {motivators.length === 0 ? (

@@ -21,7 +21,13 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const ROOT = process.cwd();
-const DIRS = ["app", "components", "emails"];
+
+/**
+ * convex/ is included because validation errors and status messages thrown
+ * there surface directly in the UI. Its console logging is developer-facing
+ * and skipped — see isDeveloperFacing.
+ */
+const DIRS = ["app", "components", "emails", "convex"];
 
 /** SKILL.md "Banned outright". */
 const BANNED_WORDS = [
@@ -117,6 +123,15 @@ function stripNonCopy(source) {
     .join("\n");
 }
 
+/**
+ * Log output and internal invariant messages are read by developers, not
+ * users, so the copy rules don't apply. Log prefixes like "[emails] …" are
+ * the convention this repo uses for them.
+ */
+function isDeveloperFacing(line) {
+  return /console\.(log|warn|error|debug|info)/.test(line) || /["'`]\s*\[[a-z-]+\]/i.test(line);
+}
+
 const findings = [];
 const add = (level, file, lineNo, rule, text) =>
   findings.push({ level, file, lineNo, rule, text: text.trim().slice(0, 130) });
@@ -135,7 +150,7 @@ for (const dir of DIRS) {
       .split("\n")
       .forEach((line, i) => {
         const lineNo = i + 1;
-        if (!line.trim()) return;
+        if (!line.trim() || isDeveloperFacing(line)) return;
         const lower = line.toLowerCase();
 
         for (const word of BANNED_WORDS) {

@@ -39,8 +39,8 @@ function parseNotification(
       };
     case "applicationDecision":
       return {
-        title: payload.wasApproved ? "Application approved!" : "Application declined",
-        body: `${payload.goalTitle} — ${payload.wasApproved ? "You're in!" : "Not this time."}`,
+        title: payload.wasApproved ? "Application approved" : "Application declined",
+        body: `${payload.goalTitle}: ${payload.wasApproved ? "You're in." : "Not this time."}`,
         href: payload.goalSlug ? `/o/${payload.goalSlug}` : "/motivate",
       };
     case "targetHit":
@@ -112,7 +112,7 @@ function parseNotification(
       };
     case "goalCreated":
       return {
-        title: "Goal created!",
+        title: "Goal created",
         body: `${payload.goalTitle} is live. Share it to start building momentum.`,
         href: "/dashboard",
       };

@@ -1275,8 +1275,8 @@ export const recordValue = mutation({
     if (goal.progressType !== "number") {
       throw new Error(
         goal.progressType === "milestones"
-          ? "This goal tracks milestones — tick them off instead of logging a value"
-          : "This goal tracks a streak — use the daily log instead"
+          ? "This goal tracks milestones. Tick them off instead of logging a value."
+          : "This goal tracks a streak. Use the daily log instead."
       );
     }
     if (!Number.isFinite(value)) throw new Error("Value must be a number");

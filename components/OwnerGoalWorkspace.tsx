@@ -233,7 +233,7 @@ export function OwnerGoalWorkspace({
               {goal.title}
             </h1>
             <p className="mt-3 max-w-[42rem] text-sm leading-6 text-[var(--color-text-muted)]">
-              {goal.summary || "A public goal made stronger by the people behind it."}
+              {goal.summary || "A public goal."}
             </p>
           </div>
 

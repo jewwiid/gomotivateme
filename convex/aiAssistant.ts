@@ -306,7 +306,7 @@ export const suggest = action({
       throw new ConvexError({
         code: "AI_UNAVAILABLE",
         message:
-          "AI help is temporarily unavailable. Your draft is safe—please try again.",
+          "AI help is temporarily unavailable. Your draft is safe, so try again in a moment.",
       });
     }
   },

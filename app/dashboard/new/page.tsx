@@ -1116,7 +1116,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           )}
 
           {step === totalSteps - 1 && (
-            <Step title="Everything looks good?">
+            <Step title="Review your goal">
               {coverPreview ? (
                 <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-sunken)]">
                   <div className="relative aspect-[1.45/1] w-full">
