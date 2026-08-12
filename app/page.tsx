@@ -49,19 +49,11 @@ export default function HomePage() {
         <section className="px-5 pb-20 pt-12 sm:px-8 sm:pb-28 sm:pt-20 lg:pb-32 lg:pt-24">
           <div className="shell-bleed grid items-center gap-16 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12">
             <div className="lg:pr-5">
-              <motion.p
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, ease: easeOut }}
-                className="inline-flex border-l-2 border-[var(--color-sun)] py-1 pl-3 text-xs font-semibold text-[var(--color-primary-dark)]"
-              >
-                A public home for goals worth finishing
-              </motion.p>
               <motion.h1
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.05, ease: easeOut }}
-                className="mt-7 max-w-[11ch] text-balance font-display text-[clamp(3.35rem,6.25vw,6.35rem)] font-semibold leading-[0.91] tracking-[-0.058em]"
+                className="max-w-[11ch] text-balance font-display text-[clamp(3.35rem,6.25vw,6.35rem)] font-semibold leading-[0.91] tracking-[-0.058em]"
               >
                 Big goals feel lighter with people beside you.
               </motion.h1>
@@ -554,9 +546,6 @@ function JourneyHero() {
         sizes="(min-width: 1024px) 52vw, 100vw"
         className="object-contain mix-blend-multiply"
       />
-      <figcaption className="absolute bottom-[3%] left-[4%] max-w-[15rem] border-l-2 border-[var(--color-sun)] bg-[color:rgba(251,250,246,0.88)] py-2 pl-3 pr-4 text-xs font-medium leading-5 text-[var(--color-text-secondary)] backdrop-blur-sm">
-        Every goal here is public, and has people behind it.
-      </figcaption>
     </figure>
   );
 }

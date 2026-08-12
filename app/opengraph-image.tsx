@@ -61,22 +61,8 @@ export default function OpengraphImage() {
           <div
             style={{
               display: "flex",
-              marginTop: 56,
-              color: "#1c419f",
-              background: "#e5ebfa",
-              borderRadius: 999,
-              padding: "9px 16px",
-              fontSize: 16,
-              fontWeight: 600,
-            }}
-          >
-            A public home for goals worth finishing
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              marginTop: 26,
+              // Absorbs the spacing the removed kicker pill used to provide.
+              marginTop: 82,
               maxWidth: 625,
               fontSize: 68,
               fontWeight: 700,
@@ -122,24 +108,6 @@ export default function OpengraphImage() {
             height={630}
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "flex" }}
           />
-          <div
-            style={{
-              position: "absolute",
-              left: 28,
-              right: 28,
-              bottom: 28,
-              display: "flex",
-              padding: "16px 18px",
-              borderLeft: "4px solid #feb704",
-              background: "rgba(251,250,246,0.92)",
-              color: "#18201c",
-              fontSize: 19,
-              fontWeight: 700,
-              lineHeight: 1.25,
-            }}
-          >
-            Progress is personal. Support makes it shared.
-          </div>
         </div>
       </div>
     ),
