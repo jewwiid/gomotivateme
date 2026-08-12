@@ -35,6 +35,11 @@ export default function SettingsPage() {
 
 function SettingsContent() {
   const [tab, setTab] = useState<Tab>("account");
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "notifications") {
+      setTab("notifications");
+    }
+  }, []);
   return (
     <DashboardWorkspaceShell active="settings">
       <main className="mx-auto max-w-[52rem]">
@@ -620,28 +625,45 @@ function NotificationsTab() {
   const prefs = useQuery(api.notificationPrefs.get, {});
   const update = useMutation(api.notificationPrefs.update);
 
-  const toggle = (key: "yourMotivations" | "supportedGoalUpdates" | "newMotivatorOnGoal" | "weeklyDigest" | "urgentCauses" | "productUpdates") => {
+  const toggle = (key: "yourMotivations" | "supportedGoalUpdates" | "goalActivity" | "motivationActivity" | "socialActivity" | "accountActivity" | "newMotivatorOnGoal" | "weeklyDigest" | "dailyStreakReminder" | "deadlineReminders" | "urgentCauses" | "productUpdates") => {
     if (!prefs) return;
-    void update({ [key]: !prefs[key] });
+    const defaultOn = key !== "weeklyDigest" && key !== "productUpdates";
+    void update({ [key]: !(prefs[key] ?? defaultOn) });
   };
+
+  const allNonEssentialEmailOn = !(prefs?.unsubscribedAll ?? false);
 
   return (
     <div className="space-y-6">
-      <Section title="How you'd like to hear from us">
+      <Section title="Email preferences">
         {prefs?.unsubscribedAll && (
           <p className="mb-4 rounded-lg bg-[var(--color-warning-soft)] px-3 py-2 text-xs text-[var(--color-warning)]">
-            You've unsubscribed from all email. Turn a category back on below
-            or visit your{" "}
-            <Link href="/settings" className="underline">
-              preferences
-            </Link>{" "}
-            to resubscribe.
+            Non-essential email is paused. Turn it back on below, or enable
+            any category to resume the emails you choose.
           </p>
         )}
         <div className="divide-y divide-[var(--color-border-subtle)]">
           <Toggle
+            label="All non-essential email"
+            description="Pause or resume every reminder and activity email at once"
+            on={allNonEssentialEmailOn}
+            onChange={() => void update({ unsubscribedAll: allNonEssentialEmailOn })}
+          />
+          <Toggle
+            label="Activity on your goals"
+            description="Applications, cheers, messages, and people joining goals you own"
+            on={prefs?.goalActivity ?? true}
+            onChange={() => toggle("goalActivity")}
+          />
+          <Toggle
+            label="Motivation Circle activity"
+            description="Invitations, application decisions, and check-in reminders"
+            on={prefs?.motivationActivity ?? true}
+            onChange={() => toggle("motivationActivity")}
+          />
+          <Toggle
             label="Updates on goals you motivate"
-            description="Reactions, milestone posts, replies from the goal owner"
+            description="Progress posts and status changes from creators you motivate"
             on={prefs?.yourMotivations ?? true}
             onChange={() => toggle("yourMotivations")}
           />
@@ -658,10 +680,46 @@ function NotificationsTab() {
             onChange={() => toggle("newMotivatorOnGoal")}
           />
           <Toggle
-            label="Weekly digest"
+            label="Followers and follow requests"
+            description="When someone follows you or asks to follow"
+            on={prefs?.socialActivity ?? true}
+            onChange={() => toggle("socialActivity")}
+          />
+          <Toggle
+            label="Goal confirmations"
+            description="A welcome, plus confirmation when a goal goes live or reaches its target"
+            on={prefs?.accountActivity ?? true}
+            onChange={() => toggle("accountActivity")}
+          />
+          <Toggle
+            label="Weekly activity digest"
             description="A Monday-morning summary of activity across your goals"
             on={prefs?.weeklyDigest ?? false}
             onChange={() => toggle("weeklyDigest")}
+          />
+          <Toggle
+            label="Daily streak reminder"
+            description="A local-evening nudge when today's streak is still unlogged"
+            on={prefs?.dailyStreakReminder ?? true}
+            onChange={() => toggle("dailyStreakReminder")}
+          />
+          <ReminderCadence
+            value={prefs?.goalUpdateReminderCadence ?? "weekly"}
+            onChange={(goalUpdateReminderCadence) =>
+              void update({ goalUpdateReminderCadence })
+            }
+          />
+          <Toggle
+            label="Deadline reminders"
+            description="A heads-up before your target date and once it has passed"
+            on={prefs?.deadlineReminders ?? true}
+            onChange={() => toggle("deadlineReminders")}
+          />
+          <PlatformDigestCadence
+            value={prefs?.platformDigestCadence ?? "off"}
+            onChange={(platformDigestCadence) =>
+              void update({ platformDigestCadence })
+            }
           />
           <Toggle
             label="Urgent causes near you"
@@ -676,7 +734,73 @@ function NotificationsTab() {
             onChange={() => toggle("productUpdates")}
           />
         </div>
+        <p className="mt-4 text-[11px] leading-relaxed text-[var(--color-text-muted)]">
+          Password resets and account verification are essential security emails and stay on.
+        </p>
       </Section>
+    </div>
+  );
+}
+
+function PlatformDigestCadence({
+  value,
+  onChange,
+}: {
+  value: "off" | "daily" | "weekly";
+  onChange: (value: "off" | "daily" | "weekly") => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3">
+      <div>
+        <div className="text-sm font-medium text-[var(--color-text)]">
+          Discover new goals
+        </div>
+        <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
+          Marketing email with a short selection of new, approved public goals
+        </div>
+        <div className="mt-1 text-[10px] text-[var(--color-text-dim)]">
+          Off by default. Choosing Daily or Weekly is your explicit opt-in.
+        </div>
+      </div>
+      <select
+        aria-label="Discover new goals email frequency"
+        value={value}
+        onChange={(event) => onChange(event.target.value as "off" | "daily" | "weekly")}
+        className="h-8 shrink-0 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs font-medium text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)]"
+      >
+        <option value="off">Off</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+      </select>
+    </div>
+  );
+}
+
+function ReminderCadence({
+  value,
+  onChange,
+}: {
+  value: "off" | "daily" | "weekly";
+  onChange: (value: "off" | "daily" | "weekly") => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-3">
+      <div>
+        <div className="text-sm font-medium text-[var(--color-text)]">Goal update reminder</div>
+        <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
+          A nudge to post an update when an active goal goes quiet
+        </div>
+      </div>
+      <select
+        aria-label="Goal update reminder frequency"
+        value={value}
+        onChange={(event) => onChange(event.target.value as "off" | "daily" | "weekly")}
+        className="h-8 shrink-0 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs font-medium text-[var(--color-text)] outline-none transition focus:border-[var(--color-primary)]"
+      >
+        <option value="off">Off</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+      </select>
     </div>
   );
 }

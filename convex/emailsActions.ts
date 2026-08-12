@@ -17,7 +17,8 @@ import { internal } from "./_generated/api";
 
 // Public site URL — used for the List-Unsubscribe header and footer links.
 // Matches the default in the email templates.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gomotivateme.com";
+const SITE_URL =
+  process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gomotivateme.com";
 
 export const drainQueue = internalAction({
   args: {},
@@ -41,11 +42,18 @@ export const drainQueue = internalAction({
     const client = new Resend(apiKey);
     const fromAddress =
       process.env.RESEND_FROM_ADDRESS ?? "GoMotivateMe <hello@gomotivateme.com>";
+    const marketingFromAddress =
+      process.env.RESEND_MARKETING_FROM_ADDRESS ??
+      "GoMotivateMe Discover <discover@gomotivateme.com>";
 
     let sent = 0;
     for (const notification of pending) {
       try {
         const payload = JSON.parse(notification.payload);
+        // Templates use this for calls to action. Keep email links on the
+        // configured canonical site even though this action runs in Convex,
+        // where Next.js public environment variables are not guaranteed.
+        payload.siteUrl ??= SITE_URL;
         const { subject, component } = renderTemplate(notification.templateId, payload);
         const html = await render(component);
 
@@ -53,17 +61,27 @@ export const drainQueue = internalAction({
         // Only present for user-recipient emails where enqueue injected a token.
         const headers: Record<string, string> = {};
         if (payload.unsubscribeToken) {
-          const unsubUrl = `${SITE_URL}/email/unsubscribe?token=${payload.unsubscribeToken}`;
+          const unsubUrl = `${SITE_URL}/api/email/unsubscribe?token=${payload.unsubscribeToken}`;
           headers["List-Unsubscribe"] = `<${unsubUrl}>`;
           headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
         }
+        if (notification.templateId === "platformDigest") {
+          headers["List-ID"] = "GoMotivateMe Discover <discover.gomotivateme.com>";
+        }
 
         const result = await client.emails.send({
-          from: fromAddress,
+          from:
+            notification.templateId === "platformDigest"
+              ? marketingFromAddress
+              : fromAddress,
           to: notification.toEmail,
           subject,
           html,
           headers,
+          tags: [
+            { name: "template", value: notification.templateId },
+            { name: "category", value: notification.category },
+          ],
         });
 
         if (result.error) {
@@ -126,6 +144,7 @@ export const sendWeeklyDigests = internalAction({
         toEmail: data.email,
         templateId: "weeklyDigest",
         category: "lifecycle",
+        preferenceKey: "weeklyDigest",
         payload: JSON.stringify({
           firstName: data.firstName,
           goals: data.goals,
@@ -135,6 +154,54 @@ export const sendWeeklyDigests = internalAction({
     }
     return { enqueued };
   },
+});
+
+async function sendPlatformDigests(ctx: any, cadence: "daily" | "weekly") {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log(`[platform-${cadence}] RESEND_API_KEY not set — skipping.`);
+    return { enqueued: 0, skipped: "no_api_key" };
+  }
+
+  const subscribers = await ctx.runQuery(
+    internal.emails.listPlatformDigestSubscribers,
+    { cadence }
+  );
+  if (subscribers.length === 0) {
+    return { enqueued: 0, skipped: "no_subscribers" };
+  }
+
+  let enqueued = 0;
+  for (const subscriber of subscribers) {
+    const data = await ctx.runQuery(internal.emails.getPlatformDigestData, {
+      userId: subscriber.userId,
+      cadence,
+    });
+    if (!data) continue;
+
+    const result = await ctx.runMutation(internal.emails.enqueue, {
+      userId: subscriber.userId,
+      toEmail: subscriber.email,
+      templateId: "platformDigest",
+      category: "lifecycle",
+      preferenceKey: "platformDigest",
+      payload: JSON.stringify(data),
+    });
+    if (result.status === "pending") enqueued++;
+  }
+  return { enqueued };
+}
+
+/** Daily consent-only marketing digest of fresh approved public goals. */
+export const sendDailyPlatformDigests = internalAction({
+  args: {},
+  handler: async (ctx) => sendPlatformDigests(ctx, "daily"),
+});
+
+/** Weekly consent-only marketing roundup of fresh approved public goals. */
+export const sendWeeklyPlatformDigests = internalAction({
+  args: {},
+  handler: async (ctx) => sendPlatformDigests(ctx, "weekly"),
 });
 
 /**
@@ -162,6 +229,7 @@ export const sendCheckInReminders = internalAction({
         toEmail: item.motivatorEmail,
         templateId: "checkInDue",
         category: "lifecycle",
+        preferenceKey: "motivationActivity",
         payload: JSON.stringify({
           motivatorName: item.motivatorName,
           ownerName: item.ownerName,
@@ -174,6 +242,43 @@ export const sendCheckInReminders = internalAction({
       // Stamp so we don't remind again until they check in.
       await ctx.runMutation(internal.emails.markPledgeReminded, {
         pledgeId: item.pledgeId,
+      });
+      enqueued++;
+    }
+    return { enqueued };
+  },
+});
+
+/** Hourly worker; each goal is delivered at 19:00 in its owner's local time. */
+export const sendStreakReminders = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.log("[streaks] RESEND_API_KEY not set — skipping reminders.");
+      return { enqueued: 0, skipped: "no_api_key" };
+    }
+
+    const due = await ctx.runQuery(internal.emails.listDueStreakReminders, {});
+    let enqueued = 0;
+    for (const item of due) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId: item.ownerId,
+        toEmail: item.ownerEmail,
+        templateId: "streakReminder",
+        category: "lifecycle",
+        preferenceKey: "dailyStreakReminder",
+        payload: JSON.stringify({
+          ownerName: item.ownerName,
+          goalTitle: item.goalTitle,
+          goalId: item.goalId,
+          currentStreak: item.currentStreak,
+          bestStreak: item.bestStreak,
+        }),
+      });
+      await ctx.runMutation(internal.emails.markStreakReminded, {
+        goalId: item.goalId,
+        reminderDay: item.reminderDay,
       });
       enqueued++;
     }
@@ -209,11 +314,13 @@ export const sendStaleGoalReminders = internalAction({
         await ctx.runMutation(internal.emails.enqueue, {
           userId: owner.ownerId,
           toEmail: owner.email,
-          templateId: "staleGoal",
+          templateId: "goalUpdateReminder",
           category: "lifecycle",
+          preferenceKey: "goalUpdateReminder",
           payload: JSON.stringify({
             ownerName: owner.name,
             goalTitle: goal.title,
+            goalId: goal.goalId,
             goalSlug: goal.slug,
             ownerHandle: goal.ownerHandle,
             daysSinceLastUpdate: goal.daysSinceLastUpdate,
@@ -254,6 +361,7 @@ export const sendDeadlineApproaching = internalAction({
         toEmail: item.email,
         templateId: "deadlineApproaching",
         category: "lifecycle",
+        preferenceKey: "deadlineReminders",
         payload: JSON.stringify({
           ownerName: item.ownerName,
           goalTitle: item.goalTitle,
@@ -286,6 +394,7 @@ export const sendDeadlineApproaching = internalAction({
           toEmail: follower.email,
           templateId: "deadlineApproaching",
           category: "lifecycle",
+          preferenceKey: "deadlineReminders",
           payload: JSON.stringify({
             ownerName: item.ownerName,
             goalTitle: item.goalTitle,
@@ -333,6 +442,7 @@ export const sendDeadlinePassed = internalAction({
         toEmail: item.email,
         templateId: "deadlinePassed",
         category: "lifecycle",
+        preferenceKey: "deadlineReminders",
         payload: JSON.stringify({
           ownerName: item.ownerName,
           goalTitle: item.goalTitle,
@@ -364,6 +474,7 @@ export const sendDeadlinePassed = internalAction({
           toEmail: follower.email,
           templateId: "deadlinePassed",
           category: "lifecycle",
+          preferenceKey: "deadlineReminders",
           payload: JSON.stringify({
             ownerName: item.ownerName,
             goalTitle: item.goalTitle,

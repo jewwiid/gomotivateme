@@ -253,6 +253,7 @@ export const acceptInvite = mutation({
             toEmail: owner.email,
             templateId: "applicationDecision",
             category: "lifecycle",
+            preferenceKey: "goalActivity",
             payload: JSON.stringify({
               applicantName: motivator?.name ?? motivator?.handle ?? "Someone",
               goalTitle: invite.goalTitle,
@@ -380,6 +381,8 @@ export const addInvite = mutation({
         userId: undefined, // may not have an account yet
         toEmail: args.email.trim(),
         templateId: "inviteReceived",
+        // This is a direct, one-to-one invitation to someone who may not yet
+        // have an account, so there is no account preference to consult.
         category: "transactional",
         payload: JSON.stringify({
           ownerName: goal.isAnonymous ? "Someone" : (owner?.name ?? "Someone"),
@@ -686,7 +689,8 @@ export const requestApplication = mutation({
         userId: goal.ownerId,
         toEmail: owner.email,
         templateId: "newApplication",
-        category: "transactional",
+        category: "lifecycle",
+        preferenceKey: "goalActivity",
         payload: JSON.stringify({
           ownerName: owner.name ?? "there",
           motivatorName: applicant?.name ?? applicant?.handle ?? "Someone",
@@ -761,7 +765,8 @@ export const approveApplication = mutation({
         userId: app.applicantId,
         toEmail: applicant.email,
         templateId: "applicationDecision",
-        category: "transactional",
+        category: "lifecycle",
+        preferenceKey: "motivationActivity",
         payload: JSON.stringify({
           applicantName: applicant.name ?? applicant.handle ?? "there",
           goalTitle: goal.title,
@@ -800,7 +805,8 @@ export const declineApplication = mutation({
         userId: app.applicantId,
         toEmail: applicant.email,
         templateId: "applicationDecision",
-        category: "transactional",
+        category: "lifecycle",
+        preferenceKey: "motivationActivity",
         payload: JSON.stringify({
           applicantName: applicant.name ?? applicant.handle ?? "there",
           goalTitle: goal.title,
@@ -930,7 +936,8 @@ export const createCheckIn = mutation({
           userId: goal.ownerId,
           toEmail: owner.email,
           templateId: "supportMessageReceived",
-          category: "transactional",
+          category: "lifecycle",
+          preferenceKey: "goalActivity",
           payload: JSON.stringify({
             ownerName: owner.name ?? owner.handle ?? "there",
             authorName: motivator?.name ?? motivator?.handle ?? "Someone",

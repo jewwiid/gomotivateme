@@ -425,8 +425,17 @@ export const setNotificationPrefs = internalMutation({
     email: v.string(),
     yourMotivations: v.optional(v.boolean()),
     supportedGoalUpdates: v.optional(v.boolean()),
+    goalActivity: v.optional(v.boolean()),
+    motivationActivity: v.optional(v.boolean()),
+    socialActivity: v.optional(v.boolean()),
+    accountActivity: v.optional(v.boolean()),
     newMotivatorOnGoal: v.optional(v.boolean()),
     weeklyDigest: v.optional(v.boolean()),
+    dailyStreakReminder: v.optional(v.boolean()),
+    goalUpdateReminderCadence: v.optional(
+      v.union(v.literal("off"), v.literal("daily"), v.literal("weekly"))
+    ),
+    deadlineReminders: v.optional(v.boolean()),
     urgentCauses: v.optional(v.boolean()),
     productUpdates: v.optional(v.boolean()),
     unsubscribedAll: v.optional(v.boolean()),

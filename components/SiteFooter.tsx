@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
+import { CookieSettingsButton } from "@/components/CookieSettingsButton";
 
 const primaryLinks = [
   ["Explore goals", "/explore"],
@@ -53,6 +54,7 @@ export function SiteFooter() {
               {label}
             </Link>
           ))}
+          <CookieSettingsButton />
         </div>
       </div>
     </footer>

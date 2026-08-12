@@ -168,7 +168,7 @@ function GoalsTab({
 
   return (
     <div>
-      <div className="mb-2 flex gap-6 overflow-x-auto border-b border-[var(--color-border)] [scrollbar-width:none]">
+      <div className="mb-2 flex gap-x-6 overflow-x-auto border-b border-[var(--color-border)] [scrollbar-width:none] xl:flex-wrap xl:overflow-visible">
         <CategoryTab
           active={activeCategory === null}
           onClick={() => setActiveCategory(null)}

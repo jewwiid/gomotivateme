@@ -130,9 +130,9 @@ export function Header({
 
   return (
     <motion.header
-      className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)]/95 backdrop-blur"
+      className="sticky top-0 z-40 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg)]/90 backdrop-blur-xl"
     >
-      <div className="shell-app flex h-[4.25rem] items-center gap-7 px-5 sm:px-6">
+      <div className="shell-app flex h-[4.75rem] items-center gap-7 px-5 sm:px-6">
         <Wordmark size="lg" ariaLabel="GoMotivateMe — home" />
 
         <nav
@@ -165,7 +165,7 @@ export function Header({
             <>
               <Link
                 href={startGoalHref}
-                className="hidden min-h-10 items-center border border-[var(--color-border-strong)] px-4 text-xs font-semibold transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] sm:inline-flex"
+                className="hidden min-h-10 items-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-4 text-xs font-semibold transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] active:translate-y-0 sm:inline-flex"
               >
                 New goal
               </Link>
@@ -290,7 +290,7 @@ export function Header({
               </Link>
               <Link
                 href={startGoalHref}
-                className="hidden min-h-10 items-center bg-[var(--color-text)] px-4 text-xs font-semibold text-white transition hover:bg-[var(--color-primary)] sm:inline-flex"
+                className="hidden min-h-10 items-center rounded-full bg-[var(--color-text)] px-5 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[var(--color-primary)] active:translate-y-0 sm:inline-flex"
               >
                 Start a goal
               </Link>

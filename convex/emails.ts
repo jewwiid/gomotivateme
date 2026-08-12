@@ -18,6 +18,51 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { computeProgress } from "./utils";
 
+type LifecyclePreferenceKey =
+  | "goalActivity"
+  | "motivationActivity"
+  | "socialActivity"
+  | "accountActivity"
+  | "goalUpdates"
+  | "weeklyDigest"
+  | "dailyStreakReminder"
+  | "goalUpdateReminder"
+  | "deadlineReminders"
+  | "platformDigest"
+  | "urgentCauses"
+  | "productUpdates";
+
+const lifecyclePreferenceValidator = v.union(
+  v.literal("goalActivity"),
+  v.literal("motivationActivity"),
+  v.literal("socialActivity"),
+  v.literal("accountActivity"),
+  v.literal("goalUpdates"),
+  v.literal("weeklyDigest"),
+  v.literal("dailyStreakReminder"),
+  v.literal("goalUpdateReminder"),
+  v.literal("deadlineReminders"),
+  v.literal("platformDigest"),
+  v.literal("urgentCauses"),
+  v.literal("productUpdates")
+);
+
+function hasEnabledLifecyclePreference(
+  prefs: Record<string, any>,
+  preferenceKey: LifecyclePreferenceKey
+) {
+  if (preferenceKey === "goalUpdates") {
+    return prefs.yourMotivations !== false || prefs.supportedGoalUpdates !== false;
+  }
+  if (preferenceKey === "goalUpdateReminder") {
+    return (prefs.goalUpdateReminderCadence ?? "weekly") !== "off";
+  }
+  if (preferenceKey === "platformDigest") {
+    return (prefs.platformDigestCadence ?? "off") !== "off";
+  }
+  return prefs[preferenceKey] !== false;
+}
+
 // =====================================================================
 // Enqueue — write a notification row from a trigger mutation.
 // =====================================================================
@@ -29,18 +74,24 @@ export const enqueue = internalMutation({
     templateId: v.string(),
     payload: v.string(),
     category: v.union(v.literal("transactional"), v.literal("lifecycle")),
+    preferenceKey: v.optional(lifecyclePreferenceValidator),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    const { preferenceKey, ...notification } = args;
 
     // Pref check: suppress lifecycle email to opted-out users.
     if (args.userId && args.category === "lifecycle") {
       const prefs = await ctx.runMutation(internal.notificationPrefs.getForUser, {
         userId: args.userId,
       });
-      if (prefs?.unsubscribedAll) {
+      if (
+        prefs?.unsubscribedAll ||
+        !preferenceKey ||
+        !hasEnabledLifecyclePreference(prefs, preferenceKey)
+      ) {
         await ctx.db.insert("notifications", {
-          ...args,
+          ...notification,
           status: "suppressed",
           attempts: 0,
           createdAt: now,
@@ -54,7 +105,7 @@ export const enqueue = internalMutation({
     // who never went through updateProfile, e.g. Google OAuth sign-ins). Same
     // mint pattern as users.ts:282. Non-user emails (userId absent, e.g.
     // inviteReceived) get no token — they render the "service message" footer.
-    let payload = args.payload;
+    let payload = notification.payload;
     if (args.userId) {
       const user = await ctx.db.get(args.userId);
       const existing = (user as { unsubscribeToken?: string } | null)?.unsubscribeToken;
@@ -77,7 +128,7 @@ export const enqueue = internalMutation({
     }
 
     await ctx.db.insert("notifications", {
-      ...args,
+      ...notification,
       payload,
       status: "pending",
       attempts: 0,
@@ -259,6 +310,145 @@ export const getDigestData = internalQuery({
   },
 });
 
+// =====================================================================
+// Consent-only platform discovery marketing
+// =====================================================================
+
+const PLATFORM_DIGEST_BLOCKED_CATEGORIES = new Set(["health"]);
+const PLATFORM_DIGEST_BLOCKED_MODERATION = new Set([
+  "sexual",
+  "violence",
+  "self_harm",
+  "hate",
+  "harassment",
+]);
+
+/** Marketing recipients are selected only from an explicit settings choice. */
+export const listPlatformDigestSubscribers = internalQuery({
+  args: { cadence: v.union(v.literal("daily"), v.literal("weekly")) },
+  handler: async (ctx, { cadence }) => {
+    const prefs = await ctx.db
+      .query("notificationPrefs")
+      .withIndex("by_platform_digest_cadence", (q) =>
+        q.eq("platformDigestCadence", cadence)
+      )
+      .collect();
+
+    const subscribers = [];
+    for (const pref of prefs) {
+      if (pref.unsubscribedAll || !pref.platformDigestConsentAt) continue;
+      const user = await ctx.db.get(pref.userId);
+      if (!user?.email) continue;
+      subscribers.push({
+        userId: pref.userId,
+        email: user.email,
+      });
+    }
+    return subscribers;
+  },
+});
+
+/**
+ * Build a compact Product-Hunt-style discovery email from recently launched,
+ * approved public goals. Sensitive categories, anonymous goals, and the
+ * recipient's own goals are never used in marketing.
+ */
+export const getPlatformDigestData = internalQuery({
+  args: {
+    userId: v.id("users"),
+    cadence: v.union(v.literal("daily"), v.literal("weekly")),
+    nowMs: v.optional(v.number()),
+  },
+  handler: async (ctx, { userId, cadence, nowMs }) => {
+    const now = nowMs ?? Date.now();
+    const contentPeriodMs = cadence === "daily" ? 26 * 60 * 60 * 1000 : 8 * DAY;
+    const dedupePeriodMs = cadence === "daily" ? 20 * 60 * 60 * 1000 : 6 * DAY;
+    const contentSince = now - contentPeriodMs;
+    const dedupeSince = now - dedupePeriodMs;
+
+    // Idempotency: a rerun or redeploy cannot enqueue the same cadence twice.
+    const recentNotifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_user", (q) => q.eq("userId", userId).gte("createdAt", dedupeSince))
+      .collect();
+    if (
+      recentNotifications.some(
+        (notification) =>
+          notification.templateId === "platformDigest" &&
+          notification.status !== "suppressed"
+      )
+    ) {
+      return null;
+    }
+
+    const recentPublicGoals = await ctx.db
+      .query("goals")
+      .withIndex("by_visibility_created", (q) => q.eq("visibility", "public"))
+      .order("desc")
+      .take(200);
+
+    const eligible = recentPublicGoals.filter((goal) => {
+      const launchedAt = goal.launchedAt ?? goal.createdAt;
+      const moderationFlags = goal.moderationCategories ?? [];
+      return (
+        launchedAt >= contentSince &&
+        goal.status === "active" &&
+        goal.moderationStatus === "approved" &&
+        goal.ownerId !== userId &&
+        !goal.isAnonymous &&
+        Boolean(goal.ownerHandle) &&
+        !PLATFORM_DIGEST_BLOCKED_CATEGORIES.has(goal.category) &&
+        !moderationFlags.some((flag) => PLATFORM_DIGEST_BLOCKED_MODERATION.has(flag))
+      );
+    });
+
+    // Lead with variety: select one strong recent goal per category, then fill.
+    eligible.sort((a, b) => {
+      const aScore = (a.supporterCount ?? 0) * 4 + (a.launchedAt ?? a.createdAt) / 1e12;
+      const bScore = (b.supporterCount ?? 0) * 4 + (b.launchedAt ?? b.createdAt) / 1e12;
+      return bScore - aScore;
+    });
+    const chosen: typeof eligible = [];
+    const usedCategories = new Set<string>();
+    for (const goal of eligible) {
+      if (usedCategories.has(goal.category)) continue;
+      chosen.push(goal);
+      usedCategories.add(goal.category);
+      if (chosen.length === (cadence === "daily" ? 4 : 6)) break;
+    }
+    for (const goal of eligible) {
+      if (chosen.some((candidate) => candidate._id === goal._id)) continue;
+      chosen.push(goal);
+      if (chosen.length === (cadence === "daily" ? 4 : 6)) break;
+    }
+    if (chosen.length === 0) return null;
+
+    const user = await ctx.db.get(userId);
+    const goals = chosen.map((goal) => ({
+      title: goal.title,
+      summary: goal.summary?.slice(0, 180) ?? "A new goal looking for encouragement.",
+      category: goal.category,
+      slug: goal.slug,
+      ownerHandle: goal.ownerHandle!,
+      ownerName: goal.ownerName ?? goal.ownerHandle ?? "A goal creator",
+      supporterCount: goal.supporterCount ?? 0,
+      progressPct: computeProgress(
+        goal.startValue ?? 0,
+        goal.currentValue ?? 0,
+        goal.targetValue ?? 0,
+        goal.direction ?? "increase"
+      ),
+    }));
+
+    return {
+      firstName: user?.name?.split(" ")[0] ?? undefined,
+      cadence,
+      goals,
+      totalNewGoals: eligible.length,
+    };
+  },
+});
+
 /**
  * Internal: find active pledges whose check-in cadence has elapsed and
  * haven't been reminded in this overdue cycle. Returns pledge data +
@@ -327,31 +517,109 @@ export const markPledgeReminded = internalMutation({
 });
 
 // =====================================================================
+// Owner daily-streak reminders
+// =====================================================================
+
+const STREAK_DAY_MS = 86_400_000;
+
+function streakDayKey(timestamp: number, offsetMinutes: number) {
+  return new Date(timestamp - offsetMinutes * 60_000).toISOString().slice(0, 10);
+}
+
+/** Find streak goals whose owner's local reminder hour has arrived. */
+export const listDueStreakReminders = internalQuery({
+  args: { nowMs: v.optional(v.number()) },
+  handler: async (ctx, { nowMs }) => {
+    const now = nowMs ?? Date.now();
+    const goals = await ctx.db.query("goals").collect();
+    const due = [];
+
+    for (const goal of goals) {
+      if (goal.status !== "active" || goal.progressType !== "streak") continue;
+
+      const offset = Math.max(
+        -840,
+        Math.min(840, Math.round(goal.streakTimezoneOffsetMinutes ?? 0))
+      );
+      const localNow = new Date(now - offset * 60_000);
+      const today = localNow.toISOString().slice(0, 10);
+      const reminderHour = Math.max(0, Math.min(23, goal.streakReminderHour ?? 19));
+      if (localNow.getUTCHours() !== reminderHour) continue;
+      if (goal.streakLastLoggedDay === today || goal.streakLastReminderDay === today) continue;
+
+      // Legacy streak rows may not have a stored day yet. Avoid a false nudge
+      // if they already logged a value during this local calendar day.
+      if (!goal.streakLastLoggedDay) {
+        const todayStart =
+          Math.floor((now - offset * 60_000) / STREAK_DAY_MS) * STREAK_DAY_MS +
+          offset * 60_000;
+        const todayUpdates = await ctx.db
+          .query("updates")
+          .withIndex("by_goal_created", (q) =>
+            q.eq("goalId", goal._id).gte("createdAt", todayStart)
+          )
+          .collect();
+        if (todayUpdates.some((update) => update.type === "value" && !update.revertedAt)) {
+          continue;
+        }
+      }
+
+      const prefs = await ctx.db
+        .query("notificationPrefs")
+        .withIndex("by_user", (q) => q.eq("userId", goal.ownerId))
+        .first();
+      if (prefs?.unsubscribedAll || prefs?.dailyStreakReminder === false) continue;
+
+      const owner = await ctx.db.get(goal.ownerId);
+      if (!owner?.email) continue;
+
+      const yesterday = streakDayKey(now - STREAK_DAY_MS, offset);
+      const currentStreak =
+        goal.streakLastLoggedDay === yesterday ? goal.currentValue ?? 0 : 0;
+      due.push({
+        goalId: goal._id,
+        ownerId: goal.ownerId,
+        ownerEmail: owner.email,
+        ownerName: owner.name ?? owner.handle ?? "there",
+        goalTitle: goal.title,
+        currentStreak,
+        bestStreak: goal.streakBest ?? goal.currentValue ?? 0,
+        reminderDay: today,
+      });
+    }
+
+    return due;
+  },
+});
+
+export const markStreakReminded = internalMutation({
+  args: { goalId: v.id("goals"), reminderDay: v.string() },
+  handler: async (ctx, { goalId, reminderDay }) => {
+    await ctx.db.patch(goalId, { streakLastReminderDay: reminderDay });
+  },
+});
+
+// =====================================================================
 // Accountability queries — stale goals, deadline approaching, deadline passed
 // =====================================================================
 
 const DAY = 24 * 60 * 60 * 1000;
 
 /**
- * Find active goals where the creator hasn't posted an update in 7+ days.
- * Groups by owner so each creator gets one consolidated email (not one per goal).
- * Skips goals already reminded in the last 7 days.
+ * Find active goals whose owner has chosen a goal-update reminder and has
+ * not posted in that cadence window. Groups results by owner so one run can
+ * enqueue a reminder for each due goal. The setting supports daily, weekly,
+ * or off; existing accounts retain the weekly behaviour by default.
  * Returns { ownerId, email, name, goals: [{title, slug, daysSinceLastUpdate, supporterCount, motivatorCount}] }[]
  */
 export const listStaleGoals = internalQuery({
   args: { nowMs: v.optional(v.number()) },
   handler: async (ctx, { nowMs }) => {
     const now = nowMs ?? Date.now();
-    const staleThreshold = 7 * DAY;
-    const reRemindThreshold = 7 * DAY;
-
-    // Scan active goals (table scan, but filtered to active only).
-    const goals = await ctx.db
-      .query("goals")
-      .withIndex("by_public_created", (q) =>
-        q.eq("visibility", "public").eq("status", "active")
-      )
-      .collect();
+    // Private goals need the same accountability support as public ones.
+    const goals = (await ctx.db.query("goals").collect()).filter(
+      (goal) => goal.status === "active"
+    );
 
     // Group by owner so we send one email per creator.
     const byOwner = new Map<string, {
@@ -368,8 +636,19 @@ export const listStaleGoals = internalQuery({
     }>();
 
     for (const goal of goals) {
+      const prefs = await ctx.db
+        .query("notificationPrefs")
+        .withIndex("by_user", (q) => q.eq("userId", goal.ownerId))
+        .first();
+      const cadence = prefs?.goalUpdateReminderCadence ?? "weekly";
+      if (prefs?.unsubscribedAll || cadence === "off") continue;
+
+      const reminderInterval = cadence === "daily" ? DAY : 7 * DAY;
+
       // Skip if already reminded recently.
-      if (goal.lastStaleReminderAt && now - goal.lastStaleReminderAt < reRemindThreshold) continue;
+      if (goal.lastStaleReminderAt && now - goal.lastStaleReminderAt < reminderInterval) {
+        continue;
+      }
 
       // Find the most recent update for this goal.
       const lastUpdate = await ctx.db
@@ -381,7 +660,7 @@ export const listStaleGoals = internalQuery({
       // Stale baseline: last update, or goal createdAt/launchedAt if no updates yet.
       const lastActivity = lastUpdate?.createdAt ?? goal.launchedAt ?? goal.createdAt;
       const elapsed = now - lastActivity;
-      if (elapsed < staleThreshold) continue;
+      if (elapsed < reminderInterval) continue;
 
       // Count supporters + motivators for social proof.
       const [supporters, motivators] = await Promise.all([

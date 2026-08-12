@@ -213,7 +213,7 @@ function SignupForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="name"
-            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="workspace-input px-4 py-3"
             placeholder="Your name"
           />
         </div>
@@ -223,7 +223,7 @@ function SignupForm() {
             Handle <span className="text-[var(--color-text-dim)]">(optional)</span>
           </label>
           <div
-            className={`flex items-center rounded-xl border bg-white pr-3 transition ${
+            className={`flex items-center rounded-[var(--workspace-radius)] border bg-[var(--color-surface)] pr-3 transition ${
               handleErr
                 ? "border-[var(--color-danger)]/50"
                 : handleValid
@@ -273,7 +273,7 @@ function SignupForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="workspace-input px-4 py-3"
             placeholder="you@example.com"
           />
         </div>
@@ -287,7 +287,7 @@ function SignupForm() {
             value={password}
             onChange={(e) => onPasswordChange(e.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="workspace-input px-4 py-3"
             placeholder="At least 8 characters"
           />
           {passwordHint === "short" && (
@@ -313,7 +313,7 @@ function SignupForm() {
             value={confirmPassword}
             onChange={(e) => onConfirmPasswordChange(e.target.value)}
             autoComplete="new-password"
-            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="workspace-input px-4 py-3"
             placeholder="Type your password again"
           />
           {confirmHint === "mismatch" && (
@@ -330,7 +330,7 @@ function SignupForm() {
         </div>
 
         {err && (
-          <div className="rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 px-3 py-2 text-xs text-[var(--color-danger)]">
+          <div className="rounded-[var(--workspace-radius)] border border-[var(--color-danger)] bg-[var(--color-danger-soft)] px-3 py-2 text-xs text-[var(--color-danger-text)]">
             {err}
           </div>
         )}
@@ -338,7 +338,7 @@ function SignupForm() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-2 w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
+          className="workspace-button-primary mt-2 disabled:opacity-50"
         >
           {busy ? "Creating account..." : "Create account"}
         </button>

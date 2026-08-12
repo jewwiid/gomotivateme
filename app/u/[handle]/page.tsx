@@ -248,13 +248,22 @@ export default function ProfilePage() {
                       <FollowButton followeeId={user._id} signedIn={!!me} />
                     )}
                     {isMe && (
-                      <Link
-                        href="/settings"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                      >
-                        <Edit3 size={12} />
-                        Edit profile
-                      </Link>
+                      <>
+                        <Link
+                          href="/dashboard/recap"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+                        >
+                          <Trophy size={12} />
+                          Year in motion
+                        </Link>
+                        <Link
+                          href="/settings"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-text-secondary)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                        >
+                          <Edit3 size={12} />
+                          Edit profile
+                        </Link>
+                      </>
                     )}
                   </div>
                 )}

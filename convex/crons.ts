@@ -26,7 +26,25 @@ crons.cron("purgeNotifications", "0 3 * * *", internal.emails.purgeOld, {});
 
 crons.cron("sendDigests", "0 9 * * 1", internal.emailsActions.sendWeeklyDigests, {});
 
+// Consent-only marketing: daily readers get a short morning discovery list;
+// weekly readers get a Sunday roundup, separate from accountability reminders.
+crons.cron(
+  "dailyPlatformDigest",
+  "30 8 * * *",
+  internal.emailsActions.sendDailyPlatformDigests,
+  {}
+);
+crons.cron(
+  "weeklyPlatformDigest",
+  "0 17 * * 0",
+  internal.emailsActions.sendWeeklyPlatformDigests,
+  {}
+);
+
 crons.cron("checkInReminders", "0 10 * * *", internal.emailsActions.sendCheckInReminders, {});
+
+// Hourly so each streak goal can be nudged at 19:00 in the owner's timezone.
+crons.cron("streakReminders", "5 * * * *", internal.emailsActions.sendStreakReminders, {});
 
 // Accountability — daily at 11:00 UTC
 crons.cron(

@@ -58,15 +58,15 @@ export function ProgressBar({
   return (
     <div className={className}>
       <div
-        className={`relative w-full overflow-hidden rounded-full bg-[var(--color-bg-elev)] ${SIZES[size]}`}
+        className={`relative w-full overflow-hidden bg-[var(--color-bg-elev)] ${SIZES[size]}`}
       >
         <motion.div
-          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-gold)]"
+          className="absolute inset-y-0 left-0 bg-[var(--color-primary)]"
           style={{ width: widthPct }}
         />
         {pct > 0 && (
           <motion.div
-            className="absolute inset-y-0 right-0 w-8 bg-gradient-to-r from-transparent to-white/30"
+            className="absolute inset-y-0 right-0 w-8 bg-white/20"
             style={{ width: widthPct }}
             aria-hidden
           />

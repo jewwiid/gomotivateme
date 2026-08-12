@@ -8,42 +8,42 @@
 }
 
 /*
-  gomotivateme design system.
+  GoMotivateMe design system.
 
-  A cool paper canvas, near-black ink, and one cobalt signal colour. Warm cream,
-  decorative gradients, and soft floating cards are deliberately excluded so
-  the product reads as a useful public record rather than lifestyle SaaS.
+  A warm, human canvas with clear ink and one blue brand signal. The product
+  keeps the discipline of a public record, but the softer paper tones and
+  tactile geometry make it feel like people helping people—not enterprise UI.
 */
 
 @layer base {
   :root {
-    --color-bg: #f6f8f7;
-    --color-bg-elev: #edf1ef;
-    --color-bg-sunken: #dfe5e2;
-    --color-surface: #fbfcfb;
+    --color-bg: #fbfaf6;
+    --color-bg-elev: #f3f0e8;
+    --color-bg-sunken: #e8e3d8;
+    --color-surface: #fffefb;
 
     /* Border ramp — subtle (inner dividers), default (cards), strong (inputs). */
-    --color-border-subtle: #e6ebe8;
-    --color-border: #d4dbd7;
-    --color-border-strong: #aeb8b3;
+    --color-border-subtle: #eeeae1;
+    --color-border: #dfd9cd;
+    --color-border-strong: #b9b1a3;
 
     /* Cool-neutral text ramp.
          text       14.2:1  body + headings
          secondary   8.3:1  supporting copy
          muted       5.5:1  metadata (AA normal)
          dim         3.5:1  labels only (AA large) — never body copy */
-    --color-text: #141a17;
-    --color-text-secondary: #39423e;
-    --color-text-muted: #5e6863;
-    --color-text-dim: #7b8681;
+    --color-text: #18201c;
+    --color-text-secondary: #414b46;
+    --color-text-muted: #66706b;
+    --color-text-dim: #848c87;
 
-    --color-primary: #214fda;
-    --color-primary-dark: #1538a3;
-    --color-primary-soft: #dfe6fb;
-    --color-accent: #214fda;
-    --color-accent-soft: #e6ebfa;
-    --color-gold: #686f63;
-    --color-gold-soft: #e8ece7;
+    --color-primary: #2856c7;
+    --color-primary-dark: #1c419f;
+    --color-primary-soft: #e5ebfa;
+    --color-accent: #2856c7;
+    --color-accent-soft: #edf1fb;
+    --color-gold: #766b57;
+    --color-gold-soft: #eee8dc;
     --color-success: #267052;
     --color-success-soft: #dcebe2;
     --color-warning: #a36b13;
@@ -55,18 +55,19 @@
        icons and are too light to sit as text on their own -soft chip.
        These darker pairs carry the same hue at AA contrast. */
     --color-success-text: #1f6047;
+    --color-warning-text: #704908;
     --color-gold-text: #50584d;
     --color-danger-text: #8d3434;
 
     /* Surfaces for the campaign/landing */
-    --color-card: #fbfcfb;
-    --color-card-elev: #fbfcfb;
+    --color-card: #fffefb;
+    --color-card-elev: #fffefb;
     /* Alias: --color-bg-card is widely used but was never declared. */
     --color-bg-card: var(--color-card);
 
     /* Shared workspace geometry. */
-    --workspace-radius: 0.3rem;
-    --workspace-shadow: none;
+    --workspace-radius: 1.125rem;
+    --workspace-shadow: 0 1.125rem 3rem -2.25rem rgba(55, 47, 35, 0.28);
 
     /* Page shell widths. Four documented widths — no ad-hoc max-w values.
        Header and workspace share --shell-app so the app chrome always
@@ -153,7 +154,7 @@
      from visually stacking inside cards. */
   .workspace-card-soft {
     border: 1px solid var(--color-border);
-    border-radius: 0.2rem;
+    border-radius: 0.875rem;
     background: var(--color-bg-elev);
   }
 
@@ -206,7 +207,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.25rem;
+    border-radius: 999px;
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
     font-weight: 700;
@@ -238,6 +239,27 @@
   .workspace-button-secondary:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
+  }
+
+  .workspace-input {
+    width: 100%;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 0.875rem;
+    background: var(--color-surface);
+    color: var(--color-text);
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .workspace-input::placeholder {
+    color: var(--color-text-dim);
+  }
+
+  .workspace-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(40, 86, 199, 0.12);
+    outline: none;
   }
 
   .workspace-detail-section {

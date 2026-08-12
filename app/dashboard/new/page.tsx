@@ -19,13 +19,27 @@ import {
   ImagePlus,
   ChevronRight,
   BarChart3,
+  CircleDollarSign,
+  Clock3,
+  Dumbbell,
   Flame,
   ListChecks,
+  Route,
+  Scale,
+  X,
 } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { CATEGORIES, CategoryId, getCategory, getDefaultMilestones } from "@/lib/categories";
+import {
+  DEFAULT_METRIC_BY_CATEGORY,
+  getDefaultMeasurement,
+  getMeasurementMetric,
+  getMeasurementsForCategory,
+  type GoalMeasurementMetric,
+  type MeasurementIcon,
+} from "@/lib/goalMeasurementCatalog";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Wordmark } from "@/components/Wordmark";
@@ -56,8 +70,8 @@ const WIZARD_COPY = [
     detail: "We'll guide you through the essentials, then help you invite the right people in.",
   },
   {
-    title: "Choose your progress style",
-    detail: "Pick a way of measuring that makes progress visible.",
+    title: "Choose what progress means",
+    detail: "Your category now narrows this to measurements that fit the goal.",
   },
   {
     title: "Set a target that matters",
@@ -87,26 +101,22 @@ const WIZARD_COPY = [
 
 const PROGRESS_WIDTHS = ["w-[11.111%]", "w-[22.222%]", "w-1/3", "w-[44.444%]", "w-[55.555%]", "w-2/3", "w-[77.777%]", "w-[88.888%]", "w-full"];
 
-const PROGRESS_TEMPLATES = [
-  {
-    id: "number" as const,
-    label: "Number target",
-    description: "Hit a specific number: kg, books, miles, days, dollars.",
-    icon: BarChart3,
-  },
-  {
-    id: "streak" as const,
-    label: "Daily streak",
-    description: "Show up every day and watch the count climb.",
-    icon: Flame,
-  },
-  {
-    id: "milestones" as const,
-    label: "Milestone checklist",
-    description: "Tick off a series of named steps: research, draft, publish, etc.",
-    icon: ListChecks,
-  },
-];
+const MEASUREMENT_ICONS: Record<MeasurementIcon, typeof BarChart3> = {
+  count: BarChart3,
+  distance: Route,
+  duration: Clock3,
+  money: CircleDollarSign,
+  plan: ListChecks,
+  streak: Flame,
+  strength: Dumbbell,
+  people: Users,
+  weight: Scale,
+};
+
+const INITIAL_MEASUREMENT = getDefaultMeasurement("creative");
+
+const numericFieldValue = (value: number | undefined) =>
+  value === undefined ? "" : String(value);
 
 const SUPPORT_OPTIONS = [
   { id: "encourage" as const, label: "Encouragement", icon: Heart, desc: "Cheer me on" },
@@ -144,11 +154,12 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   const [summary, setSummary] = useState("");
   const [story, setStory] = useState("");
   const [category, setCategory] = useState<CategoryId>("creative");
-  const [progressType, setProgressType] = useState<"number" | "streak" | "milestones">("number");
-  const [direction, setDirection] = useState<"increase" | "decrease">("increase");
-  const [unit, setUnit] = useState("pages");
-  const [startValue, setStartValue] = useState("");
-  const [targetValue, setTargetValue] = useState("");
+  const [metricId, setMetricId] = useState(INITIAL_MEASUREMENT.id);
+  const [progressType, setProgressType] = useState<"number" | "streak" | "milestones">(INITIAL_MEASUREMENT.progressType);
+  const [direction, setDirection] = useState<"increase" | "decrease">(INITIAL_MEASUREMENT.defaultDirection);
+  const [unit, setUnit] = useState(INITIAL_MEASUREMENT.defaultUnit);
+  const [startValue, setStartValue] = useState(numericFieldValue(INITIAL_MEASUREMENT.defaultStartValue));
+  const [targetValue, setTargetValue] = useState(numericFieldValue(INITIAL_MEASUREMENT.suggestedTargetValue));
   const [targetDate, setTargetDate] = useState("");
   const [milestones, setMilestones] = useState<Array<{ id: string; title: string }>>(() =>
     getDefaultMilestones("creative")
@@ -202,6 +213,9 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
     task: AiTask;
     message: string;
   } | null>(null);
+  const measurementOptions = getMeasurementsForCategory(category);
+  const selectedMeasurement =
+    getMeasurementMetric(category, metricId) ?? getDefaultMeasurement(category);
 
   const requestAiSuggestion = async (task: AiTask) => {
     setAiBusy(task);
@@ -293,25 +307,28 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
     setAiError(null);
   };
 
+  const applyMeasurementSelection = (definition: GoalMeasurementMetric) => {
+    setMetricId(definition.id);
+    setProgressType(definition.progressType);
+    setDirection(definition.defaultDirection);
+    setUnit(definition.defaultUnit);
+    setStartValue(numericFieldValue(definition.defaultStartValue));
+    setTargetValue(numericFieldValue(definition.suggestedTargetValue));
+    if (definition.progressType === "milestones") {
+      const titles = definition.milestones ?? getDefaultMilestones(definition.categoryId).map((item) => item.title);
+      setMilestones(titles.map((milestone, index) => ({ id: `m${index + 1}`, title: milestone })));
+    }
+  };
+
   const onCategoryChange = (id: CategoryId) => {
     setCategory(id);
-    const c = CATEGORIES.find((x) => x.id === id)!;
-    setDirection(c.defaultDirection);
-    setUnit(c.unitOptions[0] ?? "units");
-    // Pre-select the category's preferred progress type.
-    if (c.defaultProgressType !== progressType) {
-      setProgressType(c.defaultProgressType);
-      // Update milestone defaults when switching to milestones.
-      if (c.defaultProgressType === "milestones") {
-        setMilestones(getDefaultMilestones(id));
-      }
-    }
+    applyMeasurementSelection(getDefaultMeasurement(id));
   };
 
   const canAdvance = () => {
     if (step === 0) return true; // category has a default
     if (step === 1) return title.trim().length > 0;
-    if (step === 2) return true; // progress type has a default
+    if (step === 2) return Boolean(getMeasurementMetric(category, metricId));
     if (step === 3) {
       if (progressType === "number") {
         const s = parseFloat(startValue);
@@ -353,6 +370,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           return direction === "decrease"
             ? "Target should be lower than your starting value"
             : "Target should be higher than your starting value";
+        if (!unit.trim()) return "Choose or enter a unit";
       }
       if (progressType === "streak") {
         const t = parseInt(targetValue, 10);
@@ -406,6 +424,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
         summary: summary.trim() || undefined,
         story: story.trim() || undefined,
         category,
+        metricId,
         unit:
           progressType === "milestones"
             ? "milestones"
@@ -419,6 +438,8 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
         targetDate: targetDate
           ? new Date(`${targetDate}T12:00:00`).getTime()
           : undefined,
+        tzOffsetMinutes:
+          progressType === "streak" ? new Date().getTimezoneOffset() : undefined,
         milestones: progressType === "milestones" ? milestones : undefined,
         supporterTarget: supporterTarget
           ? parseInt(supporterTarget, 10)
@@ -450,7 +471,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
         </Link>
       </aside>
 
-      <section className="flow-form flex min-h-dvh flex-col rounded-tl-[0] bg-white lg:rounded-tl-[4rem]">
+      <section className="flow-form flex min-h-dvh flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-5 py-5 lg:hidden">
           <Wordmark href="/dashboard" size="md" />
           <span className="text-xs font-semibold text-[var(--color-primary)]">{step + 1} / {totalSteps}</span>
@@ -465,7 +486,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                     key={c.id}
                     type="button"
                     onClick={() => onCategoryChange(c.id)}
-                    className={`flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition ${
+                    className={`flex flex-col items-start gap-1.5 rounded-[var(--workspace-radius)] border p-3 text-left transition ${
                       category === c.id
                         ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                         : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
@@ -503,7 +524,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   maxLength={120}
                   placeholder={getCategory(category).titlePlaceholder ?? "e.g. Write my first novel"}
                   autoFocus
-                  className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                  className="workspace-input px-4 py-3.5"
                 />
               </div>
               <div className="mt-4">
@@ -516,7 +537,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   onChange={(e) => setSummary(e.target.value)}
                   maxLength={280}
                   placeholder={getCategory(category).summaryPlaceholder ?? "e.g. One-line summary"}
-                  className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                  className="workspace-input px-4 py-3.5"
                 />
               </div>
               <div className="mt-5 border-t border-[var(--color-border-subtle)] pt-5">
@@ -559,41 +580,51 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
 
           {step === 2 && (
             <Step title="How will you measure progress?">
-              <div className="space-y-2">
-                {PROGRESS_TEMPLATES.map((t) => {
-                  const Icon = t.icon;
+              <p className="mb-5 max-w-xl text-sm leading-6 text-[var(--color-text-muted)]">
+                These measurements fit {getCategory(category).label.toLowerCase()} goals. Choose what you can update consistently—not merely what sounds impressive.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {measurementOptions.map((measurement) => {
+                  const Icon = MEASUREMENT_ICONS[measurement.icon];
+                  const active = metricId === measurement.id;
+                  const recommended = DEFAULT_METRIC_BY_CATEGORY[category] === measurement.id;
+                  const metricSummary =
+                    measurement.progressType === "streak"
+                      ? "Daily check-in"
+                      : measurement.progressType === "milestones"
+                      ? `${measurement.milestones?.length ?? 0} editable stages`
+                      : measurement.allowsCustomUnit
+                      ? "Custom unit"
+                      : measurement.units.slice(0, 3).join(" · ");
                   return (
                     <button
-                      key={t.id}
+                      key={measurement.id}
                       type="button"
-                      onClick={() => {
-                        setProgressType(t.id);
-                        if (t.id === "streak") {
-                          setDirection("increase");
-                          setUnit("days");
-                        }
-                        if (t.id === "milestones") {
-                          setDirection("increase");
-                        }
-                      }}
-                      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
-                        progressType === t.id
+                      onClick={() => applyMeasurementSelection(measurement)}
+                      className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
+                        active
                           ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                           : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
                       }`}
                     >
                       <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                          progressType === t.id
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] ${
+                          active
                             ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
                             : "bg-[var(--color-bg-elev)] text-[var(--color-text-muted)]"
                         }`}
                       >
                         <Icon size={19} aria-hidden />
                       </span>
-                      <div>
-                        <div className="text-sm font-semibold">{t.label}</div>
-                        <div className="text-xs text-[var(--color-text-muted)]">{t.description}</div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold">{measurement.label}</span>
+                          {recommended ? (
+                            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--color-primary)]">Recommended</span>
+                          ) : null}
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">{measurement.description}</div>
+                        <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-text-dim)]">{metricSummary}</div>
                       </div>
                     </button>
                   );
@@ -603,22 +634,36 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           )}
 
           {step === 3 && (
-            <Step title="Set your numbers">
+            <Step
+              title={
+                progressType === "milestones"
+                  ? "Map the steps"
+                  : progressType === "streak"
+                  ? "Set your streak target"
+                  : `Set your ${selectedMeasurement.label.toLowerCase()} target`
+              }
+            >
+              <div className="mb-5 border-l-2 border-[var(--color-primary)] pl-4">
+                <p className="text-sm font-semibold text-[var(--color-text)]">{selectedMeasurement.label}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">{selectedMeasurement.description}</p>
+              </div>
               {progressType === "number" && (
                 <>
-                  <div className="mb-3 flex gap-2">
-                    <DirectionToggle value={direction} onChange={setDirection} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  {selectedMeasurement.directions.length > 1 ? (
+                    <div className="mb-3 flex gap-2">
+                      <DirectionToggle value={direction} onChange={setDirection} />
+                    </div>
+                  ) : null}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Field
-                      label="Start value"
+                      label={selectedMeasurement.startLabel ?? "Starting value"}
                       value={startValue}
                       onChange={setStartValue}
                       type="number"
                       step="any"
                     />
                     <Field
-                      label="Target value"
+                      label={selectedMeasurement.targetLabel ?? "Target value"}
                       value={targetValue}
                       onChange={setTargetValue}
                       type="number"
@@ -631,7 +676,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                     </label>
                     <select
                       value={
-                        getCategory(category).unitOptions.includes(unit)
+                        selectedMeasurement.units.includes(unit)
                           ? unit
                           : "__custom"
                       }
@@ -642,26 +687,26 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                           setUnit(e.target.value);
                         }
                       }}
-                      className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                      className="workspace-input px-3 py-3"
                     >
-                      {getCategory(category).unitOptions.map((u) => (
+                      {selectedMeasurement.units.map((u) => (
                         <option key={u} value={u}>
                           {cap(u)}
                         </option>
                       ))}
-                      {!getCategory(category).unitOptions.includes(unit) && unit && (
+                      {!selectedMeasurement.units.includes(unit) && unit && (
                         <option value="__custom">{cap(unit)} (custom)</option>
                       )}
-                      <option value="__custom">Custom…</option>
+                      {selectedMeasurement.allowsCustomUnit ? <option value="__custom">Custom…</option> : null}
                     </select>
-                    {!getCategory(category).unitOptions.includes(unit) && (
+                    {selectedMeasurement.allowsCustomUnit && !selectedMeasurement.units.includes(unit) && (
                       <input
                         type="text"
                         value={unit}
                         onChange={(e) => setUnit(e.target.value)}
                         placeholder="Type your unit…"
                         autoFocus
-                        className="mt-2 w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                        className="workspace-input mt-2 px-3 py-3"
                       />
                     )}
                   </div>
@@ -694,7 +739,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                             );
                           }}
                           maxLength={120}
-                          className="flex-1 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                          className="workspace-input flex-1 px-3 py-2.5"
                         />
                         <button
                           type="button"
@@ -761,12 +806,24 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
 
           {step === 4 && (
             <Step title="Would a target date help?">
-              <input
-                type="date"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3.5 text-base text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
-              />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  type="date"
+                  value={targetDate}
+                  onChange={(e) => setTargetDate(e.target.value)}
+                  className="workspace-input px-4 py-3.5"
+                />
+                {targetDate ? (
+                  <button
+                    type="button"
+                    onClick={() => setTargetDate("")}
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 border-b border-[var(--color-border-strong)] px-2 text-sm font-semibold text-[var(--color-text-muted)] transition hover:border-[var(--color-text)] hover:text-[var(--color-text)] active:translate-y-px"
+                  >
+                    <X size={15} aria-hidden />
+                    Remove date
+                  </button>
+                ) : null}
+              </div>
               <p className="mt-3 text-sm text-[var(--color-text-muted)]">
                 Optional. Leave this blank for an open-ended goal—you can add a
                 date later from goal settings.
@@ -785,7 +842,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 maxLength={3000}
                 placeholder="Write your story…"
                 rows={9}
-                className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-4 text-sm leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+                className="workspace-input resize-none px-4 py-4 leading-6"
               />
               <div className="mt-5 border-t border-[var(--color-border-subtle)] pt-5">
                 <AiAssistButton
@@ -836,7 +893,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                           active ? arr.filter((x) => x !== opt.id) : [...arr, opt.id]
                         );
                       }}
-                      className={`flex items-start gap-3 rounded-xl border p-3 text-left transition ${
+                      className={`flex items-start gap-3 rounded-[var(--workspace-radius)] border p-3 text-left transition ${
                         active
                           ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                           : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
@@ -868,7 +925,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   onChange={(e) => setSupporterTarget(e.target.value)}
                   placeholder="e.g. 50"
                   min={0}
-                  className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none"
+                  className="workspace-input px-3 py-3"
                 />
                 <p className="mt-1.5 text-xs text-[var(--color-text-dim)]">
                   Shown alongside goal progress. We wait until three people join your circle before showing the target.
@@ -883,7 +940,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 <button
                   type="button"
                   onClick={() => setVisibility("public")}
-                  className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
                     visibility === "public"
                       ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                       : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
@@ -903,7 +960,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 <button
                   type="button"
                   onClick={() => setVisibility("unlisted")}
-                  className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
                     visibility === "unlisted"
                       ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                       : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
@@ -923,7 +980,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                 <button
                   type="button"
                   onClick={() => setVisibility("private")}
-                  className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+                  className={`flex w-full items-start gap-3 rounded-[var(--workspace-radius)] border p-4 text-left transition ${
                     visibility === "private"
                       ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                       : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
@@ -943,7 +1000,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
               </div>
 
               <label
-                className={`mt-4 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                className={`mt-4 flex cursor-pointer items-start gap-3 rounded-[var(--workspace-radius)] border p-4 transition ${
                   isAnonymous
                     ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
                     : "border-[var(--color-border)] bg-white hover:border-[var(--color-primary)]"
@@ -1052,7 +1109,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
               <div className="mt-8 divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
                 <ReviewItem label="Goal" value={title || "Untitled goal"} onEdit={() => setStep(1)} />
                 <ReviewItem label="Category" value={CATEGORIES.find((item) => item.id === category)?.label ?? category} onEdit={() => setStep(0)} />
-                <ReviewItem label="Progress" value={PROGRESS_TEMPLATES.find((item) => item.id === progressType)?.label ?? progressType} onEdit={() => setStep(2)} />
+                <ReviewItem label="Measurement" value={selectedMeasurement.label} onEdit={() => setStep(2)} />
                 <ReviewItem
                   label="Target"
                   value={
@@ -1085,7 +1142,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
             type="button"
             onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--color-border-strong)] bg-white text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-30"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-[var(--workspace-radius)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Go back"
           >
             <ArrowLeft size={19} />
@@ -1183,7 +1240,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         step={step}
-        className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+        className="workspace-input px-3 py-3"
       />
     </div>
   );

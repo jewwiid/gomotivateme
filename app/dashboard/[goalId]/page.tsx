@@ -9,16 +9,14 @@ import {
   Check,
   Copy,
   ExternalLink,
+  Eye,
   Image as ImageIcon,
-  Link as LinkIcon,
-  MessageSquare,
   Pause,
   PauseCircle,
   PlayCircle,
   Plus,
   Send,
   Trash2,
-  TrendingUp,
   Trophy,
   X,
   CheckCircle2,
@@ -28,10 +26,14 @@ import {
   Flame,
   ListChecks,
   Loader2,
+  Pencil,
+  UserRound,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
@@ -41,10 +43,12 @@ import { UpdateCard } from "@/components/UpdateCard";
 import { MilestonesList } from "@/components/MilestonesList";
 import {
   OwnerGoalWorkspace,
+  titleCase,
   type OwnerUpdateKind,
 } from "@/components/OwnerGoalWorkspace";
 import { formatDate, formatNumber, relativeTime } from "@/lib/format";
 import { getDefaultMilestones } from "@/lib/categories";
+import { getMeasurementsForCategory } from "@/lib/goalMeasurementCatalog";
 import { prepareProgressImage } from "@/lib/media";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
@@ -57,6 +61,15 @@ import {
   aiAssistantErrorMessage,
   type AiSuggestion,
 } from "@/lib/aiAssistant";
+
+function targetDateInputValue(timestamp?: number) {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function GoalDetailPage() {
   const searchParams = useSearchParams();
@@ -116,7 +129,6 @@ function GoalDetailDesignPreview() {
       <OwnerGoalWorkspace
         goal={previewGoal}
         coverUrl="/illustrations/hero-community-v3.webp"
-        owner={{ name: "Jude Okun" }}
         progress={25}
         publicUrl={publicUrl}
         linkCopied={copied}
@@ -208,7 +220,7 @@ function GoalDetailContent() {
   );
   const updateImageUrlOf = (imageId: Id<"_storage">) => updateImageUrls?.[imageId] ?? null;
 
-  const [showUpdate, setShowUpdate] = useState<null | "note" | "media" | "link" | "value" | "milestone" | "streak">(null);
+  const [showUpdate, setShowUpdate] = useState<OwnerUpdateKind | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
 
@@ -300,7 +312,6 @@ function GoalDetailContent() {
       <OwnerGoalWorkspace
         goal={goal}
         coverUrl={coverUrl}
-        owner={{ name: ownerName, image: user?.image ?? null }}
         progress={progress}
         publicUrl={publicUrl}
         linkCopied={linkCopied}
@@ -311,7 +322,6 @@ function GoalDetailContent() {
         onCopyLink={onCopyLink}
         onOpenUpdate={(kind: OwnerUpdateKind) => setShowUpdate(kind)}
         onPostUpdate={postQuickUpdate}
-        onQuickIncrement={async (delta) => { await quickIncrement({ goalId, delta }); }}
         onUndoUpdate={(updateId) => {
           const reason = prompt("Why are you undoing this? (optional)");
           if (reason === null) return; // user cancelled
@@ -424,6 +434,7 @@ function GoalDetailContent() {
               direction={goal.direction}
               progressType={goal.progressType}
               category={goal.category}
+              targetDate={goal.targetDate}
               supporterCount={goal.supporterCount ?? 0}
               currentValue={goal.currentValue ?? 0}
               onDeleted={() => router.push("/dashboard")}
@@ -447,6 +458,14 @@ function GoalDetailContent() {
             goalTitle={goal.title}
             unit={goal.unit}
             milestones={goal.milestones ?? []}
+            quickDelta={goal.direction === "decrease" ? -1 : 1}
+            onSelectType={setShowUpdate}
+            onQuickIncrement={async () => {
+              await quickIncrement({
+                goalId,
+                delta: goal.direction === "decrease" ? -1 : 1,
+              });
+            }}
             onClose={() => setShowUpdate(null)}
           />
         ) : null}
@@ -458,10 +477,10 @@ function GoalDetailContent() {
 function StatusPill({ status }: { status: string }) {
   const meta: Record<string, { label: string; color: string; icon: any }> = {
     active: { label: "Active", color: "bg-[var(--color-success-soft)] text-[var(--color-success-text)] border-[var(--color-success)]", icon: PlayCircle },
-    paused: { label: "Paused", color: "bg-[var(--color-warning)] 500/15 text-[var(--color-warning)] 400 border-[var(--color-warning)] 500/30", icon: Pause },
+    paused: { label: "Paused", color: "bg-[var(--color-warning-soft)] text-[var(--color-warning-text)] border-[var(--color-warning)]", icon: Pause },
     completed: { label: "Completed", color: "bg-[var(--color-success-soft)] text-[var(--color-success-text)] border-[var(--color-success)]", icon: CheckCircle2 },
-    closed: { label: "Closed", color: "bg-[var(--color-text-dim)] text-[var(--color-text-dim)] border-[var(--color-border-strong)]", icon: Archive },
-    draft: { label: "Draft", color: "bg-[var(--color-text-dim)] text-[var(--color-text-dim)] border-[var(--color-border-strong)]", icon: Archive },
+    closed: { label: "Closed", color: "bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)] border-[var(--color-border-strong)]", icon: Archive },
+    draft: { label: "Draft", color: "bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)] border-[var(--color-border-strong)]", icon: Archive },
   };
   const m = meta[status] ?? meta.active;
   const Icon = m.icon;
@@ -470,6 +489,90 @@ function StatusPill({ status }: { status: string }) {
       <Icon size={11} />
       {m.label}
     </span>
+  );
+}
+
+function ViewportModal({
+  children,
+  onClose,
+  ariaLabel,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+  ariaLabel: string;
+}) {
+  const [portalReady, setPortalReady] = useState(false);
+  const [viewport, setViewport] = useState({ height: 0, offsetTop: 0 });
+
+  useEffect(() => {
+    setPortalReady(true);
+
+    const visualViewport = window.visualViewport;
+    const syncViewport = () => {
+      setViewport({
+        height: visualViewport?.height ?? window.innerHeight,
+        offsetTop: visualViewport?.offsetTop ?? 0,
+      });
+    };
+
+    syncViewport();
+    visualViewport?.addEventListener("resize", syncViewport);
+    visualViewport?.addEventListener("scroll", syncViewport);
+    window.addEventListener("resize", syncViewport);
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      visualViewport?.removeEventListener("resize", syncViewport);
+      visualViewport?.removeEventListener("scroll", syncViewport);
+      window.removeEventListener("resize", syncViewport);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  if (!portalReady) return null;
+
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={ariaLabel}
+      className="fixed inset-x-0 z-[100] flex items-center justify-center overflow-hidden bg-black/60 px-3 sm:px-4"
+      style={{
+        top: viewport.offsetTop,
+        height: viewport.height ? `${viewport.height}px` : "100dvh",
+        paddingTop: "max(0.75rem, env(safe-area-inset-top))",
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 18, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+        className="workspace-card max-h-full w-full max-w-md overflow-y-auto overscroll-contain p-5"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {children}
+      </motion.div>
+    </motion.div>,
+    document.body
   );
 }
 
@@ -497,20 +600,7 @@ function StatusModal({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ y: 30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 30, opacity: 0 }}
-        className="w-full max-w-md workspace-card p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ViewportModal onClose={onClose} ariaLabel="Campaign status">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Campaign status</h3>
           <button
@@ -538,9 +628,9 @@ function StatusModal({
             <button
               onClick={() => transition("paused", reason || "Taking a break")}
               disabled={busy}
-              className="w-full workspace-card-soft p-3 text-left text-sm font-medium transition hover:border-[var(--color-warning)] 500/40 disabled:opacity-50"
+              className="w-full workspace-card-soft p-3 text-left text-sm font-medium transition hover:border-[var(--color-warning)] disabled:opacity-50"
             >
-              <Pause size={14} className="mr-2 inline text-[var(--color-warning)] 400" />
+              <Pause size={14} className="mr-2 inline text-[var(--color-warning-text)]" />
               Pause the campaign
             </button>
             <input
@@ -567,8 +657,7 @@ function StatusModal({
             </button>
           </div>
         )}
-      </motion.div>
-    </motion.div>
+    </ViewportModal>
   );
 }
 
@@ -716,39 +805,46 @@ function UpdateModal({
   goalTitle,
   unit,
   milestones,
+  quickDelta,
+  onSelectType,
+  onQuickIncrement,
   onClose,
 }: {
-  type: "note" | "media" | "link" | "value" | "milestone" | "streak";
+  type: OwnerUpdateKind;
   goalId: Id<"goals">;
   goalTitle: string;
   unit: string;
   milestones: any[];
+  quickDelta: -1 | 1;
+  onSelectType: (type: OwnerUpdateKind) => void;
+  onQuickIncrement: () => Promise<void>;
   onClose: () => void;
 }) {
+  const canReturnToProgress = type === "value";
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ y: 30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 30, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 320, damping: 28 }}
-        className="w-full max-w-md workspace-card p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">
+    <ViewportModal onClose={onClose} ariaLabel="Goal update">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {canReturnToProgress ? (
+              <button
+                type="button"
+                onClick={() => onSelectType("progress")}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)] active:translate-y-px"
+                aria-label="Back to progress options"
+              >
+                <ArrowLeft size={16} />
+              </button>
+            ) : null}
+            <h3 className="truncate text-lg font-semibold">
+            {type === "progress" && "Log progress"}
             {type === "note" && "Add a note"}
             {type === "media" && "Share progress media"}
             {type === "link" && "Add a link"}
             {type === "value" && `New ${unit} value`}
             {type === "milestone" && "Mark milestone done"}
-          </h3>
+            {type === "streak" && "Mark today"}
+            </h3>
+          </div>
           <button
             onClick={onClose}
             className="rounded-md p-1.5 text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
@@ -757,6 +853,15 @@ function UpdateModal({
             <X size={16} />
           </button>
         </div>
+        {type === "progress" && (
+          <ProgressActionPicker
+            unit={unit}
+            quickDelta={quickDelta}
+            onChoose={onSelectType}
+            onQuickIncrement={onQuickIncrement}
+            onDone={onClose}
+          />
+        )}
         {type === "note" && (
           <NoteForm goalId={goalId} goalTitle={goalTitle} onDone={onClose} />
         )}
@@ -767,8 +872,73 @@ function UpdateModal({
         {type === "milestone" && (
           <MilestoneForm goalId={goalId} milestones={milestones} onDone={onClose} />
         )}
-      </motion.div>
-    </motion.div>
+    </ViewportModal>
+  );
+}
+
+function ProgressActionPicker({
+  unit,
+  quickDelta,
+  onChoose,
+  onQuickIncrement,
+  onDone,
+}: {
+  unit: string;
+  quickDelta: -1 | 1;
+  onChoose: (type: OwnerUpdateKind) => void;
+  onQuickIncrement: () => Promise<void>;
+  onDone: () => void;
+}) {
+  const [incrementing, setIncrementing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const increment = async () => {
+    if (incrementing) return;
+    setIncrementing(true);
+    setError(null);
+    try {
+      await onQuickIncrement();
+      onDone();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not update progress");
+    } finally {
+      setIncrementing(false);
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-sm leading-6 text-[var(--color-text-muted)]">
+        Choose a quick adjustment or enter the current value.
+      </p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={increment}
+          disabled={incrementing}
+          className="rounded-[var(--workspace-radius)] border border-[var(--color-border-strong)] p-4 text-left transition hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] active:translate-y-px disabled:opacity-50"
+        >
+          <Plus size={18} className="text-[var(--color-primary)]" aria-hidden />
+          <span className="mt-3 block text-sm font-bold text-[var(--color-text)]">
+            {incrementing ? "Updating…" : `Quick ${quickDelta > 0 ? "+1" : "−1"}`}
+          </span>
+          <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
+            {quickDelta > 0 ? "Add" : "Subtract"} one {unit}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onChoose("value")}
+          className="rounded-[var(--workspace-radius)] border border-[var(--color-border-strong)] p-4 text-left transition hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] active:translate-y-px"
+        >
+          <BarChart3 size={18} className="text-[var(--color-primary)]" aria-hidden />
+          <span className="mt-3 block text-sm font-bold text-[var(--color-text)]">Enter value</span>
+          <span className="mt-1 block text-xs text-[var(--color-text-muted)]">Set the current {unit}</span>
+        </button>
+      </div>
+
+      {error ? <p className="mt-3 text-sm text-[var(--color-danger)]">{error}</p> : null}
+    </div>
   );
 }
 
@@ -1270,6 +1440,7 @@ function GoalSettings({
   direction,
   progressType,
   category,
+  targetDate,
   supporterCount,
   currentValue,
   onDeleted,
@@ -1289,6 +1460,7 @@ function GoalSettings({
   direction?: "increase" | "decrease";
   progressType?: string;
   category?: string;
+  targetDate?: number;
   supporterCount: number;
   currentValue: number;
   onDeleted: () => void;
@@ -1310,7 +1482,7 @@ function GoalSettings({
   const [draftSupporterTarget, setDraftSupporterTarget] = useState<string>(
     supporterTarget?.toString() ?? ""
   );
-  const [draftVisibility, setDraftVisibility] = useState<"public" | "unlisted">(
+  const [draftVisibility, setDraftVisibility] = useState<"public" | "unlisted" | "private">(
     (visibility as any) ?? "public"
   );
   const [draftIsAnonymous, setDraftIsAnonymous] = useState<boolean>(
@@ -1326,6 +1498,8 @@ function GoalSettings({
   const [draftDirection, setDraftDirection] = useState<"increase" | "decrease">(
     direction ?? "increase"
   );
+  const targetDateValue = targetDateInputValue(targetDate);
+  const [draftTargetDate, setDraftTargetDate] = useState(targetDateValue);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -1371,6 +1545,7 @@ function GoalSettings({
       const parsedStartValue = canEditTargetFields && !targetFieldsLocked && draftStartValue !== ""
         ? parseFloat(draftStartValue)
         : undefined;
+      const targetDateChanged = draftTargetDate !== targetDateValue;
       await updateGoal({
         goalId,
         title: draftTitle,
@@ -1384,7 +1559,13 @@ function GoalSettings({
         startValue: parsedStartValue,
         unit: canEditTargetFields && !targetFieldsLocked && draftUnit !== "" ? draftUnit : undefined,
         direction: canEditTargetFields && !targetFieldsLocked ? draftDirection : undefined,
+        targetDate:
+          targetDateChanged && draftTargetDate
+            ? new Date(`${draftTargetDate}T12:00:00`).getTime()
+            : undefined,
+        clearTargetDate: targetDateChanged && !draftTargetDate ? true : undefined,
       });
+      setPreview(null);
       setEditing(false);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not save");
@@ -1418,6 +1599,7 @@ function GoalSettings({
     setDraftStartValue(startValue?.toString() ?? "");
     setDraftUnit(unit ?? "");
     setDraftDirection(direction ?? "increase");
+    setDraftTargetDate(targetDateValue);
     setEditing(true);
   };
 
@@ -1425,320 +1607,359 @@ function GoalSettings({
     preview ??
     (draftCover ? coverUrl?.[draftCover] : null) ??
     (coverImageId ? coverUrl?.[coverImageId] : null);
+  const progressTypeLabel =
+    progressType === "streak"
+      ? "Daily streak"
+      : progressType === "milestones"
+      ? "Milestone checklist"
+      : "Number target";
+  const visibilityLabel =
+    visibility === "public"
+      ? "Public"
+      : visibility === "unlisted"
+      ? "Unlisted"
+      : "Private";
+  const fieldClass =
+    "workspace-input min-h-11 px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <motion.section
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.05 }}
-      className="mt-6 workspace-card p-5"
+      className="workspace-card mt-6 overflow-hidden"
     >
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-          Public page
-        </h2>
+      <header className="flex flex-col gap-4 border-b border-[var(--color-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div>
+          <p className="workspace-eyebrow">Public page</p>
+          <h2 className="mt-1 text-xl font-bold tracking-[-0.025em] text-[var(--color-text)]">
+            How your goal appears
+          </h2>
+          <p className="mt-1 max-w-[58ch] text-sm leading-6 text-[var(--color-text-muted)]">
+            Shape the story people see and decide how they can find it.
+          </p>
+        </div>
         {!editing ? (
           <button
+            type="button"
             onClick={startEditing}
-            className="text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-soft)]"
+            className="workspace-button-secondary min-h-10 w-auto self-start px-4 sm:self-auto"
           >
+            <Pencil size={14} aria-hidden />
             Edit
           </button>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
+              type="button"
               onClick={() => {
                 setEditing(false);
                 setPreview(null);
               }}
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              className="workspace-button-secondary min-h-10 w-auto px-4"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={onSave}
               disabled={busy || !draftTitle.trim()}
-              className="rounded-md bg-[var(--color-accent)] px-3 py-1 text-xs font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
+              className="workspace-button-primary min-h-10 w-auto px-5 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {busy ? "Saving..." : "Save"}
+              <Check size={14} aria-hidden />
+              {busy ? "Saving…" : "Save changes"}
             </button>
           </div>
         )}
-      </div>
+      </header>
 
-      <div className="mb-4">
-        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-          Cover photo
-        </label>
-        <div
-          onClick={() => editing && fileInput.current?.click()}
-          className={`relative aspect-[3/1] w-full overflow-hidden rounded-xl border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] ${
-            editing ? "cursor-pointer transition hover:border-[var(--color-accent)]" : ""
-          }`}
-        >
-          {currentCoverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={currentCoverUrl}
-              alt="Cover"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-xs text-[var(--color-text-dim)]">
-              {editing ? "Click to upload a cover photo" : "No cover photo yet"}
-            </div>
-          )}
-        </div>
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0] ?? null;
-            if (f) {
-              if (preview) URL.revokeObjectURL(preview);
-              setPreview(URL.createObjectURL(f));
-              onUploadCover(f);
-            }
-          }}
-        />
-      </div>
-
-      <div className="mb-3">
-        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-          Title
-        </label>
-        {editing ? (
-          <input
-            value={draftTitle}
-            onChange={(e) => setDraftTitle(e.target.value)}
-            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
-          />
-        ) : (
-          <p className="text-sm text-[var(--color-text)]">{title}</p>
-        )}
-      </div>
-
-      <div className="mb-3">
-        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-          One-line pitch
-        </label>
-        {editing ? (
-          <input
-            value={draftSummary}
-            onChange={(e) => setDraftSummary(e.target.value)}
-            placeholder="Short, punchy summary for the homepage card"
-            className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
-          />
-        ) : (
-          <p className="text-sm text-[var(--color-text-muted)]">{summary || "—"}</p>
-        )}
-      </div>
-
-      <div className="mb-3">
-        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-          Why this matters
-        </label>
-        {editing ? (
-          <textarea
-            value={draftStory}
-            onChange={(e) => setDraftStory(e.target.value)}
-            rows={5}
-            placeholder="Tell your story. Why this goal? What does hitting it mean?"
-            className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
-          />
-        ) : (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text-muted)]">
-            {story || "—"}
+      <div className="px-5 sm:px-6">
+        {err ? (
+          <p className="mt-5 border-l-2 border-[var(--color-danger)] pl-3 text-sm text-[var(--color-danger-text)]">
+            {err}
           </p>
-        )}
-      </div>
+        ) : null}
 
-      <div className="mb-3 grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-            Supporter target
-          </label>
-          {editing ? (
-            <input
-              type="number"
-              value={draftSupporterTarget}
-              onChange={(e) => setDraftSupporterTarget(e.target.value)}
-              placeholder="e.g. 50"
-              min={0}
-              className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
-            />
-          ) : (
-            <p className="text-sm text-[var(--color-text)]">
-              {supporterTarget ?? <span className="text-[var(--color-text-dim)]">not set</span>}
-            </p>
-          )}
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-            Visibility
-          </label>
-          {editing ? (
-            <select
-              value={draftVisibility}
-              onChange={(e) => setDraftVisibility(e.target.value as any)}
-              className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
-            >
-              <option value="public">Public (indexed)</option>
-              <option value="unlisted">Unlisted (link only)</option>
-            </select>
-          ) : (
-            <p className="text-sm text-[var(--color-text)] capitalize">{visibility}</p>
-          )}
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-            Anonymous
-          </label>
-          {editing ? (
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={draftIsAnonymous}
-                onChange={(e) => setDraftIsAnonymous(e.target.checked)}
-                className="h-4 w-4 rounded border-[var(--color-border-strong)] text-[var(--color-primary)] focus:ring-[var(--color-accent)]"
-              />
-              <span className="text-sm text-[var(--color-text)]">
-                Hide my name, avatar, and profile link
-              </span>
-            </label>
-          ) : (
-            <p className="text-sm text-[var(--color-text)]">
-              {isAnonymous ? "Yes (name hidden)" : "No"}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Progress type switcher — only when goal has no traction */}
-      <ProgressTypeSwitcher
-        goalId={goalId}
-        currentType={progressType ?? "number"}
-        hasTraction={hasTraction}
-        supporterCount={supporterCount}
-        changeProgressType={changeProgressType}
-        editing={editing}
-        category={category ?? "personal"}
-      />
-
-      {canEditTargetFields && (
-        <div className="mb-3">
-          {targetFieldsLocked && (
-            <div className="mb-2 flex items-start gap-2 rounded-lg border border-[var(--color-gold-soft)] bg-[var(--color-gold-soft)] px-3 py-2 text-xs text-[var(--color-gold-text)]">
-              <LockIcon size={12} className="mt-0.5 shrink-0" />
-              <span>
-                Target value, start value, unit, and direction are locked because this goal
-                {supporterCount > 0 ? ` has ${supporterCount} supporter${supporterCount === 1 ? "" : "s"}` : " has logged progress"}.
-                Close this goal and create a new one to change these.
-              </span>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-                Target value
-              </label>
-              {editing ? (
-                <input
-                  type="number"
-                  step="any"
-                  value={draftTargetValue}
-                  onChange={(e) => setDraftTargetValue(e.target.value)}
-                  placeholder="e.g. 100"
-                  disabled={targetFieldsLocked}
-                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        {!editing ? (
+          <>
+            <figure className="relative mt-6 overflow-hidden rounded-[var(--workspace-radius)] border border-[var(--color-border)] bg-[var(--color-bg-elev)]">
+              {currentCoverUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={currentCoverUrl}
+                  alt="Goal cover"
+                  className="aspect-[16/6] max-h-[25rem] min-h-48 w-full object-cover sm:aspect-[16/5]"
                 />
               ) : (
-                <p className="text-sm text-[var(--color-text)]">
-                  {targetValue ?? <span className="text-[var(--color-text-dim)]">—</span>}
-                </p>
+                <div className="grid aspect-[16/5] min-h-48 place-items-center">
+                  <div className="text-center">
+                    <ImageIcon className="mx-auto text-[var(--color-text-dim)]" size={24} aria-hidden />
+                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">No cover image yet</p>
+                  </div>
+                </div>
               )}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-                Start value
-              </label>
-              {editing ? (
-                <input
-                  type="number"
-                  step="any"
-                  value={draftStartValue}
-                  onChange={(e) => setDraftStartValue(e.target.value)}
-                  placeholder="e.g. 0"
-                  disabled={targetFieldsLocked}
-                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              ) : (
-                <p className="text-sm text-[var(--color-text)]">
-                  {startValue ?? <span className="text-[var(--color-text-dim)]">0</span>}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-                Unit
-              </label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={draftUnit}
-                  onChange={(e) => setDraftUnit(e.target.value)}
-                  placeholder="e.g. kg, books, runs"
-                  disabled={targetFieldsLocked}
-                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              ) : (
-                <p className="text-sm text-[var(--color-text)]">
-                  {unit || <span className="text-[var(--color-text-dim)]">—</span>}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-muted)]">
-                Direction
-              </label>
-              {editing ? (
-                <select
-                  value={draftDirection}
-                  onChange={(e) => setDraftDirection(e.target.value as "increase" | "decrease")}
-                  disabled={targetFieldsLocked}
-                  className="w-full rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="increase">Increase</option>
-                  <option value="decrease">Decrease</option>
-                </select>
-              ) : (
-                <p className="text-sm text-[var(--color-text)] capitalize">
-                  {direction ?? "increase"}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+              <figcaption className="absolute bottom-3 left-3 rounded-full border border-white/25 bg-[var(--color-text)]/80 px-3 py-1 font-mono text-[10px] text-white backdrop-blur-sm">
+                Cover image
+              </figcaption>
+            </figure>
 
-      {/* Delete goal */}
-      <div className="mt-6 border-t border-[var(--color-border)] pt-5">
-        {!confirmingDelete ? (
-          <button
-            onClick={() => setConfirmingDelete(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-danger)] px-4 py-2 text-xs font-semibold text-[var(--color-danger-text)] transition hover:bg-[var(--color-danger-soft)]"
-          >
-            <Trash2 size={12} />
-            Delete goal
-          </button>
+            <div className="grid gap-8 py-7 lg:grid-cols-[minmax(0,1.55fr)_minmax(17rem,0.65fr)] lg:gap-12">
+              <article>
+                <p className="workspace-eyebrow">Goal page copy</p>
+                <h3 className="mt-2 max-w-[24ch] text-2xl font-bold tracking-[-0.035em] text-[var(--color-text)] sm:text-3xl">
+                  {title}
+                </h3>
+                <p className="mt-3 max-w-[62ch] text-base leading-7 text-[var(--color-text-secondary)]">
+                  {summary || "No one-line pitch has been added yet."}
+                </p>
+                <div className="mt-7 border-t border-[var(--color-border)] pt-5">
+                  <p className="workspace-eyebrow">Why this matters</p>
+                  <p className="mt-2 max-w-[72ch] whitespace-pre-wrap text-sm leading-7 text-[var(--color-text-muted)]">
+                    {story || "Add the reason behind this goal so people know what they are showing up for."}
+                  </p>
+                </div>
+              </article>
+
+              <div className="grid grid-cols-2 content-start gap-x-6 gap-y-6 border-t border-[var(--color-border)] pt-6 lg:grid-cols-1 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+                <SettingsReadout
+                  icon={Calendar}
+                  label="Target date"
+                  value={targetDate ? formatDate(targetDate) : "Open-ended"}
+                />
+                <SettingsReadout
+                  icon={Users}
+                  label="Supporter target"
+                  value={supporterTarget ? `${supporterTarget} people` : "No target"}
+                />
+                <SettingsReadout icon={Eye} label="Visibility" value={visibilityLabel} />
+                <SettingsReadout
+                  icon={UserRound}
+                  label="Identity"
+                  value={isAnonymous ? "Anonymous" : "Name shown"}
+                />
+              </div>
+            </div>
+
+            <section className="border-t border-[var(--color-border)] py-7">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                <div>
+                  <p className="workspace-eyebrow">Progress tracking</p>
+                  <h3 className="mt-1 text-lg font-bold tracking-[-0.02em] text-[var(--color-text)]">
+                    {progressTypeLabel}
+                  </h3>
+                </div>
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  {supportTypes.length
+                    ? `Support: ${supportTypes.map(titleCase).join(" · ")}`
+                    : "General encouragement"}
+                </p>
+              </div>
+              <div className="mt-5 grid grid-cols-2 border-y border-[var(--color-border)] sm:grid-cols-4 sm:divide-x sm:divide-[var(--color-border)]">
+                <SettingsMetric label="Start" value={formatNumber(startValue ?? 0)} />
+                <SettingsMetric label="Current" value={formatNumber(currentValue)} />
+                <SettingsMetric label="Target" value={targetValue !== undefined ? formatNumber(targetValue) : "—"} />
+                <SettingsMetric label="Unit" value={unit || (progressType === "streak" ? "days" : "steps")} />
+              </div>
+            </section>
+          </>
         ) : (
-          <div className="rounded-xl border border-[var(--color-danger)] bg-[var(--color-danger-soft)] p-4">
-            <p className="text-sm font-medium text-[var(--color-danger-text)]">
+          <>
+            <section className="py-6">
+              <div className="mb-3 flex items-end justify-between gap-4">
+                <div>
+                  <p className="workspace-eyebrow">Cover image</p>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">Choose an image that makes the goal immediately understandable.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                className="group relative block aspect-[16/6] max-h-[25rem] min-h-48 w-full overflow-hidden rounded-[var(--workspace-radius)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] text-left transition hover:border-[var(--color-primary)] active:translate-y-px sm:aspect-[16/5]"
+              >
+                {currentCoverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={currentCoverUrl} alt="Goal cover preview" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="grid h-full place-items-center text-center text-sm text-[var(--color-text-muted)]">
+                    <span>Upload a cover image</span>
+                  </div>
+                )}
+                <span className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full bg-[var(--color-text)] px-3 py-2 text-xs font-bold text-white transition group-hover:bg-[var(--color-primary)]">
+                  <ImageIcon size={14} aria-hidden />
+                  {currentCoverUrl ? "Replace image" : "Choose image"}
+                </span>
+              </button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  if (!file) return;
+                  if (preview) URL.revokeObjectURL(preview);
+                  setPreview(URL.createObjectURL(file));
+                  void onUploadCover(file);
+                }}
+              />
+            </section>
+
+            <section className="border-t border-[var(--color-border)] py-7">
+              <SectionHeading eyebrow="Page copy" title="Tell people what this goal means" />
+              <div className="mt-5 grid gap-5">
+                <SettingsField label="Title">
+                  <input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} className={fieldClass} />
+                </SettingsField>
+                <SettingsField label="One-line pitch" helper="Used on your public goal card.">
+                  <input
+                    value={draftSummary}
+                    onChange={(event) => setDraftSummary(event.target.value)}
+                    placeholder="A clear, specific summary"
+                    className={fieldClass}
+                  />
+                </SettingsField>
+                <SettingsField label="Why this matters" helper="Give supporters the human reason behind the target.">
+                  <textarea
+                    value={draftStory}
+                    onChange={(event) => setDraftStory(event.target.value)}
+                    rows={5}
+                    placeholder="Why this goal, and what would reaching it change?"
+                    className={`${fieldClass} min-h-32 resize-y leading-6`}
+                  />
+                </SettingsField>
+              </div>
+            </section>
+
+            <section className="border-t border-[var(--color-border)] py-7">
+              <SectionHeading eyebrow="Publishing" title="Control who can see and support it" />
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <SettingsField label="Supporter target" helper="Optional number of people you hope will show up.">
+                  <input
+                    type="number"
+                    value={draftSupporterTarget}
+                    onChange={(event) => setDraftSupporterTarget(event.target.value)}
+                    placeholder="No target"
+                    min={0}
+                    className={fieldClass}
+                  />
+                </SettingsField>
+                <SettingsField label="Target date" helper={draftTargetDate ? undefined : "Open-ended goal"}>
+                  <input
+                    type="date"
+                    value={draftTargetDate}
+                    onChange={(event) => setDraftTargetDate(event.target.value)}
+                    className={fieldClass}
+                  />
+                  {draftTargetDate ? (
+                    <button
+                      type="button"
+                      onClick={() => setDraftTargetDate("")}
+                      className="mt-1 inline-flex min-h-8 items-center gap-1 text-xs font-semibold text-[var(--color-text-muted)] transition hover:text-[var(--color-text)] active:translate-y-px"
+                    >
+                      <X size={13} aria-hidden />
+                      Remove date
+                    </button>
+                  ) : null}
+                </SettingsField>
+                <SettingsField label="Visibility" helper="Private goals are visible only to you.">
+                  <select
+                    value={draftVisibility}
+                    onChange={(event) => setDraftVisibility(event.target.value as "public" | "unlisted" | "private")}
+                    className={fieldClass}
+                  >
+                    <option value="public">Public — searchable</option>
+                    <option value="unlisted">Unlisted — link only</option>
+                    <option value="private">Private — only me</option>
+                  </select>
+                </SettingsField>
+                <SettingsField label="Identity" helper="Anonymous goals hide your name, avatar, and profile link.">
+                  <label className="flex min-h-11 cursor-pointer items-center gap-3 border-y border-[var(--color-border)] py-2 text-sm text-[var(--color-text)]">
+                    <input
+                      type="checkbox"
+                      checked={draftIsAnonymous}
+                      onChange={(event) => setDraftIsAnonymous(event.target.checked)}
+                      className="h-4 w-4 rounded border-[var(--color-border-strong)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                    />
+                    Publish this goal anonymously
+                  </label>
+                </SettingsField>
+              </div>
+            </section>
+
+            <section className="border-t border-[var(--color-border)] py-7">
+              <SectionHeading eyebrow="Progress tracking" title="Define what moving forward means" />
+              <div className="mt-5">
+                <ProgressTypeSwitcher
+                  goalId={goalId}
+                  currentType={progressType ?? "number"}
+                  hasTraction={hasTraction}
+                  supporterCount={supporterCount}
+                  changeProgressType={changeProgressType}
+                  editing
+                  category={category ?? "personal"}
+                />
+              </div>
+
+              {canEditTargetFields ? (
+                <div className="mt-5">
+                  {targetFieldsLocked ? (
+                    <div className="mb-5 flex items-start gap-3 border-y border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-3 text-sm leading-6 text-[var(--color-text-muted)]">
+                      <LockIcon size={15} className="mt-1 shrink-0 text-[var(--color-text-secondary)]" aria-hidden />
+                      <span>
+                        These measurement fields are locked because this goal
+                        {supporterCount > 0
+                          ? ` has ${supporterCount} supporter${supporterCount === 1 ? "" : "s"}`
+                          : " has logged progress"}.
+                        Close it and create a new goal to change the measurement itself.
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <SettingsField label="Target value">
+                      <input type="number" step="any" value={draftTargetValue} onChange={(event) => setDraftTargetValue(event.target.value)} placeholder="100" disabled={targetFieldsLocked} className={fieldClass} />
+                    </SettingsField>
+                    <SettingsField label="Start value">
+                      <input type="number" step="any" value={draftStartValue} onChange={(event) => setDraftStartValue(event.target.value)} placeholder="0" disabled={targetFieldsLocked} className={fieldClass} />
+                    </SettingsField>
+                    <SettingsField label="Unit">
+                      <input value={draftUnit} onChange={(event) => setDraftUnit(event.target.value)} placeholder="lessons, books, kilometres" disabled={targetFieldsLocked} className={fieldClass} />
+                    </SettingsField>
+                    <SettingsField label="Direction">
+                      <select value={draftDirection} onChange={(event) => setDraftDirection(event.target.value as "increase" | "decrease")} disabled={targetFieldsLocked} className={fieldClass}>
+                        <option value="increase">Increase toward the target</option>
+                        <option value="decrease">Decrease toward the target</option>
+                      </select>
+                    </SettingsField>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          </>
+        )}
+
+        <section className="border-t border-[var(--color-border)] py-7">
+          {!confirmingDelete ? (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="workspace-eyebrow text-[var(--color-danger-text)]">Danger zone</p>
+              <h3 className="mt-1 text-base font-bold text-[var(--color-text)]">Delete this goal</h3>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Permanently removes its progress, updates, and supporter activity.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              className="inline-flex min-h-10 w-fit items-center gap-2 rounded-full border border-[var(--color-danger)] px-4 text-xs font-bold text-[var(--color-danger-text)] transition hover:bg-[var(--color-danger-soft)] active:translate-y-px"
+            >
+              <Trash2 size={13} aria-hidden />
+              Delete goal
+            </button>
+          </div>
+        ) : (
+          <div className="border-l-2 border-[var(--color-danger)] bg-[var(--color-danger-soft)] p-4 sm:p-5">
+            <p className="text-base font-bold text-[var(--color-danger-text)]">
               Delete this goal? This cannot be undone.
             </p>
-            <p className="mt-1 text-xs text-[var(--color-danger-text)]">
+            <p className="mt-1 text-sm text-[var(--color-danger-text)]">
               Type the goal title to confirm:
             </p>
             <input
@@ -1746,34 +1967,91 @@ function GoalSettings({
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder={title}
-              className="mt-2 w-full rounded-lg border border-[var(--color-danger)] bg-white px-3 py-2 text-sm text-[var(--color-text)] focus:border-[var(--color-danger)] focus:outline-none"
+              className="workspace-input mt-3 min-h-11 px-3 py-2.5 text-sm focus:border-[var(--color-danger)]"
             />
             <div className="mt-3 flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => {
                   setConfirmingDelete(false);
                   setDeleteConfirmText("");
                 }}
                 disabled={deleting}
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                className="workspace-button-secondary min-h-10 w-auto px-4"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={onDelete}
                 disabled={deleting || deleteConfirmText.trim() !== title.trim()}
-                className="rounded-md bg-[var(--color-danger)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-danger)] disabled:opacity-50"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[var(--color-danger)] px-4 text-xs font-bold text-white transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Trash2 size={12} className="mr-1 inline" />
-                {deleting ? "Deleting..." : "Delete forever"}
+                <Trash2 size={13} aria-hidden />
+                {deleting ? "Deleting…" : "Delete forever"}
               </button>
             </div>
           </div>
-        )}
+          )}
+        </section>
       </div>
-
-      {err && <p className="mt-3 text-xs text-[var(--color-danger)]">{err}</p>}
     </motion.section>
+  );
+}
+
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div>
+      <p className="workspace-eyebrow">{eyebrow}</p>
+      <h3 className="mt-1 text-lg font-bold tracking-[-0.02em] text-[var(--color-text)]">{title}</h3>
+    </div>
+  );
+}
+
+function SettingsField({
+  label,
+  helper,
+  children,
+}: {
+  label: string;
+  helper?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <span className="mb-2 block text-xs font-bold text-[var(--color-text-secondary)]">{label}</span>
+      {children}
+      {helper ? <span className="mt-1.5 block text-xs leading-5 text-[var(--color-text-dim)]">{helper}</span> : null}
+    </div>
+  );
+}
+
+function SettingsReadout({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Calendar;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <Icon size={17} strokeWidth={1.7} className="mt-0.5 shrink-0 text-[var(--color-primary)]" aria-hidden />
+      <div>
+        <p className="workspace-eyebrow">{label}</p>
+        <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function SettingsMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 px-3 py-4 first:pl-0 sm:px-5 sm:first:pl-0">
+      <p className="workspace-eyebrow">{label}</p>
+      <p className="mt-1 truncate font-mono text-base font-semibold text-[var(--color-text)]">{value}</p>
+    </div>
   );
 }
 
@@ -1807,44 +2085,45 @@ function ProgressTypeSwitcher({
     setSelectedType(currentType);
   }, [currentType]);
 
+  const currentTypeLabel =
+    currentType === "number"
+      ? "Number target"
+      : currentType === "streak"
+      ? "Daily streak"
+      : "Milestone checklist";
+
   if (!editing) {
     return (
-      <div className="mb-3">
-        <span className="text-xs font-medium text-[var(--color-text-muted)]">
-          Progress type
-        </span>
-        <p className="text-sm text-[var(--color-text)] capitalize">
-          {currentType === "number" ? "Number target" : currentType === "streak" ? "Daily streak" : "Milestone checklist"}
-        </p>
+      <div>
+        <span className="workspace-eyebrow">Progress type</span>
+        <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">{currentTypeLabel}</p>
       </div>
     );
   }
 
   if (hasTraction) {
     return (
-      <div className="mb-3">
-        <span className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
-          Progress type
-        </span>
-        <div className="flex items-start gap-2 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning-soft)] px-3 py-2 text-xs text-[var(--color-text-muted)]">
-          <LockIcon size={12} className="mt-0.5 shrink-0" />
-          <span>
-            Tracking method is locked because this goal
-            {supporterCount > 0
-              ? ` has ${supporterCount} supporter${supporterCount === 1 ? "" : "s"}`
-              : " has logged progress"}.
-            Close this goal and create a new one to change it.
+      <div>
+        <p className="workspace-eyebrow">Tracking method</p>
+        <div className="mt-2 flex items-center justify-between gap-4 border-y border-[var(--color-border)] py-3">
+          <span className="text-sm font-semibold text-[var(--color-text)]">{currentTypeLabel}</span>
+          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-[var(--color-text-muted)]">
+            <LockIcon size={12} aria-hidden />
+            Locked
           </span>
         </div>
       </div>
     );
   }
 
+  const allowedProgressTypes = new Set(
+    getMeasurementsForCategory(category).map((measurement) => measurement.progressType)
+  );
   const TYPES = [
     { id: "number", label: "Number target", icon: BarChart3 },
     { id: "streak", label: "Daily streak", icon: Flame },
     { id: "milestones", label: "Milestone checklist", icon: ListChecks },
-  ] as const;
+  ].filter((type) => allowedProgressTypes.has(type.id as "number" | "streak" | "milestones"));
 
   const onApply = async () => {
     if (selectedType === currentType) return;
@@ -1873,11 +2152,11 @@ function ProgressTypeSwitcher({
   };
 
   return (
-    <div className="mb-3">
-      <span className="mb-2 block text-xs font-medium text-[var(--color-text-muted)]">
+    <div>
+      <span className="mb-2 block workspace-eyebrow">
         Progress type
       </span>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 divide-y divide-[var(--color-border)] border-y border-[var(--color-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {TYPES.map((t) => {
           const Icon = t.icon;
           const active = selectedType === t.id;
@@ -1886,14 +2165,14 @@ function ProgressTypeSwitcher({
               key={t.id}
               type="button"
               onClick={() => setSelectedType(t.id)}
-              className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition ${
+              className={`flex items-center gap-2.5 px-3 py-3 text-left transition active:translate-y-px ${
                 active
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)]"
+                  ? "bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
+                  : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
               }`}
             >
               <Icon size={18} />
-              <span className="text-[11px] font-medium leading-tight">{t.label}</span>
+              <span className="text-xs font-bold leading-tight">{t.label}</span>
             </button>
           );
         })}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Copy, Share2 } from "lucide-react";
+import { Check, Heart, Share2 } from "lucide-react";
 
 export function StickyCta({
   goalId,
@@ -47,16 +47,16 @@ export function StickyCta({
       <div className="mx-auto flex max-w-2xl items-center gap-2">
         <button
           onClick={onShare}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)]"
+          className="workspace-button-secondary flex-1"
         >
           {copied ? <Check size={14} /> : <Share2 size={14} />}
           {copied ? "Link copied" : "Share"}
         </button>
         <button
           onClick={onCheerClick}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-bg-card)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-accent)]"
+          className="workspace-button-primary flex-1"
         >
-          <span aria-hidden>💪</span>
+          <Heart size={14} />
           Cheer {total > 0 && <span className="tabular-nums text-xs text-[var(--color-text-dim)]">· {total}</span>}
         </button>
       </div>

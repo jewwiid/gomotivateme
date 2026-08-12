@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as achievements from "../achievements.js";
 import type * as admin from "../admin.js";
 import type * as aiAssistant from "../aiAssistant.js";
 import type * as aiRateLimits from "../aiRateLimits.js";
@@ -19,9 +20,11 @@ import type * as emailsActions from "../emailsActions.js";
 import type * as follows from "../follows.js";
 import type * as goals from "../goals.js";
 import type * as http from "../http.js";
+import type * as insights from "../insights.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as linkPreview from "../linkPreview.js";
 import type * as linkPreviewData from "../linkPreviewData.js";
+import type * as migrations from "../migrations.js";
 import type * as moderation from "../moderation.js";
 import type * as motivation from "../motivation.js";
 import type * as notificationPrefs from "../notificationPrefs.js";
@@ -43,6 +46,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  achievements: typeof achievements;
   admin: typeof admin;
   aiAssistant: typeof aiAssistant;
   aiRateLimits: typeof aiRateLimits;
@@ -54,9 +58,11 @@ declare const fullApi: ApiFromModules<{
   follows: typeof follows;
   goals: typeof goals;
   http: typeof http;
+  insights: typeof insights;
   "lib/auth": typeof lib_auth;
   linkPreview: typeof linkPreview;
   linkPreviewData: typeof linkPreviewData;
+  migrations: typeof migrations;
   moderation: typeof moderation;
   motivation: typeof motivation;
   notificationPrefs: typeof notificationPrefs;

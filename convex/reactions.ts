@@ -85,6 +85,7 @@ async function maybeNotifyOwnerOfReaction(
     toEmail: owner.email,
     templateId: "newReaction",
     category: "lifecycle",
+    preferenceKey: "goalActivity",
     payload: JSON.stringify({
       ownerName,
       goalTitle: goal.title,

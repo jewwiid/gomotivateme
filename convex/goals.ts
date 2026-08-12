@@ -7,6 +7,12 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { buildSlug, computeProgress, newMilestoneTiers } from "./utils";
+import {
+  MEASUREMENT_VERSION,
+  getMeasurementMetric,
+  inferMeasurementMetric,
+  measurementAllowsUnit,
+} from "../lib/goalMeasurementCatalog";
 
 const CATEGORIES = [
   "health",
@@ -32,17 +38,51 @@ const SUPPORT_TYPES = [
   "join",
 ] as const;
 
+const DAY_MS = 86_400_000;
+const STREAK_ACHIEVEMENTS = [
+  { value: 1, title: "First day", description: "You showed up and started the streak." },
+  { value: 3, title: "Momentum", description: "Three days in a row." },
+  { value: 7, title: "One week strong", description: "Seven consecutive days of progress." },
+  { value: 14, title: "In rhythm", description: "Two weeks without missing a day." },
+  { value: 30, title: "A real habit", description: "Thirty consecutive days of progress." },
+  { value: 60, title: "Built to last", description: "Sixty days of consistent effort." },
+  { value: 100, title: "Century streak", description: "One hundred consecutive days." },
+  { value: 365, title: "A year of showing up", description: "A full year, one day at a time." },
+] as const;
+
+function safeTimezoneOffset(value: number | undefined) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(-840, Math.min(840, Math.round(value ?? 0)));
+}
+
+/** Date key in the browser convention where positive offsets are behind UTC. */
+function localDayKey(timestamp: number, offsetMinutes: number) {
+  return new Date(timestamp - offsetMinutes * 60_000).toISOString().slice(0, 10);
+}
+
+function withEffectiveStreak<T extends Record<string, any>>(goal: T): T {
+  if (goal.progressType !== "streak" || !goal.streakLastLoggedDay) return goal;
+  const offset = safeTimezoneOffset(goal.streakTimezoneOffsetMinutes);
+  const today = localDayKey(Date.now(), offset);
+  const yesterday = localDayKey(Date.now() - DAY_MS, offset);
+  if (goal.streakLastLoggedDay === today || goal.streakLastLoggedDay === yesterday) {
+    return goal;
+  }
+  return { ...goal, currentValue: 0, streakIsBroken: true };
+}
+
 /** List the owner's goals (dashboard). */
 export const listMine = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-    return ctx.db
+    const goals = await ctx.db
       .query("goals")
       .withIndex("by_owner_created", (q) => q.eq("ownerId", userId))
       .order("desc")
       .collect();
+    return goals.map(withEffectiveStreak);
   },
 });
 
@@ -54,7 +94,7 @@ export const getMine = query({
     if (!userId) return null;
     const goal = await ctx.db.get(goalId);
     if (!goal || goal.ownerId !== userId) return null;
-    return goal;
+    return withEffectiveStreak(goal);
   },
 });
 
@@ -65,6 +105,7 @@ export const create = mutation({
     summary: v.optional(v.string()),
     story: v.optional(v.string()),
     category: v.string(),
+    metricId: v.optional(v.string()),
     unit: v.string(),
     progressType: v.union(
       v.literal("number"),
@@ -75,6 +116,7 @@ export const create = mutation({
     targetValue: v.number(),
     direction: v.union(v.literal("increase"), v.literal("decrease")),
     targetDate: v.optional(v.number()),
+    tzOffsetMinutes: v.optional(v.number()),
     milestones: v.optional(
       v.array(
         v.object({
@@ -125,6 +167,15 @@ export const create = mutation({
       throw new Error("Invalid category");
     }
     const category = args.category;
+    const selectedMeasurement = args.metricId
+      ? getMeasurementMetric(category, args.metricId)
+      : inferMeasurementMetric(category, args.progressType, args.unit, args.direction);
+    if (!selectedMeasurement) {
+      throw new Error("Choose a measurement that belongs to this goal category");
+    }
+    if (selectedMeasurement.progressType !== args.progressType) {
+      throw new Error("That measurement does not match the selected progress style");
+    }
 
     const cleanTitle = args.title.trim();
     const cleanSummary = args.summary?.trim() || undefined;
@@ -156,12 +207,18 @@ export const create = mutation({
     let unit: string;
 
     if (args.progressType === "milestones") {
+      if ((args.milestones?.length ?? 0) === 0) {
+        throw new Error("Add at least one milestone");
+      }
       startValue = 0;
       currentValue = 0;
       targetValue = (args.milestones ?? []).length;
       direction = "increase";
       unit = "milestones";
     } else if (args.progressType === "streak") {
+      if (!Number.isInteger(args.targetValue) || args.targetValue <= 0) {
+        throw new Error("Streak targets must be a positive number of days");
+      }
       startValue = 0;
       currentValue = 0;
       targetValue = args.targetValue;
@@ -173,7 +230,19 @@ export const create = mutation({
       targetValue = args.targetValue;
       currentValue = startValue;
       direction = args.direction;
-      unit = args.unit;
+      unit = args.unit.trim();
+      if (!Number.isFinite(startValue) || !Number.isFinite(targetValue)) {
+        throw new Error("Starting and target values must be valid numbers");
+      }
+      if (!unit || unit.length > 40) {
+        throw new Error("Choose a valid unit");
+      }
+      if (!selectedMeasurement.directions.includes(direction)) {
+        throw new Error("That direction does not fit the selected measurement");
+      }
+      if (!measurementAllowsUnit(selectedMeasurement, unit)) {
+        throw new Error("That unit does not fit the selected measurement");
+      }
       if (startValue === targetValue) {
         throw new Error("Start and target must differ");
       }
@@ -245,6 +314,8 @@ export const create = mutation({
       summary: cleanSummary,
       story: cleanStory,
       category,
+      metricId: selectedMeasurement.id,
+      measurementVersion: MEASUREMENT_VERSION,
       unit,
       progressType: args.progressType,
       startValue,
@@ -252,6 +323,11 @@ export const create = mutation({
       currentValue,
       direction,
       targetDate: args.targetDate,
+      streakTimezoneOffsetMinutes:
+        args.progressType === "streak"
+          ? safeTimezoneOffset(args.tzOffsetMinutes)
+          : undefined,
+      streakReminderHour: args.progressType === "streak" ? 19 : undefined,
       milestones: milestones.length > 0 ? milestones : undefined,
       supporterTarget: args.supporterTarget,
       supporterCount: 0,
@@ -310,11 +386,13 @@ export const create = mutation({
         userId,
         toEmail: ownerEmail,
         templateId: "goalCreated",
-        category: "transactional",
+        category: "lifecycle",
+        preferenceKey: "accountActivity",
         payload: JSON.stringify({
           firstName: ownerName?.split(" ")[0],
           goalTitle: cleanTitle,
           slug,
+          ownerHandle: (user as { handle?: string } | null)?.handle,
         }),
       });
     }
@@ -376,6 +454,7 @@ export const update = mutation({
     summary: v.optional(v.string()),
     story: v.optional(v.string()),
     targetDate: v.optional(v.number()),
+    clearTargetDate: v.optional(v.boolean()),
     supporterTarget: v.optional(v.number()),
     supportTypes: v.optional(v.array(v.string())),
     visibility: v.optional(v.union(v.literal("public"), v.literal("unlisted"), v.literal("private"))),
@@ -454,7 +533,18 @@ export const update = mutation({
       }
       patch.story = cleanStory || undefined;
     }
-    if (args.targetDate !== undefined) patch.targetDate = args.targetDate;
+    if (args.targetDate !== undefined && args.clearTargetDate) {
+      throw new Error("Choose a target date or remove it, not both");
+    }
+    if (args.targetDate !== undefined) {
+      patch.targetDate = args.targetDate;
+      patch.lastDeadlineWarningAt = undefined;
+      patch.deadlinePassedNotified = undefined;
+    } else if (args.clearTargetDate) {
+      patch.targetDate = undefined;
+      patch.lastDeadlineWarningAt = undefined;
+      patch.deadlinePassedNotified = undefined;
+    }
     if (args.supporterTarget !== undefined) patch.supporterTarget = args.supporterTarget;
     if (args.supportTypes !== undefined) {
       // `create` filters these against the allowlist; without the same filter
@@ -517,6 +607,35 @@ export const update = mutation({
     if (args.targetDate !== undefined && args.targetDate <= Date.now()) {
       throw new Error("Target date must be in the future");
     }
+
+    // Keep edits inside the same semantic measurement contract. Legacy goals
+    // without metadata are inferred once from their existing category/type/unit.
+    const nextUnit = (patch.unit ?? goal.unit) as string;
+    const nextDirection = (patch.direction ?? goal.direction) as
+      | "increase"
+      | "decrease";
+    const measurement =
+      getMeasurementMetric(goal.category, goal.metricId) ??
+      inferMeasurementMetric(
+        goal.category,
+        goal.progressType,
+        nextUnit,
+        nextDirection
+      );
+    if (!measurement || measurement.progressType !== goal.progressType) {
+      throw new Error("This goal no longer has a valid measurement");
+    }
+    if (goal.progressType === "number") {
+      if (!measurement.directions.includes(nextDirection)) {
+        throw new Error("That direction does not fit this measurement");
+      }
+      if (!measurementAllowsUnit(measurement, nextUnit)) {
+        throw new Error("That unit does not fit this measurement");
+      }
+    }
+    patch.metricId = measurement.id;
+    patch.measurementVersion = MEASUREMENT_VERSION;
+
     if (needsModeration) {
       patch.moderationStatus = "pending";
       patch.moderationReason = undefined;
@@ -657,7 +776,8 @@ export const toggleMilestone = mutation({
           userId,
           toEmail: owner.email,
           templateId: "targetHit",
-          category: "transactional",
+          category: "lifecycle",
+          preferenceKey: "accountActivity",
           payload: JSON.stringify({
             ownerName: owner.name ?? owner.handle ?? "there",
             goalTitle: goal.title,
@@ -694,6 +814,7 @@ export const toggleMilestone = mutation({
 export const changeProgressType = mutation({
   args: {
     goalId: v.id("goals"),
+    metricId: v.optional(v.string()),
     progressType: v.union(
       v.literal("number"),
       v.literal("streak"),
@@ -766,8 +887,43 @@ export const changeProgressType = mutation({
       if (startValue === targetValue) throw new Error("Start and target must differ");
     }
 
+    const measurement = args.metricId
+      ? getMeasurementMetric(goal.category, args.metricId)
+      : inferMeasurementMetric(
+          goal.category,
+          args.progressType,
+          unit,
+          direction
+        );
+    if (!measurement || measurement.progressType !== args.progressType) {
+      throw new Error("Choose a measurement that fits this goal category");
+    }
+    if (args.progressType === "number") {
+      if (!measurement.directions.includes(direction)) {
+        throw new Error("That direction does not fit this measurement");
+      }
+      if (!measurementAllowsUnit(measurement, unit)) {
+        throw new Error("That unit does not fit this measurement");
+      }
+      if (
+        direction === "decrease"
+          ? targetValue >= startValue
+          : targetValue <= startValue
+      ) {
+        throw new Error("Target is on the wrong side of start for the chosen direction");
+      }
+    }
+    if (args.progressType === "streak" && (!Number.isInteger(targetValue) || targetValue <= 0)) {
+      throw new Error("Streak targets must be a positive number of days");
+    }
+    if (args.progressType === "milestones" && milestones?.length === 0) {
+      throw new Error("Add at least one milestone");
+    }
+
     await ctx.db.patch(args.goalId, {
       progressType: args.progressType,
+      metricId: measurement.id,
+      measurementVersion: MEASUREMENT_VERSION,
       startValue,
       currentValue,
       targetValue,
@@ -915,6 +1071,7 @@ export const remove = mutation({
     for (const table of [
       "reactions",
       "badges",
+      "achievements",
       "supporters",
       "supportMessages",
       "motivatorInvites",
@@ -958,65 +1115,30 @@ export const logStreakDay = mutation({
     if (goal.progressType !== "streak") throw new Error("This goal isn't a streak");
 
     const now = Date.now();
-    // Convex runs in UTC, so `new Date(y, m, d)` here yields UTC midnight —
-    // not the user's. That let someone at UTC-7 log twice for one local day
-    // (their 8am and 6pm straddle UTC midnight) while someone at UTC+13 was
-    // blocked early. Shift into the caller's wall clock, floor to their
-    // midnight, then shift back to a real UTC instant.
-    const offsetMs = (tzOffsetMinutes ?? 0) * 60_000;
-    const DAY_MS = 86_400_000;
-    const todayStart =
-      Math.floor((now - offsetMs) / DAY_MS) * DAY_MS + offsetMs;
+    const offset = safeTimezoneOffset(
+      tzOffsetMinutes ?? goal.streakTimezoneOffsetMinutes
+    );
+    const todayKey = localDayKey(now, offset);
+    const yesterdayKey = localDayKey(now - DAY_MS, offset);
 
-    // Range-scan from today's boundary instead of reading the goal's entire
-    // history — a year-long streak would otherwise read 365+ docs per log.
-    const todaysUpdates = await ctx.db
-      .query("updates")
-      .withIndex("by_goal_created", (q) =>
-        q.eq("goalId", goalId).gte("createdAt", todayStart)
-      )
-      .collect();
-    const alreadyLoggedToday = todaysUpdates.some((u) => u.type === "value");
-    if (alreadyLoggedToday) throw new Error("Already logged today");
-
-    // --- Streak continuity check ---
-    // If the last streak log was more than ~48h ago (user's TZ), the streak
-    // is broken — reset to 1 instead of incrementing. The 48h window (not
-    // 24h) gives timezone slack and lets someone log late the next day.
-    const lastStreakUpdate = todaysUpdates.length > 0
-      ? // Today's updates exist but none are value-type (already checked above).
-        // Look back further for the most recent value update.
-        (await ctx.db
-          .query("updates")
-          .withIndex("by_goal_created", (q) =>
-            q.eq("goalId", goalId).lt("createdAt", todayStart)
-          )
-          .order("desc")
-          .first())
-      : // No updates at all today — find the most recent one ever.
-        (await ctx.db
-          .query("updates")
-          .withIndex("by_goal_created", (q) =>
-            q.eq("goalId", goalId).lt("createdAt", todayStart)
-          )
-          .order("desc")
-          .first());
-
-    let newValue: number;
-    const lastValueUpdate = lastStreakUpdate?.type === "value" ? lastStreakUpdate : null;
-    if (lastValueUpdate) {
-      const gapMs = now - lastValueUpdate.createdAt;
-      const hoursSinceLast = gapMs / 3_600_000;
-      if (hoursSinceLast > 48) {
-        // Streak broken — start fresh.
-        newValue = 1;
-      } else {
-        newValue = (goal.currentValue ?? 0) + 1;
-      }
-    } else {
-      // First ever log.
-      newValue = 1;
+    // New rows carry an exact local day key. For pre-migration streaks,
+    // infer the last day once from the newest value update.
+    let lastLoggedDay = goal.streakLastLoggedDay;
+    if (!lastLoggedDay) {
+      const recent = await ctx.db
+        .query("updates")
+        .withIndex("by_goal_created", (q) => q.eq("goalId", goalId))
+        .order("desc")
+        .take(200);
+      const lastValue = recent.find((update) => update.type === "value" && !update.revertedAt);
+      if (lastValue) lastLoggedDay = localDayKey(lastValue.createdAt, offset);
     }
+
+    if (lastLoggedDay === todayKey) throw new Error("Already logged today");
+
+    const newValue =
+      lastLoggedDay === yesterdayKey ? (goal.currentValue ?? 0) + 1 : 1;
+    const bestStreak = Math.max(goal.streakBest ?? goal.currentValue ?? 0, newValue);
     const updateId = await ctx.db.insert("updates", {
       goalId,
       ownerId: userId,
@@ -1027,11 +1149,17 @@ export const logStreakDay = mutation({
       publicVisible: !note?.trim(),
       createdAt: now,
     });
-    await ctx.db.patch(goalId, { lastStaleReminderAt: undefined });
     if (note?.trim()) {
       await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
     }
-    await ctx.db.patch(goalId, { currentValue: newValue, updatedAt: now });
+    await ctx.db.patch(goalId, {
+      currentValue: newValue,
+      streakBest: bestStreak,
+      streakLastLoggedDay: todayKey,
+      streakTimezoneOffsetMinutes: offset,
+      lastStaleReminderAt: undefined,
+      updatedAt: now,
+    });
 
     const pct = computeProgress(goal.startValue, newValue, goal.targetValue, goal.direction);
     const existingBadges = await ctx.db
@@ -1042,6 +1170,28 @@ export const logStreakDay = mutation({
     const newTiers = newMilestoneTiers(pct, awarded);
     for (const tier of newTiers) {
       await ctx.db.insert("badges", { goalId, ownerId: userId, tier, awardedAt: now });
+    }
+
+    const earnedAchievements = [];
+    for (const achievement of STREAK_ACHIEVEMENTS) {
+      if (achievement.value > bestStreak) continue;
+      const key = `streak-${achievement.value}`;
+      const exists = await ctx.db
+        .query("achievements")
+        .withIndex("by_goal_key", (q) => q.eq("goalId", goalId).eq("key", key))
+        .first();
+      if (exists) continue;
+      await ctx.db.insert("achievements", {
+        goalId,
+        ownerId: userId,
+        key,
+        kind: "streak",
+        title: achievement.title,
+        description: achievement.description,
+        value: achievement.value,
+        awardedAt: now,
+      });
+      earnedAchievements.push(achievement.title);
     }
 
     // Target hit?
@@ -1055,7 +1205,8 @@ export const logStreakDay = mutation({
           userId,
           toEmail: owner.email,
           templateId: "targetHit",
-          category: "transactional",
+          category: "lifecycle",
+          preferenceKey: "accountActivity",
           payload: JSON.stringify({
             ownerName: owner.name ?? owner.handle ?? "there",
             goalTitle: goal.title,
@@ -1084,7 +1235,14 @@ export const logStreakDay = mutation({
       });
     }
 
-    return { progress: pct, newBadges: newTiers, streakCount: newValue };
+    return {
+      progress: pct,
+      newBadges: newTiers,
+      newAchievements: earnedAchievements,
+      streakCount: newValue,
+      bestStreak,
+      loggedDay: todayKey,
+    };
   },
 });
 
@@ -1168,7 +1326,8 @@ export const recordValue = mutation({
           userId,
           toEmail: owner.email,
           templateId: "targetHit",
-          category: "transactional",
+          category: "lifecycle",
+          preferenceKey: "accountActivity",
           payload: JSON.stringify({
             ownerName: owner.name ?? owner.handle ?? "there",
             goalTitle: goal.title,
@@ -1371,6 +1530,7 @@ export const notifyFollowersOfUpdate = internalMutation({
         toEmail: r.email,
         templateId: "newUpdate",
         category: "lifecycle",
+        preferenceKey: "goalUpdates",
         payload: JSON.stringify({
           motivatorName: r.name,
           ownerName,
@@ -1407,6 +1567,7 @@ export const notifyFollowersOfCompletion = internalMutation({
         toEmail: r.email,
         templateId: "targetHit",
         category: "lifecycle",
+        preferenceKey: "goalUpdates",
         payload: JSON.stringify({
           // The targetHit template greets by `ownerName`; for followers we
           // pass the follower's own name so it reads "Hi {follower}".
@@ -1462,6 +1623,7 @@ export const notifyFollowersOfStatusChange = internalMutation({
         toEmail: r.email,
         templateId: "newUpdate",
         category: "lifecycle",
+        preferenceKey: "goalUpdates",
         payload: JSON.stringify({
           motivatorName: r.name,
           ownerName,

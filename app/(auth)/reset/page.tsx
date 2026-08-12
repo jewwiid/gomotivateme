@@ -94,13 +94,13 @@ export default function ResetRequestPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            className="w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
+            className="workspace-input px-4 py-3"
             placeholder="you@example.com"
           />
         </div>
 
         {err && (
-          <div className="rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 px-3 py-2 text-xs text-[var(--color-danger)]">
+          <div className="rounded-[var(--workspace-radius)] border border-[var(--color-danger)] bg-[var(--color-danger-soft)] px-3 py-2 text-xs text-[var(--color-danger-text)]">
             {err}
           </div>
         )}
@@ -108,7 +108,7 @@ export default function ResetRequestPage() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-2 w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
+          className="workspace-button-primary mt-2 disabled:opacity-50"
         >
           {busy ? "Sending..." : "Send reset link"}
         </button>

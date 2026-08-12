@@ -13,7 +13,6 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   MessageCircle,
-  Plus,
   Send,
   Settings,
   Share2,
@@ -30,7 +29,8 @@ export type OwnerUpdateKind =
   | "link"
   | "value"
   | "milestone"
-  | "streak";
+  | "streak"
+  | "progress";
 
 type WorkspaceGoal = {
   title: string;
@@ -43,6 +43,10 @@ type WorkspaceGoal = {
   coreMotivatorMin?: number;
   progressType?: string;
   unit?: string;
+  streakBest?: number;
+  streakLastLoggedDay?: string;
+  streakTimezoneOffsetMinutes?: number;
+  streakIsBroken?: boolean;
   milestones?: Array<{
     id: string;
     title: string;
@@ -80,7 +84,6 @@ type WorkspaceMotivator = {
 export function OwnerGoalWorkspace({
   goal,
   coverUrl,
-  owner,
   progress,
   publicUrl,
   linkCopied,
@@ -91,7 +94,6 @@ export function OwnerGoalWorkspace({
   onCopyLink,
   onOpenUpdate,
   onPostUpdate,
-  onQuickIncrement,
   onUndoUpdate,
   milestoneEditor,
   updatesArchive,
@@ -102,7 +104,6 @@ export function OwnerGoalWorkspace({
 }: {
   goal: WorkspaceGoal;
   coverUrl: string | null | undefined;
-  owner: { name: string; image?: string | null };
   progress: number;
   publicUrl: string;
   linkCopied: boolean;
@@ -113,7 +114,6 @@ export function OwnerGoalWorkspace({
   onCopyLink: () => void;
   onOpenUpdate: (kind: OwnerUpdateKind) => void;
   onPostUpdate: (note: string) => Promise<void>;
-  onQuickIncrement?: (delta: number) => void;
   onUndoUpdate?: (updateId: string) => void;
   milestoneEditor?: ReactNode;
   updatesArchive?: ReactNode;
@@ -131,6 +131,12 @@ export function OwnerGoalWorkspace({
   const coreMotivators = (motivators ?? []).filter((motivator: any) =>
     "isCoreMotivator" in motivator ? motivator.isCoreMotivator : true
   );
+  const streakOffset =
+    goal.streakTimezoneOffsetMinutes ?? new Date().getTimezoneOffset();
+  const streakTodayKey = new Date(Date.now() - streakOffset * 60_000)
+    .toISOString()
+    .slice(0, 10);
+  const streakLoggedToday = goal.streakLastLoggedDay === streakTodayKey;
   const publicPath = publicUrl
     ? publicUrl.replace(/^https?:\/\/[^/]+/, "")
     : "/o/your-handle/your-goal";
@@ -166,7 +172,9 @@ export function OwnerGoalWorkspace({
     goal.progressType === "milestones" && firstIncomplete?.title
       ? `Define your ${firstIncomplete.title.toLowerCase()}`
       : goal.progressType === "streak"
-      ? "Mark today's progress"
+      ? streakLoggedToday
+        ? "Today's streak is safe"
+        : "Mark today's progress"
       : goal.progressType === "number"
       ? `Log your ${goal.unit ?? "progress"}`
       : "Share what you learned";
@@ -270,7 +278,7 @@ export function OwnerGoalWorkspace({
                 goal.progressType === "milestones"
                   ? firstIncomplete?.title || "All complete"
                   : goal.progressType === "streak"
-                  ? "days logged"
+                  ? `best ${goal.streakBest ?? goal.currentValue ?? 0}d`
                   : goal.unit ?? "units"
               }
             />
@@ -299,17 +307,14 @@ export function OwnerGoalWorkspace({
           <div className="space-y-3">
             <form onSubmit={postNote} className="workspace-card p-4">
               <h2 className="text-base font-bold text-[var(--color-text)]">Share an update</h2>
-              <div className="mt-2 flex items-start gap-3">
-                <Avatar name={owner.name} image={owner.image} size="md" />
-                <textarea
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  rows={2}
-                  placeholder="What progress have you made?"
-                  className="min-h-16 flex-1 resize-none rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2.5 text-base leading-6 text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/10"
-                />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 pl-0 sm:pl-12">
+              <textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                rows={2}
+                placeholder="What progress have you made?"
+                className="workspace-input mt-2 min-h-16 w-full resize-none px-4 py-2.5 leading-6"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <ComposerAction
                   icon={FileText}
                   label="Note"
@@ -325,34 +330,6 @@ export function OwnerGoalWorkspace({
                   label="Link"
                   onClick={() => onOpenUpdate("link")}
                 />
-                {goal.progressType === "milestones" && (
-                  <ComposerAction
-                    icon={Flag}
-                    label="Milestone"
-                    onClick={() => onOpenUpdate("milestone")}
-                  />
-                )}
-                {goal.progressType === "number" && (
-                  <>
-                    <ComposerAction
-                      icon={Plus}
-                      label="+1"
-                      onClick={() => onQuickIncrement?.(1)}
-                    />
-                    <ComposerAction
-                      icon={CircleGauge}
-                      label="Log value"
-                      onClick={() => onOpenUpdate("value")}
-                    />
-                  </>
-                )}
-                {goal.progressType === "streak" && (
-                  <ComposerAction
-                    icon={Sparkles}
-                    label="Mark today"
-                    onClick={() => onOpenUpdate("streak")}
-                  />
-                )}
                 <button
                   type="submit"
                   disabled={!note.trim() || posting}
@@ -438,11 +415,11 @@ export function OwnerGoalWorkspace({
               <div className="mt-4 space-y-3 sm:space-y-4">
                 {updates === undefined ? (
                   <>
-                    <div className="h-14 animate-pulse rounded-xl bg-[var(--color-bg-elev)]" />
-                    <div className="h-14 animate-pulse rounded-xl bg-[var(--color-bg-elev)]" />
+                    <div className="h-14 animate-pulse rounded-[var(--workspace-radius)] bg-[var(--color-bg-elev)]" />
+                    <div className="h-14 animate-pulse rounded-[var(--workspace-radius)] bg-[var(--color-bg-elev)]" />
                   </>
                 ) : updates.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-[var(--color-border-strong)] px-4 py-7 text-center">
+                  <div className="rounded-[var(--workspace-radius)] border border-dashed border-[var(--color-border-strong)] px-4 py-7 text-center">
                     <Sparkles className="mx-auto text-[var(--color-primary)]" size={22} aria-hidden />
                     <p className="mt-2 text-sm font-semibold text-[var(--color-text)]">Your first update starts the story.</p>
                   </div>
@@ -501,26 +478,29 @@ export function OwnerGoalWorkspace({
                       {goal.progressType === "milestones"
                         ? "Clarify the outcome, success metrics, and the next concrete step."
                         : goal.progressType === "streak"
-                        ? "Keep your streak alive — log today and stay on track."
+                        ? streakLoggedToday
+                          ? "You showed up today. Come back tomorrow to keep the chain going."
+                          : "Keep your streak alive — log today and stay on track."
                         : "Update your progress and keep your supporters in the loop."}
                     </p>
                     <button
                       type="button"
+                      disabled={goal.progressType === "streak" && streakLoggedToday}
                       onClick={() =>
                         onOpenUpdate(
                           goal.progressType === "milestones"
                             ? "milestone"
                             : goal.progressType === "streak"
                             ? "streak"
-                            : "value"
+                            : "progress"
                         )
                       }
-                      className="workspace-button-primary mt-2 min-h-9"
+                      className="workspace-button-primary mt-2 min-h-9 disabled:cursor-default disabled:opacity-55"
                     >
                       {goal.progressType === "milestones"
                         ? "Create plan"
                         : goal.progressType === "streak"
-                        ? "Mark today"
+                        ? streakLoggedToday ? "Done for today" : "Mark today"
                         : "Log progress"}
                     </button>
                   </div>
@@ -547,7 +527,7 @@ export function OwnerGoalWorkspace({
               <button
                 type="button"
                 onClick={() => document.getElementById("supporters")?.scrollIntoView({ behavior: "smooth" })}
-                className="mt-3 min-h-10 w-full rounded-xl bg-[var(--color-bg-elev)] px-3 text-xs font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)]"
+                className="workspace-button-secondary mt-3 min-h-10 px-3 text-xs"
               >
                 Send thank you
               </button>
@@ -580,7 +560,7 @@ export function OwnerGoalWorkspace({
                   );
                 })}
               </div>
-              <div className="mt-4 rounded-xl border border-[var(--color-primary-soft)] bg-[var(--color-accent-soft)] p-3">
+              <div className="workspace-card-soft mt-4 border-[var(--color-primary-soft)] bg-[var(--color-accent-soft)] p-3">
                 <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
                   Add the people and reasons that keep you going when momentum dips.
                 </p>
@@ -629,7 +609,7 @@ export function OwnerGoalWorkspace({
           <button
             type="button"
             onClick={onCopyLink}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--color-border-strong)] px-4 font-bold text-[var(--color-text)]"
+            className="workspace-button-secondary min-h-11 w-auto px-4"
           >
             {linkCopied ? <Check size={14} /> : <Copy size={14} />}
             {linkCopied ? "Copied" : "Copy public link"}
@@ -701,7 +681,7 @@ function ComposerAction({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-9 items-center gap-2 rounded-[2px] border border-[var(--color-border-strong)] bg-white px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+      className="inline-flex min-h-9 items-center gap-2 rounded-[2px] border border-[var(--color-border-strong)] bg-white px-3 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] active:translate-y-px"
     >
       <Icon size={15} strokeWidth={1.8} aria-hidden />
       {label}

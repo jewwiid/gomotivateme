@@ -357,7 +357,8 @@ export const updateProfile = mutation({
         userId,
         toEmail: before.email,
         templateId: "welcome",
-        category: "transactional",
+        category: "lifecycle",
+        preferenceKey: "accountActivity",
         payload: JSON.stringify({ firstName: (patch.name as string)?.split(" ")[0] }),
       });
     }

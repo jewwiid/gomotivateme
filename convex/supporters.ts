@@ -87,6 +87,7 @@ export const join = mutation({
             toEmail: owner.email,
             templateId: "supportMessageReceived",
             category: "lifecycle",
+            preferenceKey: "goalActivity",
             payload: JSON.stringify({
               ownerName: owner.name ?? owner.handle ?? "there",
               authorName: supporter?.name ?? supporter?.handle ?? "Someone",

@@ -79,7 +79,7 @@ export function DualProgress({
         pctRef={goalLabelRef}
         initialPct={goalPct}
         width={goalWidth}
-        color="from-[var(--color-accent)] to-[var(--color-gold)]"
+        tone="bg-[var(--color-primary)]"
         icon={<TrendingUp size={11} />}
       />
       <ProgressBar
@@ -99,7 +99,7 @@ export function DualProgress({
         pctRef={supLabelRef}
         initialPct={supporterPct ?? 0}
         width={supWidth}
-        color="from-[var(--color-success)] to-[var(--color-success-soft)]"
+        tone="bg-[var(--color-success)]"
         icon={<Users size={11} />}
       />
     </div>
@@ -113,7 +113,7 @@ function ProgressBar({
   pctRef,
   initialPct,
   width,
-  color,
+  tone,
   icon,
 }: {
   label: string;
@@ -122,7 +122,7 @@ function ProgressBar({
   pctRef: React.RefObject<HTMLSpanElement | null>;
   initialPct: number;
   width: any;
-  color: string;
+  tone: string;
   icon: React.ReactNode;
 }) {
   // First-paint label so SSR / hydration have content immediately.
@@ -138,9 +138,9 @@ function ProgressBar({
           {valueLabel}
         </span>
       </div>
-      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-elev)]">
+      <div className="relative h-2.5 w-full overflow-hidden bg-[var(--color-bg-elev)]">
         <motion.div
-          className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${color}`}
+          className={`absolute inset-y-0 left-0 ${tone}`}
           style={{ width }}
         />
       </div>

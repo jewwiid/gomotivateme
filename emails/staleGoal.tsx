@@ -5,6 +5,7 @@ import { EmailLayout, CTAButton } from "./components/Layout";
 export interface StaleGoalEmailProps {
   ownerName: string;
   goalTitle: string;
+  goalId?: string;
   goalSlug: string;
   daysSinceLastUpdate: number;
   supporterCount: number;
@@ -16,6 +17,7 @@ export interface StaleGoalEmailProps {
 export function StaleGoalEmail({
   ownerName,
   goalTitle,
+  goalId,
   goalSlug,
   daysSinceLastUpdate,
   supporterCount,
@@ -57,7 +59,9 @@ export function StaleGoalEmail({
         </Text>
       )}
 
-      <CTAButton href={`${siteUrl}/dashboard`}>Post an update</CTAButton>
+      <CTAButton href={goalId ? `${siteUrl}/dashboard/${goalId}` : `${siteUrl}/dashboard`}>
+        Post an update
+      </CTAButton>
 
       <Text style={{ fontSize: "15px", color: "#6c706f", margin: "8px 0 0" }}>
         It takes 30 seconds. A photo, a number, a sentence. Whatever shows

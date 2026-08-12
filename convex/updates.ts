@@ -477,6 +477,18 @@ export const undoUpdate = mutation({
 
       await ctx.db.patch(update.goalId, {
         currentValue: latestValue?.value ?? goal.startValue ?? 0,
+        ...(goal.progressType === "streak"
+          ? {
+              streakLastLoggedDay: latestValue
+                ? new Date(
+                    latestValue.createdAt -
+                      (goal.streakTimezoneOffsetMinutes ?? 0) * 60_000
+                  )
+                    .toISOString()
+                    .slice(0, 10)
+                : undefined,
+            }
+          : {}),
         updatedAt: now,
       });
     } else if (update.type === "milestone" && update.milestoneId) {

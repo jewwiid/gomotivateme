@@ -77,7 +77,8 @@ export const create = mutation({
         userId: goal.ownerId,
         toEmail: owner.email,
         templateId: "supportMessageReceived",
-        category: "transactional",
+        category: "lifecycle",
+        preferenceKey: "goalActivity",
         payload: JSON.stringify({
           ownerName: owner.name ?? owner.handle ?? "there",
           authorName: author?.name ?? author?.handle ?? "Someone",

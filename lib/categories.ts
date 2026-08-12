@@ -1,3 +1,5 @@
+import { getDefaultMeasurement } from "./goalMeasurementCatalog";
+
 /**
  * Goal categories — shared between the create form, public pages, and
  * the explore feed.
@@ -122,15 +124,15 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "community",
-    label: "Community & charity",
+    label: "Community & volunteering",
     icon: "heart-handshake",
-    unitOptions: ["$", "people", "events", "volunteers"],
+    unitOptions: ["volunteers", "members", "participants", "people", "events", "hours", "items"],
     defaultProgressType: "number",
     defaultDirection: "increase",
     defaultMilestones: ["Plan", "Launch", "Grow", "Goal reached"],
-    titlePlaceholder: "e.g. Raise $5,000 for my local food bank",
-    summaryPlaceholder: "e.g. 100 donors, $50 average",
-    storyPrompt: "Who or what are you raising for? Why this cause?",
+    titlePlaceholder: "e.g. Organise 100 volunteer hours for my neighbourhood",
+    summaryPlaceholder: "e.g. Bring 20 people together for five practical service days",
+    storyPrompt: "Who is this for, what practical change are you working toward, and where could people help?",
   },
   {
     id: "personal",
@@ -219,6 +221,9 @@ export function getCategory(id: string): Category {
  */
 export function getDefaultMilestones(categoryId: string): Array<{ id: string; title: string }> {
   const cat = getCategory(categoryId);
-  const titles = cat.defaultMilestones ?? ["Step 1", "Step 2", "Step 3", "Done"];
+  const titles =
+    getDefaultMeasurement(categoryId).milestones ??
+    cat.defaultMilestones ??
+    ["Step 1", "Step 2", "Step 3", "Done"];
   return titles.map((title, i) => ({ id: `m${i + 1}`, title }));
 }

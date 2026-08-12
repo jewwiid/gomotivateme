@@ -77,12 +77,28 @@ export default defineSchema({
       v.literal("streak"),
       v.literal("milestones")
     ),
+    /** Semantic metric selected from the versioned category measurement catalog. */
+    metricId: v.optional(v.string()),
+    measurementVersion: v.optional(v.number()),
     unit: v.string(), // kg, lbs, books, days, etc.
     startValue: v.optional(v.number()),
     targetValue: v.number(),
     currentValue: v.optional(v.number()),
     direction: v.union(v.literal("increase"), v.literal("decrease")),
     targetDate: v.optional(v.number()),
+
+    /**
+     * Daily-streak state is stored as the owner's local YYYY-MM-DD key so a
+     * streak follows calendar days instead of an approximate 24/48h window.
+     */
+    streakLastLoggedDay: v.optional(v.string()),
+    streakBest: v.optional(v.number()),
+    /** Browser `Date#getTimezoneOffset()` value (minutes behind UTC). */
+    streakTimezoneOffsetMinutes: v.optional(v.number()),
+    /** Local hour (0-23) at which an unlogged streak gets a reminder. */
+    streakReminderHour: v.optional(v.number()),
+    /** Local day key of the most recently enqueued reminder. */
+    streakLastReminderDay: v.optional(v.string()),
 
     /** Milestone checklist (only used when progressType === "milestones"). */
     milestones: v.optional(
@@ -425,6 +441,22 @@ export default defineSchema({
     .index("by_goal", ["goalId"])
     .index("by_goal_tier", ["goalId", "tier"]),
 
+  /** Named accomplishments, separate from percentage-based progress badges. */
+  achievements: defineTable({
+    goalId: v.id("goals"),
+    ownerId: v.id("users"),
+    /** Stable idempotency key, e.g. `streak-7`. */
+    key: v.string(),
+    kind: v.union(v.literal("streak"), v.literal("consistency")),
+    title: v.string(),
+    description: v.string(),
+    value: v.number(),
+    awardedAt: v.number(),
+  })
+    .index("by_goal", ["goalId"])
+    .index("by_goal_key", ["goalId", "key"])
+    .index("by_owner_awarded", ["ownerId", "awardedAt"]),
+
   /**
    * Motivation Circle — the creator's pre-launch team.
    * The creator sends up to six of these. Each invitee accepts, declines, or
@@ -606,20 +638,45 @@ export default defineSchema({
     yourMotivations: v.boolean(),
     /** Updates on goals you support (progress posts from the creator). */
     supportedGoalUpdates: v.optional(v.boolean()),
+    /** Applications, cheers, messages, and new supporters on your own goals. */
+    goalActivity: v.optional(v.boolean()),
+    /** Invitations, application decisions, and check-ins for goals you motivate. */
+    motivationActivity: v.optional(v.boolean()),
+    /** Follow requests and new followers. */
+    socialActivity: v.optional(v.boolean()),
+    /** Welcome and confirmations when a goal goes live or reaches its target. */
+    accountActivity: v.optional(v.boolean()),
     /** A new motivator joins one of your goals. */
     newMotivatorOnGoal: v.boolean(),
     /** Monday-morning summary of activity across your goals. */
     weeklyDigest: v.boolean(),
+    /** Local-evening nudge when an active daily streak is still unlogged. */
+    dailyStreakReminder: v.optional(v.boolean()),
+    /** How often to nudge an owner whose active goal has no recent update. */
+    goalUpdateReminderCadence: v.optional(
+      v.union(v.literal("off"), v.literal("daily"), v.literal("weekly"))
+    ),
+    /** Alerts when an active goal is approaching or past its target date. */
+    deadlineReminders: v.optional(v.boolean()),
+    /** Consent-only marketing newsletter featuring approved public goals. */
+    platformDigestCadence: v.optional(
+      v.union(v.literal("off"), v.literal("daily"), v.literal("weekly"))
+    ),
+    /** Server timestamps provide an audit trail for the latest consent choice. */
+    platformDigestConsentAt: v.optional(v.number()),
+    platformDigestOptedOutAt: v.optional(v.number()),
     /** Medical / emergency / memorial goals in your area. */
     urgentCauses: v.boolean(),
     /** New features, design changes, occasional surveys. */
     productUpdates: v.boolean(),
     /** Master opt-out — suppresses ALL lifecycle email. Transactional still sends. */
     unsubscribedAll: v.boolean(),
+    unsubscribedAt: v.optional(v.number()),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_weekly_digest", ["weeklyDigest"]),
+    .index("by_weekly_digest", ["weeklyDigest"])
+    .index("by_platform_digest_cadence", ["platformDigestCadence"]),
 
   /**
    * Email send queue + audit log.

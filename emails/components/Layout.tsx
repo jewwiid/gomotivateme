@@ -43,6 +43,9 @@ export function EmailLayout({
   /** Extra footer text, e.g. physical address placeholder. */
   footerNote?: string;
 }) {
+  const preferencesUrl = unsubscribeUrl
+    ? unsubscribeUrl.replace(/\/email\/unsubscribe\?.*$/, "/settings?tab=notifications")
+    : "https://www.gomotivateme.com/settings?tab=notifications";
   return (
     <Html>
       <Head />
@@ -74,7 +77,7 @@ export function EmailLayout({
                   Unsubscribe
                 </Link>{" "}
                 ·{" "}
-                <Link href="https://www.gomotivateme.com/settings" style={footerLink}>
+                <Link href={preferencesUrl} style={footerLink}>
                   Email preferences
                 </Link>
               </Text>

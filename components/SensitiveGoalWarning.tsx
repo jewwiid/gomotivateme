@@ -22,10 +22,10 @@ export function SensitiveGoalWarning({ category }: { category: string }) {
     <motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-start gap-2.5 rounded-2xl border border-[var(--color-warning)] 500/30 bg-[var(--color-warning)] 500/5 p-3.5 text-sm"
+      className="flex items-start gap-2.5 rounded-[var(--workspace-radius)] border border-[var(--color-warning)] bg-[var(--color-warning-soft)] p-3.5 text-sm text-[var(--color-warning-text)]"
     >
-      <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[var(--color-warning)] 500" />
-      <p className="text-xs text-[var(--color-text-muted)]">{body}</p>
+      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+      <p className="text-xs text-current">{body}</p>
     </motion.div>
   );
 }

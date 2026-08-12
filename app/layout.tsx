@@ -3,7 +3,6 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CookieConsent } from "@/components/CookieConsent";
-import { Analytics } from "@vercel/analytics/next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -102,8 +101,6 @@ export default function RootLayout({
           <SiteFooter />
           <CookieConsent />
         </ConvexClientProvider>
-        {/* Cookieless — no consent gate needed. */}
-        <Analytics />
       </body>
     </html>
   );

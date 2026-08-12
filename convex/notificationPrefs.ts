@@ -16,8 +16,17 @@ import { api } from "./_generated/api";
 export const DEFAULT_PREFS = {
   yourMotivations: true,
   supportedGoalUpdates: true,
+  goalActivity: true,
+  motivationActivity: true,
+  socialActivity: true,
+  accountActivity: true,
   newMotivatorOnGoal: true,
   weeklyDigest: false,
+  dailyStreakReminder: true,
+  goalUpdateReminderCadence: "weekly",
+  deadlineReminders: true,
+  // Marketing requires an affirmative choice under Irish ePrivacy rules.
+  platformDigestCadence: "off",
   urgentCauses: true,
   productUpdates: false,
   unsubscribedAll: false,
@@ -49,8 +58,20 @@ export const update = mutation({
   args: {
     yourMotivations: v.optional(v.boolean()),
     supportedGoalUpdates: v.optional(v.boolean()),
+    goalActivity: v.optional(v.boolean()),
+    motivationActivity: v.optional(v.boolean()),
+    socialActivity: v.optional(v.boolean()),
+    accountActivity: v.optional(v.boolean()),
     newMotivatorOnGoal: v.optional(v.boolean()),
     weeklyDigest: v.optional(v.boolean()),
+    dailyStreakReminder: v.optional(v.boolean()),
+    goalUpdateReminderCadence: v.optional(
+      v.union(v.literal("off"), v.literal("daily"), v.literal("weekly"))
+    ),
+    deadlineReminders: v.optional(v.boolean()),
+    platformDigestCadence: v.optional(
+      v.union(v.literal("off"), v.literal("daily"), v.literal("weekly"))
+    ),
     urgentCauses: v.optional(v.boolean()),
     productUpdates: v.optional(v.boolean()),
     unsubscribedAll: v.optional(v.boolean()),
@@ -63,17 +84,51 @@ export const update = mutation({
       .query("notificationPrefs")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
+    const enablesEmail =
+      patch.yourMotivations === true ||
+      patch.supportedGoalUpdates === true ||
+      patch.goalActivity === true ||
+      patch.motivationActivity === true ||
+      patch.socialActivity === true ||
+      patch.accountActivity === true ||
+      patch.newMotivatorOnGoal === true ||
+      patch.weeklyDigest === true ||
+      patch.dailyStreakReminder === true ||
+      patch.goalUpdateReminderCadence === "daily" ||
+      patch.goalUpdateReminderCadence === "weekly" ||
+      patch.deadlineReminders === true ||
+      patch.platformDigestCadence === "daily" ||
+      patch.platformDigestCadence === "weekly" ||
+      patch.urgentCauses === true ||
+      patch.productUpdates === true;
+    // A user who switches a category back on expects to receive it again.
+    // Clear the one-click global opt-out in that case.
+    const effectivePatch: Record<string, any> =
+      existing?.unsubscribedAll && enablesEmail
+        ? { ...patch, unsubscribedAll: false }
+        : patch;
     const now = Date.now();
+    if (patch.platformDigestCadence === "daily" || patch.platformDigestCadence === "weekly") {
+      effectivePatch.platformDigestConsentAt = now;
+      effectivePatch.platformDigestOptedOutAt = undefined;
+    } else if (patch.platformDigestCadence === "off") {
+      effectivePatch.platformDigestOptedOutAt = now;
+    }
+    if (effectivePatch.unsubscribedAll === true) {
+      effectivePatch.unsubscribedAt = now;
+    } else if (effectivePatch.unsubscribedAll === false) {
+      effectivePatch.unsubscribedAt = undefined;
+    }
     const next = {
       ...DEFAULT_PREFS,
       ...(existing ?? {}),
-      ...patch,
+      ...effectivePatch,
       userId,
       email: (user as { email?: string })?.email ?? existing?.email,
       updatedAt: now,
     };
     if (existing) {
-      await ctx.db.patch(existing._id, { ...patch, updatedAt: now });
+      await ctx.db.patch(existing._id, { ...effectivePatch, updatedAt: now });
     } else {
       await ctx.db.insert("notificationPrefs", next);
     }
@@ -125,13 +180,18 @@ export const unsubscribeByToken = mutation({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .first();
     if (existing) {
-      await ctx.db.patch(existing._id, { unsubscribedAll: true, updatedAt: Date.now() });
+      await ctx.db.patch(existing._id, {
+        unsubscribedAll: true,
+        unsubscribedAt: Date.now(),
+        updatedAt: Date.now(),
+      });
     } else {
       await ctx.db.insert("notificationPrefs", {
         userId: user._id,
         email: (user as { email?: string })?.email,
         ...DEFAULT_PREFS,
         unsubscribedAll: true,
+        unsubscribedAt: Date.now(),
         updatedAt: Date.now(),
       });
     }

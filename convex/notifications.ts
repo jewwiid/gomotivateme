@@ -85,7 +85,14 @@ function parseNotification(
         body: "See how your goals went this week",
         href: "/dashboard",
       };
+    case "platformDigest":
+      return {
+        title: payload.cadence === "daily" ? "Fresh goals today" : "New goals this week",
+        body: "Discover people who could use your encouragement",
+        href: "/explore",
+      };
     case "staleGoal":
+    case "goalUpdateReminder":
       return {
         title: "Your goal needs a nudge",
         body: `${payload.goalTitle} hasn't been updated in a while`,
@@ -96,6 +103,12 @@ function parseNotification(
         title: "Check-in due",
         body: `${payload.ownerName} could use a check-in on ${payload.goalTitle}`,
         href: "/motivate",
+      };
+    case "streakReminder":
+      return {
+        title: "Your streak is waiting",
+        body: `Mark today on ${payload.goalTitle}`,
+        href: payload.goalId ? `/dashboard/${payload.goalId}` : "/dashboard",
       };
     case "goalCreated":
       return {

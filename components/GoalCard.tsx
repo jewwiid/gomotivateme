@@ -6,7 +6,6 @@ import { useQuery } from "convex/react";
 import { ArrowRight, Calendar } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
-import { CategoryIcon } from "./CategoryIcon";
 import { formatDate, formatNumber } from "@/lib/format";
 
 interface GoalDoc {
@@ -42,7 +41,7 @@ function pct(start: number | undefined, current: number | undefined, target: num
   return Math.max(0, Math.min(100, (moved / total) * 100));
 }
 
-export function GoalCard({ goal }: { goal: GoalDoc }) {
+export function GoalCard({ goal, index }: { goal: GoalDoc; index: number }) {
   const progress = pct(goal.startValue, goal.currentValue, goal.targetValue, goal.direction);
   const daysLeft = goal.targetDate
     ? Math.ceil((goal.targetDate - Date.now()) / (1000 * 60 * 60 * 24))
@@ -63,26 +62,28 @@ export function GoalCard({ goal }: { goal: GoalDoc }) {
         href={`/dashboard/${goal._id}`}
         className="group grid gap-4 py-5 sm:grid-cols-[10rem_minmax(0,1fr)_10rem_9rem_1.4rem] sm:items-center sm:gap-6"
       >
-        <div className="relative aspect-[1.65/1] overflow-hidden rounded-xl bg-[var(--color-primary-soft)]">
+        <div className="relative aspect-[1.65/1] overflow-hidden border border-[var(--color-border)] bg-[var(--color-bg-sunken)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imgSrc} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]" />
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-            <CategoryIcon category={goal.category} size={12} />
-            {goal.category}
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--color-text-dim)]">
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <span>{goal.category}</span>
           </div>
-          <h3 className="mt-1.5 line-clamp-2 font-display text-xl font-bold leading-tight tracking-[-0.035em] text-[var(--color-text)]">
+          <h3 className="mt-1.5 line-clamp-2 font-display text-2xl font-semibold leading-tight tracking-[-0.035em] text-[var(--color-text)]">
             {goal.title}
           </h3>
           {goal.summary && <p className="mt-1 line-clamp-1 text-sm text-[var(--color-text-muted)]">{goal.summary}</p>}
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-[var(--color-text-muted)]">Progress</p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--color-primary-soft)]">
-            <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${progress}%` }} />
+          <div className="flex items-center justify-between gap-3 font-mono text-xs text-[var(--color-text-muted)]">
+            <span>Progress</span>
+            <span className="tabular-nums">{Math.round(progress)}%</span>
           </div>
-          <p className="mt-2 text-sm font-bold tabular-nums text-[var(--color-text)]">{Math.round(progress)}% complete</p>
+          <div className="mt-2 h-px bg-[var(--color-border-strong)]">
+            <div className="h-px bg-[var(--color-primary)]" style={{ width: `${progress}%` }} />
+          </div>
         </div>
         <div className="text-sm text-[var(--color-text-muted)] sm:text-right">
           {goal.targetDate && (

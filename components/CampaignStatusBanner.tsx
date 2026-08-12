@@ -17,14 +17,14 @@ export function CampaignStatusBanner({
 
   const meta: Record<string, { bg: string; border: string; icon: any; title: string; body: string }> = {
     paused: {
-      bg: "bg-[var(--color-warning)] 500/10",
-      border: "border-[var(--color-warning)] 500/30",
+      bg: "bg-[var(--color-warning-soft)] text-[var(--color-warning-text)]",
+      border: "border-[var(--color-warning)]",
       icon: Pause,
       title: "Paused",
       body: pausedReason ?? "Taking a break. They'll be back.",
     },
     completed: {
-      bg: "bg-[var(--color-success-soft)]",
+      bg: "bg-[var(--color-success-soft)] text-[var(--color-success-text)]",
       border: "border-[var(--color-success)]",
       icon: CheckCircle2,
       title: "Completed",
@@ -33,14 +33,14 @@ export function CampaignStatusBanner({
         : "They did it. Take a look at the full timeline below.",
     },
     closed: {
-      bg: "bg-[var(--color-text-dim)]",
+      bg: "bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]",
       border: "border-[var(--color-border-strong)]",
       icon: Archive,
       title: "Closed",
       body: "This campaign is no longer active.",
     },
     draft: {
-      bg: "bg-[var(--color-text-dim)]",
+      bg: "bg-[var(--color-bg-elev)] text-[var(--color-text-secondary)]",
       border: "border-[var(--color-border-strong)]",
       icon: Archive,
       title: "Draft",
@@ -54,14 +54,14 @@ export function CampaignStatusBanner({
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex items-start gap-3 rounded-2xl border ${m.border} ${m.bg} p-4`}
+      className={`flex items-start gap-3 rounded-[var(--workspace-radius)] border ${m.border} ${m.bg} p-4`}
     >
-      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/20">
+      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[2px] bg-[var(--color-bg-sunken)]">
         <Icon size={18} className="text-current" />
       </div>
       <div>
         <div className="text-base font-semibold">{m.title}</div>
-        <p className="text-sm text-[var(--color-text-muted)]">{m.body}</p>
+        <p className="text-sm text-current opacity-80">{m.body}</p>
       </div>
     </motion.div>
   );

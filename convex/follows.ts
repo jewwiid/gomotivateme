@@ -79,7 +79,8 @@ export const request = mutation({
         userId: followeeId,
         toEmail: followee.email,
         templateId: policy === "open" ? "newFollower" : "followRequest",
-        category: "transactional",
+        category: "lifecycle",
+        preferenceKey: "socialActivity",
         payload: JSON.stringify({
           followerName: follower?.name ?? follower?.handle ?? "Someone",
           followerHandle: follower?.handle ?? undefined,
