@@ -463,13 +463,16 @@ export const listDueCheckIns = internalQuery({
 
     // Scan all active pledges. This is a table scan but the pledges table
     // stays small (one row per motivator commitment). Acceptable at scale.
-    const pledges = await ctx.db
-      .query("motivatorPledges")
-      .withIndex("by_goal_status", (q) => q.eq("status", "active"))
-      .collect();
+    //
+    // Deliberately unindexed: every motivatorPledges index leads with goalId
+    // or userId, so there is none this status-only lookup can use. Passing
+    // by_goal_status here throws at runtime ("didn't use the index fields in
+    // order") because it skips goalId — which silently broke this cron.
+    const pledges = await ctx.db.query("motivatorPledges").collect();
 
     const due = [];
     for (const pledge of pledges) {
+      if (pledge.status !== "active") continue;
       // Only weekly + monthly have time-based cadences.
       if (pledge.checkInFrequency !== "weekly" && pledge.checkInFrequency !== "monthly") {
         continue;
