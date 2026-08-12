@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Wordmark } from "@/components/Wordmark";
+import { BrandName, Wordmark } from "@/components/Wordmark";
 import { CookieSettingsButton } from "@/components/CookieSettingsButton";
 
 const primaryLinks = [
   ["Explore goals", "/explore"],
   ["How it works", "/#how-it-works"],
   ["Start a goal", "/dashboard/new"],
+  ["FAQ", "/faq"],
   ["Community guidelines", "/legal/community-guidelines"],
 ] as const;
 
@@ -47,7 +48,10 @@ export function SiteFooter() {
       </div>
 
       <div className="shell-content flex flex-col gap-4 border-t border-[var(--color-border)] py-6 font-mono text-[11px] text-[var(--color-text-muted)] sm:flex-row sm:items-center sm:justify-between">
-        <p>© {new Date().getFullYear()} GoMotivateMe</p>
+        <p className="inline-flex items-center gap-1.5">
+          <span>© {new Date().getFullYear()}</span>
+          <BrandName />
+        </p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {legalLinks.map(([label, href]) => (
             <Link key={href} href={href} className="transition hover:text-[var(--color-primary)]">
