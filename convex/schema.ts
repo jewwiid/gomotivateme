@@ -44,6 +44,16 @@ export default defineSchema({
      */
     handleChangesRemaining: v.optional(v.number()),
     bio: v.optional(v.string()),
+    /**
+     * The user's own uploaded avatar.
+     *
+     * Deliberately NOT stored in `image`: @convex-dev/auth patches the user
+     * document with the whole OAuth profile on *every* sign-in, so anything
+     * written to `image` is overwritten by the Google picture the next time
+     * the user signs in with Google. `image` stays the OAuth-owned field;
+     * this one is ours, and read paths prefer it. See resolveAvatarUrl.
+     */
+    avatarId: v.optional(v.id("_storage")),
     coverImageId: v.optional(v.id("_storage")),
     /** Signed token for one-click email unsubscribe links. */
     unsubscribeToken: v.optional(v.string()),

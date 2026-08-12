@@ -8,6 +8,55 @@ import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { HANDLE_RE, MIN_HANDLE_LENGTH, MAX_HANDLE_LENGTH } from "../lib/handle";
 
+/**
+ * The avatar to show for a user.
+ *
+ * `avatarId` (their own upload) wins over `image` (the OAuth picture),
+ * because @convex-dev/auth re-patches `image` from the provider profile on
+ * every single sign-in — a custom avatar written there survives only until
+ * the user next signs in with Google. Every read path must go through this
+ * so the two sources can never disagree.
+ */
+export async function resolveAvatarUrl(ctx: any, user: any): Promise<string | null> {
+  if (!user) return null;
+  if (user.avatarId) {
+    const url = await ctx.storage.getUrl(user.avatarId);
+    if (url) return url;
+    // Storage object vanished — fall through to the OAuth picture.
+  }
+  return user.image ?? null;
+}
+
+/**
+ * Push the owner's current name / avatar / handle onto the denormalized
+ * snapshot every goal carries, so public surfaces (discovery feed, explore,
+ * search, OG cards) don't keep serving a profile the user has since changed.
+ *
+ * Anything that changes one of those three fields must call this. It was
+ * originally inlined in updateProfile only, which is why uploading an avatar
+ * updated the profile page but left every goal card showing the old one.
+ */
+async function syncOwnerSnapshot(
+  ctx: any,
+  userId: any,
+  fields: { ownerName?: string; ownerImage?: string; ownerHandle?: string },
+  keys: Array<"ownerName" | "ownerImage" | "ownerHandle">
+) {
+  if (keys.length === 0) return;
+  const goals = await ctx.db
+    .query("goals")
+    .withIndex("by_owner", (q: any) => q.eq("ownerId", userId))
+    .collect();
+  for (const g of goals) {
+    // Anonymous goals have their owner fields stripped at read time, so
+    // writing to them is pointless and risks leaking identity.
+    if (g.isAnonymous) continue;
+    const patch: Record<string, unknown> = {};
+    for (const key of keys) patch[key] = fields[key];
+    await ctx.db.patch(g._id, patch);
+  }
+}
+
 /** Server-side: raw user lookup by email (for auth email flows). */
 export const getRawByEmail = query({
   args: { email: v.string() },
@@ -30,7 +79,7 @@ export const me = query({
       _id: user._id,
       name: (user as { name?: string }).name ?? null,
       email: (user as { email?: string }).email ?? null,
-      image: (user as { image?: string }).image ?? null,
+      image: await resolveAvatarUrl(ctx, user),
       handle: (user as { handle?: string }).handle ?? null,
       handleChangesRemaining: (user as { handleChangesRemaining?: number }).handleChangesRemaining ?? null,
       bio: (user as { bio?: string }).bio ?? null,
@@ -54,7 +103,7 @@ export const profilesById = query({
         out[id] = {
           _id: id,
           name: (u as { name?: string }).name ?? null,
-          image: (u as { image?: string }).image ?? null,
+          image: await resolveAvatarUrl(ctx, u),
           handle: (u as { handle?: string }).handle ?? null,
         };
       })
@@ -80,7 +129,7 @@ export const getByHandle = query({
     return {
       _id: user._id,
       name: (user as { name?: string }).name ?? null,
-      image: (user as { image?: string }).image ?? null,
+      image: await resolveAvatarUrl(ctx, user),
       handle: (user as { handle?: string }).handle ?? null,
       bio: (user as { bio?: string }).bio ?? null,
       coverImageId: (user as { coverImageId?: string }).coverImageId ?? null,
@@ -173,7 +222,7 @@ export const profileSummary = query({
       user: {
         _id: user._id,
         name: (user as { name?: string }).name ?? null,
-        image: (user as { image?: string }).image ?? null,
+        image: await resolveAvatarUrl(ctx, user),
         handle: (user as { handle?: string }).handle ?? null,
         bio: (user as { bio?: string }).bio ?? null,
         coverImageId: (user as { coverImageId?: string }).coverImageId ?? null,
@@ -228,11 +277,14 @@ export const removeCoverImage = mutation({
 });
 
 /**
- * Set the freshly-uploaded avatar as the user's image. Called after the
- * client POSTs the file to the URL from generateCoverUploadUrl. Resolves
- * the storageId to a public URL server-side and stores it on the user
- * record (the @convex-dev/auth `image` field — same one used by the
- * profile avatar and the Convex auth session).
+ * Set the freshly-uploaded avatar. Called after the client POSTs the file to
+ * the URL from generateCoverUploadUrl.
+ *
+ * Stores the storageId on `avatarId` rather than a resolved URL on `image`,
+ * for two reasons: `image` is re-patched from the OAuth profile on every
+ * Google sign-in (so a custom avatar written there silently reverts), and
+ * keeping the id lets the URL be re-resolved instead of being frozen at
+ * upload time.
  */
 export const setAvatar = mutation({
   args: { storageId: v.id("_storage") },
@@ -241,18 +293,30 @@ export const setAvatar = mutation({
     if (!userId) throw new Error("Not signed in");
     const url = await ctx.storage.getUrl(storageId);
     if (!url) throw new Error("Upload not found");
-    await ctx.db.patch(userId, { image: url });
+    await ctx.db.patch(userId, { avatarId: storageId });
+    await syncOwnerSnapshot(ctx, userId, { ownerImage: url }, ["ownerImage"]);
     return { ok: true, url };
   },
 });
 
-/** Clear the avatar image (falls back to initials on the profile). */
+/**
+ * Clear the uploaded avatar. Falls back to the OAuth picture if the account
+ * has one, and to initials if it doesn't.
+ */
 export const removeAvatar = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
-    await ctx.db.patch(userId, { image: undefined });
+    await ctx.db.patch(userId, { avatarId: undefined });
+    const user = await ctx.db.get(userId);
+    const fallback = await resolveAvatarUrl(ctx, user);
+    await syncOwnerSnapshot(
+      ctx,
+      userId,
+      { ownerImage: fallback ?? undefined },
+      ["ownerImage"]
+    );
     return { ok: true };
   },
 });
@@ -330,25 +394,28 @@ export const updateProfile = mutation({
 
     await ctx.db.patch(userId, patch);
 
-    // Sync denormalized ownerName/ownerImage/ownerHandle on all the user's
-    // goals so stale snapshots don't show old avatars/handles after a profile
-    // change. ownerHandle is included for safety — updateProfile doesn't
-    // currently set handle, but if a future caller passes it the sync fires.
-    if (patch.name !== undefined || patch.image !== undefined || patch.handle !== undefined) {
-      const goals = await ctx.db
-        .query("goals")
-        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
-        .collect();
-      for (const g of goals) {
-        // Skip anonymous goals — their denormalized owner fields are stripped
-        // at read time, so updating them is unnecessary and risks leakage.
-        if (g.isAnonymous) continue;
-        await ctx.db.patch(g._id, {
-          ...(patch.name !== undefined && { ownerName: patch.name as string }),
-          ...(patch.image !== undefined && { ownerImage: (patch.image as string | undefined) ?? undefined }),
-          ...(patch.handle !== undefined && { ownerHandle: (patch.handle as string | undefined) ?? undefined }),
-        });
-      }
+    // Keep the denormalized owner snapshot on this user's goals in step with
+    // the profile change. ownerHandle is included for safety — updateProfile
+    // doesn't currently set handle, but if a future caller passes it the sync
+    // fires.
+    const keys: Array<"ownerName" | "ownerImage" | "ownerHandle"> = [];
+    if (patch.name !== undefined) keys.push("ownerName");
+    if (patch.image !== undefined) keys.push("ownerImage");
+    if (patch.handle !== undefined) keys.push("ownerHandle");
+    if (keys.length > 0) {
+      // An explicit `image` here is an OAuth-style URL, so it only wins when
+      // the user has no uploaded avatar of their own.
+      const after = await ctx.db.get(userId);
+      await syncOwnerSnapshot(
+        ctx,
+        userId,
+        {
+          ownerName: patch.name as string | undefined,
+          ownerImage: (await resolveAvatarUrl(ctx, after)) ?? undefined,
+          ownerHandle: patch.handle as string | undefined,
+        },
+        keys
+      );
     }
 
     // Email A1 — Welcome (transactional, fires once on first profile setup).

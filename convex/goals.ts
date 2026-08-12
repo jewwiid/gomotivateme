@@ -7,6 +7,7 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { buildSlug, computeProgress, newMilestoneTiers } from "./utils";
+import { resolveAvatarUrl } from "./users";
 import {
   MEASUREMENT_VERSION,
   getMeasurementMetric,
@@ -278,7 +279,10 @@ export const create = mutation({
       (user as { name?: string } | null)?.name ??
       (user as { email?: string } | null)?.email ??
       undefined;
-    const ownerImage = (user as { image?: string } | null)?.image ?? undefined;
+    // Via resolveAvatarUrl so an uploaded avatar wins over the OAuth picture —
+    // reading `image` directly would snapshot the Google photo onto the goal
+    // even when the user has set their own.
+    const ownerImage = (await resolveAvatarUrl(ctx, user)) ?? undefined;
     const ownerHandle = (user as { handle?: string } | null)?.handle ?? undefined;
 
     // Slugs are namespaced per owner. If the user has no handle yet, fall
