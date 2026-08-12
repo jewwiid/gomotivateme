@@ -225,7 +225,7 @@ export function EditorialTimeline({
                             {milestoneTitle}
                           </h3>
                           <p className="mt-1 text-sm leading-5 text-[var(--color-text-muted)]">
-                            A milestone was completed and added to the journey.
+                            Marked this milestone complete.
                           </p>
                         </div>
                       ) : (

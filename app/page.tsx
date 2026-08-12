@@ -123,7 +123,7 @@ export default function HomePage() {
                 Put the goal where your people can find it.
               </h2>
               <p className="mt-6 max-w-md text-base leading-7 text-[var(--color-text-secondary)]">
-                Your page holds the plan, the imperfect updates, and the kind of help that would actually make a difference.
+                Your page holds the plan, the imperfect updates, and the specific help you asked for.
               </p>
               <p className="mt-9 max-w-sm rounded-[1.25rem] bg-[var(--color-surface)] p-5 text-lg font-medium leading-7 text-[var(--color-text)] shadow-[0_18px_45px_-35px_rgba(55,47,35,0.45)]">
                 “It&apos;s easier to return to a goal when someone remembers why you started.”
@@ -555,7 +555,7 @@ function JourneyHero() {
         className="object-contain mix-blend-multiply"
       />
       <figcaption className="absolute bottom-[3%] left-[4%] max-w-[15rem] border-l-2 border-[var(--color-sun)] bg-[color:rgba(251,250,246,0.88)] py-2 pl-3 pr-4 text-xs font-medium leading-5 text-[var(--color-text-secondary)] backdrop-blur-sm">
-        Progress is personal. Support makes it shared.
+        Every goal here is public, and has people behind it.
       </figcaption>
     </figure>
   );

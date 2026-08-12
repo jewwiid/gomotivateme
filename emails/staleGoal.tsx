@@ -54,8 +54,7 @@ export function StaleGoalEmail({
         </Text>
       ) : (
         <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-          Even a quick &ldquo;still going&rdquo; counts as an update. Progress
-          isn&apos;t always a big leap.
+          Even a quick &ldquo;still going&rdquo; counts as an update.
         </Text>
       )}
 

@@ -40,7 +40,7 @@ export function StreakReminderEmail({
         {bestStreak > currentStreak ? `, with a best of ${bestStreak}` : ""}.
       </Text>
       <Text style={{ fontSize: "16px", lineHeight: "1.6", color: "#202124", margin: "0 0 16px" }}>
-        Do the smallest version that counts, then mark the day. Consistency beats a perfect session.
+        Do the smallest version that counts, then mark the day.
       </Text>
       <CTAButton href={`${siteUrl}/dashboard/${goalId}`}>Mark today</CTAButton>
     </EmailLayout>
