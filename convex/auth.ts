@@ -80,4 +80,37 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
   ],
+  callbacks: {
+    /**
+     * Restore the user's own display name after every sign-in.
+     *
+     * @convex-dev/auth patches the user document with the *entire* provider
+     * profile on every sign-in, not just the first —
+     *
+     *   const userData = { ...profile };
+     *   await ctx.db.patch(userId, userData);
+     *
+     * — so a display name set here was silently reverted to the Google
+     * account name the next time the user signed in with Google.
+     *
+     * `displayName` is the user's own choice and nothing in the auth library
+     * writes to it, so it survives that patch. This runs immediately after,
+     * inside the same mutation, and puts `name` back. Doing it here rather
+     * than in `createOrUpdateUser` deliberately leaves the library's default
+     * upsert — and its verified-email/phone account-linking — untouched.
+     *
+     * `image` is intentionally left alone: uploaded avatars live on
+     * `avatarId` and win at read time (see users.resolveAvatarUrl), so
+     * letting the provider refresh `image` just keeps the fallback current.
+     */
+    async afterUserCreatedOrUpdated(ctx, { userId, existingUserId }) {
+      // A brand-new user has no chosen name to restore.
+      if (existingUserId === null) return;
+      const user = await ctx.db.get(userId);
+      const chosen = (user as any)?.displayName;
+      if (chosen && (user as any)?.name !== chosen) {
+        await ctx.db.patch(userId, { name: chosen });
+      }
+    },
+  },
 });

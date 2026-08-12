@@ -43,6 +43,17 @@ export default defineSchema({
      * undefined / 0 = locked.
      */
     handleChangesRemaining: v.optional(v.number()),
+    /**
+     * The display name the user chose for themselves.
+     *
+     * `name` is owned by @convex-dev/auth, which re-patches it from the OAuth
+     * profile on every sign-in — a name set only there reverts to the Google
+     * account name next time the user signs in. This field is ours, nothing
+     * in the auth library writes to it, and the afterUserCreatedOrUpdated
+     * callback in auth.ts copies it back onto `name` after each sign-in. That
+     * keeps `name` authoritative for the ~18 places that read it.
+     */
+    displayName: v.optional(v.string()),
     bio: v.optional(v.string()),
     /**
      * The user's own uploaded avatar.

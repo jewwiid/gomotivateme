@@ -28,6 +28,27 @@ export async function resolveAvatarUrl(ctx: any, user: any): Promise<string | nu
 }
 
 /**
+ * Delete a superseded upload so replacing a profile image is a replace rather
+ * than an accumulation — otherwise every avatar or cover a user ever picked
+ * stays in file storage forever, billable and unreachable.
+ *
+ * No-ops when there was nothing before, or when the "old" id is the same file
+ * being kept (re-selecting the identical upload must not delete it). Deletion
+ * failures are swallowed: the document already points at the new file, so a
+ * stranded blob is a housekeeping problem, not a reason to fail the user's
+ * upload.
+ */
+async function deleteStorageIfPresent(ctx: any, storageId: any, keepId?: any) {
+  if (!storageId) return;
+  if (keepId && storageId === keepId) return;
+  try {
+    await ctx.storage.delete(storageId);
+  } catch {
+    // Already gone, or never existed.
+  }
+}
+
+/**
  * Push the owner's current name / avatar / handle onto the denormalized
  * snapshot every goal carries, so public surfaces (discovery feed, explore,
  * search, OG cards) don't keep serving a profile the user has since changed.
@@ -260,7 +281,10 @@ export const setCoverImage = mutation({
   handler: async (ctx, { storageId }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
+    const previous = await ctx.db.get(userId);
+    const previousCoverId = (previous as any)?.coverImageId;
     await ctx.db.patch(userId, { coverImageId: storageId });
+    await deleteStorageIfPresent(ctx, previousCoverId, storageId);
     return { ok: true };
   },
 });
@@ -271,7 +295,10 @@ export const removeCoverImage = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
+    const previous = await ctx.db.get(userId);
+    const previousCoverId = (previous as any)?.coverImageId;
     await ctx.db.patch(userId, { coverImageId: undefined });
+    await deleteStorageIfPresent(ctx, previousCoverId);
     return { ok: true };
   },
 });
@@ -293,8 +320,18 @@ export const setAvatar = mutation({
     if (!userId) throw new Error("Not signed in");
     const url = await ctx.storage.getUrl(storageId);
     if (!url) throw new Error("Upload not found");
+
+    const previous = await ctx.db.get(userId);
+    const previousAvatarId = (previous as any)?.avatarId;
+
     await ctx.db.patch(userId, { avatarId: storageId });
     await syncOwnerSnapshot(ctx, userId, { ownerImage: url }, ["ownerImage"]);
+
+    // A replace, not an accumulation: drop the superseded file once nothing
+    // points at it any more. Deleted last, so a failure above can't strand
+    // the user with neither the old nor the new avatar.
+    await deleteStorageIfPresent(ctx, previousAvatarId, storageId);
+
     return { ok: true, url };
   },
 });
@@ -308,6 +345,9 @@ export const removeAvatar = mutation({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
+    const previous = await ctx.db.get(userId);
+    const previousAvatarId = (previous as any)?.avatarId;
+
     await ctx.db.patch(userId, { avatarId: undefined });
     const user = await ctx.db.get(userId);
     const fallback = await resolveAvatarUrl(ctx, user);
@@ -317,6 +357,9 @@ export const removeAvatar = mutation({
       { ownerImage: fallback ?? undefined },
       ["ownerImage"]
     );
+
+    await deleteStorageIfPresent(ctx, previousAvatarId);
+
     return { ok: true };
   },
 });
@@ -358,6 +401,9 @@ export const updateProfile = mutation({
       if (trimmed.length === 0) throw new Error("Name can't be empty");
       if (trimmed.length > 80) throw new Error("Name is too long (max 80 chars)");
       patch.name = trimmed;
+      // Mirrored onto the field the auth library doesn't own, so the next
+      // Google sign-in can't revert it. See schema users.displayName.
+      patch.displayName = trimmed;
     }
     if (args.bio !== undefined) {
       const trimmed = args.bio.trim();
