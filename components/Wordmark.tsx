@@ -21,6 +21,31 @@ type Props = {
   ariaLabel?: string;
 };
 
+type BrandNameProps = {
+  className?: string;
+  ariaLabel?: string;
+  ariaHidden?: boolean;
+};
+
+/** Canonical colored treatment for the product name. */
+export function BrandName({
+  className,
+  ariaLabel = "GoMotivateMe",
+  ariaHidden = false,
+}: BrandNameProps) {
+  return (
+    <span
+      aria-label={ariaHidden ? undefined : ariaLabel}
+      aria-hidden={ariaHidden || undefined}
+      className={`inline-flex whitespace-nowrap ${className ?? ""}`}
+    >
+      <span className="text-[var(--color-primary)]">Go</span>
+      <span className="text-[var(--color-sun)]">Motivate</span>
+      <span className="text-[var(--color-primary)]">Me</span>
+    </span>
+  );
+}
+
 export function Wordmark({
   size = "lg",
   href = "/",
@@ -30,7 +55,7 @@ export function Wordmark({
   const text = (
     <span
       aria-label={ariaLabel}
-      className={`inline-flex items-center gap-[0.42em] font-semibold leading-none tracking-[-0.035em] text-[var(--color-text)] antialiased ${
+      className={`inline-flex items-center gap-[0.42em] font-semibold leading-none tracking-[-0.035em] antialiased ${
         sizeMap[size]
       } ${className ?? ""}`}
     >
@@ -43,7 +68,7 @@ export function Wordmark({
           className="absolute inset-0 h-full w-full scale-[1.55] object-contain"
         />
       </span>
-      <span>GoMotivateMe</span>
+      <BrandName ariaHidden />
     </span>
   );
 
