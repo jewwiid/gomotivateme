@@ -59,8 +59,8 @@ export function HomeContent({ initialRecent }: { initialRecent: HomeGoal[] }) {
     () =>
       Array.from(
         new Set(
-          ((recent ?? [])
-            .map((goal) => goal.coverImageId as Id<"_storage"> | undefined)
+          (recent ?? [])
+            .map((goal) => goal.coverImageId)
             .filter((id): id is Id<"_storage"> => Boolean(id))
         )
       ),
