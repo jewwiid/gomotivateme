@@ -38,7 +38,7 @@ function ConnectAiblContent() {
     try {
       const { code } = await createCode({ redirectUri, state });
       const next = new URL(redirectUri);
-      next.searchParams.set("code", code);
+      next.searchParams.set("gmm_code", code);
       next.searchParams.set("state", state);
       window.location.assign(next.toString());
     } catch (err) {
