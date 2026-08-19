@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Header } from "@/components/Header";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { getCategory } from "@/lib/categories";
@@ -35,6 +36,8 @@ type Journey = {
   progress: number;
   supporterCount?: number;
   ownerName?: string;
+  coverImageId?: string;
+  coverImageUrl?: string | null;
   createdAt: number;
 };
 
@@ -43,7 +46,21 @@ async function loadJourneys(): Promise<Journey[]> {
   if (!convexUrl) return [];
   try {
     const client = new ConvexHttpClient(convexUrl);
-    return (await client.query(api.public.listPublicJourneys, { limit: 12 })) as Journey[];
+    const journeys = (await client.query(api.public.listPublicJourneys, {
+      limit: 12,
+    })) as Journey[];
+    const coverIds = journeys
+      .map((journey) => journey.coverImageId)
+      .filter((id): id is string => Boolean(id)) as Id<"_storage">[];
+    if (coverIds.length === 0) return journeys;
+    const urls = (await client.query(api.storage.getUrls, { ids: coverIds })) as Record<
+      string,
+      string
+    >;
+    return journeys.map((journey) => ({
+      ...journey,
+      coverImageUrl: journey.coverImageId ? urls[journey.coverImageId] ?? null : null,
+    }));
   } catch {
     return [];
   }
@@ -134,13 +151,22 @@ export default async function StoriesPage() {
                       className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] transition duration-300 hover:-translate-y-1 hover:border-[var(--color-border)]"
                     >
                       <div className="relative aspect-[16/9] overflow-hidden bg-[var(--color-bg-elev)]">
-                        <Image
-                          src={art.src}
-                          alt={art.alt}
-                          fill
-                          sizes="(min-width: 768px) 50vw, 100vw"
-                          className="object-cover mix-blend-multiply transition duration-500 group-hover:scale-[1.03]"
-                        />
+                        {journey.coverImageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={journey.coverImageUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                          />
+                        ) : (
+                          <Image
+                            src={art.src}
+                            alt=""
+                            fill
+                            sizes="(min-width: 768px) 50vw, 100vw"
+                            className="object-cover mix-blend-multiply transition duration-500 group-hover:scale-[1.03]"
+                          />
+                        )}
                       </div>
                       <div className="flex flex-1 flex-col p-6">
                         <div className="flex items-center justify-between gap-3 text-xs font-medium text-[var(--color-text-muted)]">
