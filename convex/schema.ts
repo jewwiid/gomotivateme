@@ -803,7 +803,9 @@ export default defineSchema({
     readAt: v.optional(v.number()),
   })
     .index("by_status_created", ["status", "createdAt"])
-    .index("by_user", ["userId", "createdAt"]),
+    .index("by_user", ["userId", "createdAt"])
+    .index("by_email_template_created", ["toEmail", "templateId", "createdAt"])
+    .index("by_template_created", ["templateId", "createdAt"]),
 
   /**
    * Follow graph — approval-gated.
