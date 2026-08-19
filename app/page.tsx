@@ -163,7 +163,7 @@ export default function HomePage() {
                     <p className="max-w-md text-sm leading-6 text-[var(--color-text-secondary)]">{body as string}</p>
                   </div>
                   <div className="relative aspect-square self-center overflow-hidden rounded-[1rem] bg-[var(--color-surface)]">
-                    <Image src={(illustration as typeof JOURNEY_ILLUSTRATIONS.begin).src} alt="" fill sizes="104px" className="object-cover mix-blend-multiply" />
+                    <Image src={(illustration as typeof JOURNEY_ILLUSTRATIONS.begin).src} alt={(illustration as typeof JOURNEY_ILLUSTRATIONS.begin).alt} fill sizes="104px" className="object-cover mix-blend-multiply" />
                   </div>
                 </li>
               ))}

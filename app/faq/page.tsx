@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -143,6 +144,11 @@ const SECTIONS: FaqSection[] = [
           "Yes, from your settings, and it takes your goals, updates, and personal data with it. You don't have to email anyone or wait for approval.",
         links: [{ label: "Privacy policy", href: "/legal/privacy" }],
       },
+      {
+        q: "How quickly do you reply to email?",
+        answer:
+          "Write to hello@gomotivateme.com for product questions, or privacy@gomotivateme.com for data requests. We reply within one business day. If something belongs on this page, we'll add it after we answer you.",
+      },
     ],
   },
 ];
@@ -160,15 +166,6 @@ const faqSchema = {
   })),
 };
 
-const breadcrumbSchema = {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  itemListElement: [
-    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-    { "@type": "ListItem", position: 2, name: "FAQ", item: `${SITE_URL}/faq` },
-  ],
-};
-
 export default function FaqPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
@@ -176,30 +173,16 @@ export default function FaqPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
       <Header />
 
       <main className="flex-1 px-5 py-12 sm:px-8 sm:py-16">
         <div className="mx-auto max-w-3xl">
-          {/* Visible breadcrumb, matching the BreadcrumbList above. */}
-          <nav aria-label="Breadcrumb" className="font-mono text-xs text-[var(--color-text-muted)]">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link href="/" className="transition hover:text-[var(--color-primary)]">
-                  Home
-                </Link>
-              </li>
-              <li aria-hidden className="text-[var(--color-border)]">
-                /
-              </li>
-              <li aria-current="page" className="text-[var(--color-text-secondary)]">
-                FAQ
-              </li>
-            </ol>
-          </nav>
+          <PageBreadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "FAQ", href: "/faq" },
+            ]}
+          />
 
           <p className="brand-kicker mt-8">Questions</p>
           <h1 className="mt-2 title-page">Frequently asked questions</h1>
@@ -212,7 +195,7 @@ export default function FaqPage() {
             >
               email us
             </a>{" "}
-            and we&rsquo;ll answer, then add it to this page.
+            and we&rsquo;ll answer within one business day, then add it to this page.
           </p>
 
           {SECTIONS.map((section) => (

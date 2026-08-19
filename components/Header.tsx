@@ -35,6 +35,9 @@ export function Header({
   const hasAccount = Boolean((isAuthenticated && user) || previewUser);
 
   const isExplore = pathname?.startsWith("/explore");
+  const isAbout = pathname?.startsWith("/about");
+  const isFaq = pathname?.startsWith("/faq");
+  const isStories = pathname?.startsWith("/stories");
   const isDashboard = pathname?.startsWith("/dashboard");
   const isMotivate = pathname?.startsWith("/motivate");
   const isSettings = pathname?.startsWith("/settings");
@@ -150,10 +153,40 @@ export function Header({
             Explore
           </Link>
           <Link
+            href="/stories"
+            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
+              isStories
+                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+                : ""
+            }`}
+          >
+            Journeys
+          </Link>
+          <Link
             href="/#how-it-works"
             className="transition hover:text-[var(--color-primary)]"
           >
             How it works
+          </Link>
+          <Link
+            href="/about"
+            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
+              isAbout
+                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+                : ""
+            }`}
+          >
+            About
+          </Link>
+          <Link
+            href="/faq"
+            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
+              isFaq
+                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+                : ""
+            }`}
+          >
+            FAQ
           </Link>
         </nav>
 

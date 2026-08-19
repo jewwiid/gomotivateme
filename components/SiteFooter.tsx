@@ -5,6 +5,8 @@ import { CookieSettingsButton } from "@/components/CookieSettingsButton";
 const primaryLinks = [
   ["Explore goals", "/explore"],
   ["How it works", "/#how-it-works"],
+  ["Open journeys", "/stories"],
+  ["About", "/about"],
   ["Start a goal", "/dashboard/new"],
   ["FAQ", "/faq"],
   ["Community guidelines", "/legal/community-guidelines"],

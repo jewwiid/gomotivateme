@@ -1,11 +1,15 @@
 import { Header } from "@/components/Header";
+import { LegalBreadcrumbs } from "@/components/LegalBreadcrumbs";
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
       <Header />
       <main className="flex-1 px-5 py-12 sm:px-8 sm:py-16">
-        <div className="mx-auto max-w-3xl">{children}</div>
+        <div className="mx-auto max-w-3xl">
+          <LegalBreadcrumbs />
+          {children}
+        </div>
       </main>
     </div>
   );

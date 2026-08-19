@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { JOURNEY_ILLUSTRATIONS } from "@/lib/journeyIllustrations";
 
 export default function NotFound() {
   return (
@@ -8,9 +9,8 @@ export default function NotFound() {
       <main className="mx-auto flex max-w-2xl flex-col items-center justify-center px-5 py-16 text-center sm:px-8 sm:py-24">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/illustrations/journey/return.webp"
-          alt=""
-          aria-hidden
+          src={JOURNEY_ILLUSTRATIONS.return.src}
+          alt={JOURNEY_ILLUSTRATIONS.return.alt}
           width={240}
           height={240}
           className="mb-0 h-56 w-56 select-none object-contain sm:h-72 sm:w-72"
@@ -26,9 +26,20 @@ export default function NotFound() {
         >
           Take me home
         </Link>
-        <Link href="/explore" className="mt-5 text-sm font-bold text-[var(--color-primary)] transition hover:underline">
-          Explore goals
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-bold text-[var(--color-primary)]">
+          <Link href="/explore" className="transition hover:underline">
+            Explore goals
+          </Link>
+          <Link href="/stories" className="transition hover:underline">
+            Open journeys
+          </Link>
+          <Link href="/faq" className="transition hover:underline">
+            FAQ
+          </Link>
+          <Link href="/about" className="transition hover:underline">
+            About
+          </Link>
+        </div>
       </main>
     </div>
   );

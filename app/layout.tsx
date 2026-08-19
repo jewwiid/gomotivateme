@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CookieConsent } from "@/components/CookieConsent";
+import { StickyMarketingCta } from "@/components/StickyMarketingCta";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -19,6 +20,8 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   display: "swap",
 });
+
+const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -42,6 +45,9 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
   },
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
 };
 
 /**
@@ -58,6 +64,26 @@ const structuredData = {
       url: SITE_URL,
       logo: `${SITE_URL}/icon.png`,
       description: SITE_DESCRIPTION,
+      email: "hello@gomotivateme.com",
+      sameAs: [
+        "https://www.instagram.com/gomotivate.me/",
+        "https://www.tiktok.com/@gomotivateme",
+      ],
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${SITE_URL}/#app`,
+      name: SITE_NAME,
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Web",
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      publisher: { "@id": `${SITE_URL}/#organization` },
     },
     {
       "@type": "WebSite",
@@ -99,6 +125,7 @@ export default function RootLayout({
         <ConvexClientProvider>
           {children}
           <SiteFooter />
+          <StickyMarketingCta />
           <CookieConsent />
         </ConvexClientProvider>
       </body>

@@ -20,3 +20,15 @@ export const SITE_DESCRIPTION =
 export function absoluteUrl(path: string) {
   return new URL(path.startsWith("/") ? path : `/${path}`, SITE_URL).toString();
 }
+
+/** Founder details used on About and structured data. */
+export const FOUNDER = {
+  name: "Jude Okun",
+  handle: "jude",
+  location: "Dublin",
+  email: "hello@gomotivateme.com",
+  site: "https://judeokun.com",
+  linkedin: "https://www.linkedin.com/in/judeokun/",
+  instagram: "https://www.instagram.com/judeokun/",
+  photoFallback: "/brand/jude-okun.jpg",
+} as const;

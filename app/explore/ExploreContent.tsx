@@ -14,6 +14,7 @@ import { PublicGoalCard } from "@/components/PublicGoalCard";
 import { CATEGORIES, getCategory } from "@/lib/categories";
 import { JOURNEY_ILLUSTRATIONS } from "@/lib/journeyIllustrations";
 import { Header } from "@/components/Header";
+import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
 
 type Tab = "goals" | "motivators" | "categories";
 
@@ -79,7 +80,13 @@ export function ExploreContent() {
             className="grid items-center gap-10 lg:grid-cols-[1fr_23rem]"
           >
             <div>
-              <p className="inline-flex border-l-2 border-[var(--color-sun)] py-1 pl-3 text-xs font-semibold text-[var(--color-primary)]">Explore</p>
+              <PageBreadcrumbs
+                items={[
+                  { label: "Home", href: "/" },
+                  { label: "Explore", href: "/explore" },
+                ]}
+              />
+              <p className="mt-8 inline-flex border-l-2 border-[var(--color-sun)] py-1 pl-3 text-xs font-semibold text-[var(--color-primary)]">Explore</p>
               <h1 className="mt-5 max-w-[13ch] text-balance font-display text-5xl font-semibold leading-[0.94] tracking-[-0.055em] text-[var(--color-text)] sm:text-6xl">
                 Find a goal worth showing up for.
               </h1>
@@ -243,14 +250,25 @@ function GoalsTab({
 // Motivators tab
 // =====================
 
+type FeaturedMotivator = {
+  _id: string;
+  name?: string | null;
+  handle?: string | null;
+  bio?: string | null;
+  image?: string | null;
+  goalsCount?: number;
+  motivatingCount?: number;
+};
+
 function MotivatorsTab({ query }: { query: string }) {
   const motivators = useQuery(api.users.listFeaturedMotivators, { limit: 36 });
 
   const filtered = useMemo(() => {
     if (!motivators) return undefined;
-    if (!query.trim()) return motivators;
+    const rows = motivators as FeaturedMotivator[];
+    if (!query.trim()) return rows;
     const q = query.toLowerCase();
-    return motivators.filter(
+    return rows.filter(
       (m) =>
         (m.name ?? "").toLowerCase().includes(q) ||
         (m.handle ?? "").toLowerCase().includes(q) ||

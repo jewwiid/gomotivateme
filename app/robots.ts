@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           "/dashboard",
           "/settings",
           "/setup",
+          "/welcome",
           "/motivate",
           "/invite/",
           "/email/",

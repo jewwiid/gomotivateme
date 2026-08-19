@@ -315,4 +315,83 @@ export const countByCategory = query({
     return counts;
   },
 });
+
+function excerpt(text: string | undefined, max = 180) {
+  if (!text) return undefined;
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return undefined;
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max - 1)}…`;
+}
+
+const publicJourneyValidator = v.object({
+  _id: v.id("goals"),
+  slug: v.string(),
+  ownerHandle: v.optional(v.string()),
+  title: v.string(),
+  summary: v.optional(v.string()),
+  category: v.string(),
+  status: v.string(),
+  progress: v.number(),
+  supporterCount: v.optional(v.number()),
+  ownerName: v.optional(v.string()),
+  coverImageId: v.optional(v.id("_storage")),
+  createdAt: v.number(),
+});
+
+/**
+ * Public journeys with a written story or summary, for the /stories page.
+ * Completed goals sort first so finished work is easier to feature.
+ */
+export const listPublicJourneys = query({
+  args: { limit: v.optional(v.number()) },
+  returns: v.array(publicJourneyValidator),
+  handler: async (ctx, { limit }) => {
+    const take = Math.min(limit ?? 12, 24);
+    const goals = await ctx.db
+      .query("goals")
+      .withIndex("by_visibility_created", (q) => q.eq("visibility", "public"))
+      .order("desc")
+      .take(take * 8);
+
+    const eligible = goals
+      .filter(
+        (g) =>
+          g.status !== "closed" &&
+          g.status !== "draft" &&
+          isModerationApproved(g) &&
+          Boolean(g.summary || g.story)
+      )
+      .map((g) => {
+        const stripped = stripOwnerIfAnonymous(g);
+        return {
+          _id: stripped._id,
+          slug: stripped.slug,
+          ownerHandle: stripped.ownerHandle,
+          title: stripped.title,
+          summary: stripped.summary || excerpt(stripped.story),
+          category: stripped.category,
+          status: stripped.status,
+          progress: computeProgress(
+            stripped.startValue,
+            stripped.currentValue,
+            stripped.targetValue,
+            stripped.direction
+          ),
+          supporterCount: stripped.supporterCount,
+          ownerName: stripped.ownerName,
+          coverImageId: stripped.coverImageId,
+          createdAt: stripped.createdAt,
+        };
+      })
+      .sort((a, b) => {
+        const aDone = a.status === "completed" ? 1 : 0;
+        const bDone = b.status === "completed" ? 1 : 0;
+        if (aDone !== bDone) return bDone - aDone;
+        return (b.progress ?? 0) - (a.progress ?? 0);
+      });
+
+    return eligible.slice(0, take);
+  },
+});
 // force redeploy Fri Jul 24 09:13:12 IST 2026

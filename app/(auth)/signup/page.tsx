@@ -90,7 +90,7 @@ function SignupForm() {
           }
         }
       }
-      if (active) router.replace(redirect || "/dashboard");
+      if (active) router.replace(redirect || "/welcome");
     };
 
     void finishSignup();
@@ -209,7 +209,7 @@ function SignupForm() {
         Set up an account in 30 seconds.
       </p>
 
-      <GoogleSignInButton mode="signUp" redirectTo={redirect || "/dashboard"} />
+      <GoogleSignInButton mode="signUp" redirectTo={redirect || "/welcome"} />
 
       <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-wider text-[var(--color-text-dim)]">
         <span className="h-px flex-1 bg-[var(--color-bg-sunken)]" />
