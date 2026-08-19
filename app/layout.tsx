@@ -32,13 +32,16 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  alternates: { canonical: "/" },
+  authors: [{ name: "Jude Okun", url: "https://judeokun.com" }],
+  creator: "Jude Okun",
+  alternates: { canonical: "./" },
   openGraph: {
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     type: "website",
     siteName: SITE_NAME,
     url: SITE_URL,
+    locale: "en_IE",
   },
   twitter: {
     card: "summary_large_image",
@@ -108,6 +111,7 @@ export const viewport: Viewport = {
   themeColor: "#fbfaf6",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -116,7 +120,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="en" dir="ltr" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <script
           type="application/ld+json"

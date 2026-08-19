@@ -13,6 +13,15 @@ import type { NextRequest } from "next/server";
  * (the profile page shows goals, so the extra segment is dropped).
  */
 export function middleware(req: NextRequest) {
+  const host = req.headers.get("host") ?? "";
+  if (host === "gomotivateme.vercel.app") {
+    const url = req.nextUrl.clone();
+    url.protocol = "https:";
+    url.host = "www.gomotivateme.com";
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   const { pathname } = req.nextUrl;
 
   // Match /@something with optional /extra-segment(s)

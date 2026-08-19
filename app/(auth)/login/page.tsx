@@ -49,10 +49,9 @@ function LoginForm() {
   // to the dashboard sooner makes RequireAuth see a transient signed-out
   // state and send the user straight back here.
   useEffect(() => {
-    if (awaitingSession && isAuthenticated) {
-      router.replace(redirect || "/dashboard");
-    }
-  }, [awaitingSession, isAuthenticated, router, redirect]);
+    if (!isAuthenticated) return;
+    router.replace(redirect || "/dashboard");
+  }, [isAuthenticated, router, redirect]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +138,7 @@ function LoginForm() {
             onChange={(e) => onPasswordChange(e.target.value)}
             autoComplete="current-password"
             className="workspace-input px-4 py-3"
-            placeholder="••••••••"
+            placeholder="Your password"
           />
           {passwordHint === "short" && (
             <div className="mt-1 text-[10px] text-[var(--color-text-dim)]">

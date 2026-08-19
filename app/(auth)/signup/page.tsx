@@ -65,6 +65,12 @@ function SignupForm() {
     }
   }, [fullName]);
 
+  // Already signed in (bookmark, back button, or finished another tab).
+  useEffect(() => {
+    if (!isAuthenticated || awaitingSession) return;
+    router.replace(redirect || "/dashboard");
+  }, [awaitingSession, isAuthenticated, redirect, router]);
+
   // Wait until Convex has validated the fresh token before either making the
   // authenticated handle mutation or moving to the guarded dashboard route.
   // `signIn` itself only guarantees that the token was received and stored.

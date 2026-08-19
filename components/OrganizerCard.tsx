@@ -36,7 +36,7 @@ export function OrganizerCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
-            alt=""
+            alt={name}
             className="h-10 w-10 rounded-full border border-[var(--color-border)] object-cover"
           />
         ) : (

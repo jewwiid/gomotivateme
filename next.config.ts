@@ -2,6 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  productionBrowserSourceMaps: false,
+  compiler: {
+    removeConsole: { exclude: ["error"] },
+  },
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+    serverActions: {
+      bodySizeLimit: "8mb",
+    },
+  },
   async redirects() {
     return [
       // Preserve old shared image URLs while serving the stable journey system.
@@ -34,17 +44,19 @@ const nextConfig: NextConfig = {
       { source: "/illustrations/support/checkin.png", destination: "/illustrations/journey/support.webp", permanent: true },
       { source: "/illustrations/support/encourage.png", destination: "/illustrations/journey/support.webp", permanent: true },
       { source: "/illustrations/support/join.png", destination: "/illustrations/journey/support.webp", permanent: true },
+
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "gomotivateme.vercel.app" }],
+        destination: "https://www.gomotivateme.com/:path*",
+        permanent: true,
+      },
     ];
   },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },
     ],
-  },
-  experimental: {
-    serverActions: {
-      bodySizeLimit: "8mb",
-    },
   },
 };
 

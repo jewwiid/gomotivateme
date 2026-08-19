@@ -56,7 +56,7 @@ export default function TermsPage() {
             strong password, don't share it, and keep your contact email
             current. If you suspect someone has accessed your account,
             change your password immediately and let us know at{" "}
-            <a href="mailto:hello@gomotivateme.com">hello@gomotivateme.com</a>.
+            <a href="mailto:hello@gomotivateme.com" className="text-[var(--color-primary)] underline">hello@gomotivateme.com</a>.
           </p>
           <p>
             We may suspend or terminate accounts that violate these Terms
@@ -236,7 +236,7 @@ export default function TermsPage() {
           </p>
           <p>
             We'll try to resolve any dispute informally first: email us at{" "}
-            <a href="mailto:hello@gomotivateme.com">hello@gomotivateme.com</a>{" "}
+            <a href="mailto:hello@gomotivateme.com" className="text-[var(--color-primary)] underline">hello@gomotivateme.com</a>{" "}
             and we'll do our best to work it out within 30 days. If we can't,
             disputes will be resolved in the courts of Ireland.
           </p>
@@ -259,7 +259,7 @@ export default function TermsPage() {
         <Section title="15. Contact">
           <p>
             Questions? Email us at{" "}
-            <a href="mailto:hello@gomotivateme.com">hello@gomotivateme.com</a>.
+            <a href="mailto:hello@gomotivateme.com" className="text-[var(--color-primary)] underline">hello@gomotivateme.com</a>.
           </p>
         </Section>
 

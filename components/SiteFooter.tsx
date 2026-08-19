@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { BrandName, Wordmark } from "@/components/Wordmark";
 import { CookieSettingsButton } from "@/components/CookieSettingsButton";
+import { StartGoalLink } from "@/components/StartGoalLink";
 
 const primaryLinks = [
   ["Explore goals", "/explore"],
   ["How it works", "/#how-it-works"],
   ["Open journeys", "/stories"],
   ["About", "/about"],
-  ["Start a goal", "/dashboard/new"],
   ["FAQ", "/faq"],
   ["Community guidelines", "/legal/community-guidelines"],
 ] as const;
@@ -39,10 +39,13 @@ export function SiteFooter() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <StartGoalLink className="transition hover:text-[var(--color-primary)]" />
+              </li>
             </ul>
           </nav>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 font-mono text-xs text-[var(--color-text-muted)] md:justify-end">
-            <a href="mailto:hello@gomotivateme.com" className="transition hover:text-[var(--color-primary)]">Email</a>
+            <a href="mailto:hello@gomotivateme.com" className="transition hover:text-[var(--color-primary)]">hello@gomotivateme.com</a>
             <a href="https://www.instagram.com/gomotivate.me/" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-primary)]">Instagram ↗</a>
             <a href="https://www.tiktok.com/@gomotivateme" target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--color-primary)]">TikTok ↗</a>
           </div>

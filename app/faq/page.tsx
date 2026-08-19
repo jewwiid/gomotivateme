@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { PageBreadcrumbs } from "@/components/PageBreadcrumbs";
+import { StartGoalLink } from "@/components/StartGoalLink";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -148,6 +149,10 @@ const SECTIONS: FaqSection[] = [
         q: "How quickly do you reply to email?",
         answer:
           "Write to hello@gomotivateme.com for product questions, or privacy@gomotivateme.com for data requests. We reply within one business day. If something belongs on this page, we'll add it after we answer you.",
+        links: [
+          { label: "hello@gomotivateme.com", href: "mailto:hello@gomotivateme.com" },
+          { label: "privacy@gomotivateme.com", href: "mailto:privacy@gomotivateme.com" },
+        ],
       },
     ],
   },
@@ -253,12 +258,7 @@ export default function FaqPage() {
               Free, takes a few minutes, and you choose who sees it.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Link
-                href="/dashboard/new"
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]"
-              >
-                Start a goal
-              </Link>
+              <StartGoalLink className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]" />
               <Link
                 href="/explore"
                 className="text-sm font-bold text-[var(--color-primary)] transition hover:underline"

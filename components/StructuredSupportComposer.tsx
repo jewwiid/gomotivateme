@@ -256,7 +256,7 @@ export function StructuredSupportComposer({
                 value={followUpBody}
                 onChange={(e) => setFollowUpBody(e.target.value)}
                 rows={3}
-                placeholder="Write a follow-up message..."
+                placeholder="Add anything you want them to know"
                 maxLength={1000}
                 className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
               />
@@ -495,7 +495,7 @@ export function StructuredSupportComposer({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={4}
-              placeholder="Your message..."
+              placeholder="What do you want to say?"
               maxLength={1000}
               className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
             />

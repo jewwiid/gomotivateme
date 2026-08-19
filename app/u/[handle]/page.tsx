@@ -752,7 +752,7 @@ function DiscoverSidebar({
             return (
               <li key={m._id}>
                 <Link
-                  href={m.handle ? `/@${m.handle}` : "#"}
+                  href={m.handle ? `/@${m.handle}` : "/explore?tab=motivators"}
                   className="group flex items-center gap-3"
                 >
                   {m.image ? (

@@ -561,7 +561,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
             </motion.div>
             <div>
               <p className="text-xs font-semibold text-[var(--color-primary)]">Your goal journey</p>
-              <h1 className="mt-1 text-balance font-display text-xl font-semibold leading-tight tracking-[-0.035em]">{stepCopy.title}</h1>
+              <p className="mt-1 text-balance font-display text-xl font-semibold leading-tight tracking-[-0.035em]">{stepCopy.title}</p>
               <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-[var(--color-text-muted)]">{stepCopy.detail}</p>
             </div>
           </div>

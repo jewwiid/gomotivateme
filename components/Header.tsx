@@ -9,9 +9,11 @@ import {
   Heart,
   LayoutDashboard,
   LogOut,
+  Menu,
   Settings as SettingsIcon,
   User as UserIcon,
   Users,
+  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -47,6 +49,7 @@ export function Header({
 
   // ── Avatar dropdown state ──────────────────────────────────────────────
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -65,20 +68,31 @@ export function Header({
 
   // Close on Escape
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !navOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setMenuOpen(false);
-        triggerRef.current?.focus();
+        setNavOpen(false);
+        if (menuOpen) triggerRef.current?.focus();
       }
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [menuOpen]);
+  }, [menuOpen, navOpen]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [navOpen]);
 
   // Close on route change
   useEffect(() => {
     setMenuOpen(false);
+    setNavOpen(false);
   }, [pathname]);
 
   async function handleSignOut() {
@@ -100,6 +114,14 @@ export function Header({
     active: boolean;
     visible: boolean;
   };
+  const primaryLinks = [
+    { href: "/explore", label: "Explore", active: isExplore },
+    { href: "/stories", label: "Journeys", active: isStories },
+    { href: "/#how-it-works", label: "How it works", active: false },
+    { href: "/about", label: "About", active: isAbout },
+    { href: "/faq", label: "FAQ", active: isFaq },
+  ] as const;
+
   const menuItems: MenuItem[] = [
     {
       href: "/dashboard",
@@ -135,59 +157,26 @@ export function Header({
     <motion.header
       className="sticky top-0 z-40 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg)]/90 backdrop-blur-xl"
     >
-      <div className="shell-app flex h-[4.75rem] items-center gap-7 px-5 sm:px-6">
+      <div className="shell-app flex h-[4.75rem] items-center gap-3 px-5 sm:px-6 md:gap-7">
         <Wordmark size="lg" ariaLabel="GoMotivateMe — home" />
 
         <nav
           aria-label="Primary navigation"
           className="hidden h-full items-center gap-7 text-sm font-medium text-[var(--color-text-secondary)] md:flex"
         >
-          <Link
-            href="/explore"
-            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
-              isExplore
-                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
-                : ""
-            }`}
-          >
-            Explore
-          </Link>
-          <Link
-            href="/stories"
-            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
-              isStories
-                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
-                : ""
-            }`}
-          >
-            Journeys
-          </Link>
-          <Link
-            href="/#how-it-works"
-            className="transition hover:text-[var(--color-primary)]"
-          >
-            How it works
-          </Link>
-          <Link
-            href="/about"
-            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
-              isAbout
-                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
-                : ""
-            }`}
-          >
-            About
-          </Link>
-          <Link
-            href="/faq"
-            className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
-              isFaq
-                ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
-                : ""
-            }`}
-          >
-            FAQ
-          </Link>
+          {primaryLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`relative inline-flex h-full items-center transition hover:text-[var(--color-text)] ${
+                link.active
+                  ? "text-[var(--color-text)] after:absolute after:inset-x-0 after:bottom-[-1px] after:h-0.5 after:bg-[var(--color-primary)]"
+                  : ""
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <nav
@@ -329,8 +318,57 @@ export function Header({
               </Link>
             </>
           )}
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text)] transition hover:bg-[var(--color-bg-elev)] md:hidden"
+            aria-expanded={navOpen}
+            aria-controls="mobile-primary-nav"
+            aria-label={navOpen ? "Close menu" : "Open menu"}
+            onClick={() => {
+              setMenuOpen(false);
+              setNavOpen((open) => !open);
+            }}
+          >
+            {navOpen ? <X size={20} strokeWidth={1.8} /> : <Menu size={20} strokeWidth={1.8} />}
+          </button>
         </nav>
       </div>
+      <AnimatePresence>
+        {navOpen ? (
+          <motion.nav
+            id="mobile-primary-nav"
+            aria-label="Mobile primary navigation"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="overflow-hidden border-t border-[var(--color-border-subtle)] bg-[var(--color-bg)] md:hidden"
+          >
+            <ul className="flex flex-col px-5 py-3">
+              {primaryLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className={`flex min-h-12 items-center text-base font-medium ${
+                      link.active ? "text-[var(--color-primary)]" : "text-[var(--color-text)]"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link
+                  href={startGoalHref}
+                  className="mt-2 mb-1 flex min-h-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white"
+                >
+                  Start a goal
+                </Link>
+              </li>
+            </ul>
+          </motion.nav>
+        ) : null}
+      </AnimatePresence>
     </motion.header>
   );
 }
@@ -392,7 +430,7 @@ function AvatarBubble({
     <img
       key={image}
       src={image}
-      alt=""
+      alt={name}
       loading="lazy"
       decoding="async"
       onError={() => setErrored(true)}

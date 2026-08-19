@@ -310,7 +310,7 @@ function MotivatorsTab({ query }: { query: string }) {
             transition={{ duration: 0.3, delay: Math.min(i * 0.02, 0.3) }}
           >
             <Link
-              href={m.handle ? `/@${m.handle}` : "#"}
+              href={m.handle ? `/@${m.handle}` : "/explore?tab=motivators"}
               className="group block h-full rounded-[1.5rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-5 transition duration-300 hover:-translate-y-1 hover:border-[var(--color-border)] hover:shadow-[0_26px_60px_-42px_rgba(55,47,35,0.5)]"
             >
               <div className="flex items-center gap-3">
@@ -318,7 +318,7 @@ function MotivatorsTab({ query }: { query: string }) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={m.image}
-                    alt=""
+                    alt={m.name ?? m.handle ?? "Motivator"}
                     className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-sm"
                   />
                 ) : (
