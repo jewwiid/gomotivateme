@@ -52,6 +52,7 @@ import { getDefaultMilestones } from "@/lib/categories";
 import { getMeasurementsForCategory } from "@/lib/goalMeasurementCatalog";
 import { prepareProgressImage } from "@/lib/media";
 import { RequireAuth } from "@/components/RequireAuth";
+import { AiblWordmark } from "@/components/AiblMark";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import {
   AiAssistButton,
@@ -87,6 +88,63 @@ export default function GoalDetailPage() {
     <RequireAuth>
       <GoalDetailContent />
     </RequireAuth>
+  );
+}
+
+function AiblSyncCard({ goalId }: { goalId: Id<"goals"> }) {
+  const map = useQuery(api.partner.getMapForGoal, { goalId });
+  const pushGoal = useAction(api.partnerPush.pushGoalToAibl);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  if (map === undefined) return null;
+  if (!map?.connected) {
+    return (
+      <section className="workspace-card p-4">
+        <AiblWordmark className="text-sm" />
+        <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+          Connect from AI Boss Leader → Profile. AIBL is invite-only; you cannot sign up from here.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+      <section className="workspace-card p-4">
+        <AiblWordmark className="text-sm" />
+        <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+        {map.partnerCampaignId
+          ? "This goal is linked. Updates and milestones sync as tasks."
+          : "Create a matching campaign and tasks in AI Boss Leader."}
+      </p>
+      {message && (
+        <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{message}</p>
+      )}
+      <button
+        type="button"
+        disabled={busy || !map.canPush}
+        onClick={async () => {
+          setBusy(true);
+          setMessage(null);
+          try {
+            const result = await pushGoal({ goalId });
+            setMessage(`Synced ${result.taskCount} tasks into AI Boss Leader.`);
+          } catch (error) {
+            setMessage(error instanceof Error ? error.message : "Could not sync");
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="workspace-button-primary mt-3 min-h-9 disabled:opacity-50"
+      >
+        {busy ? "Syncing…" : map.partnerCampaignId ? "Sync again" : "Create campaign in AIBL"}
+      </button>
+      {!map.canPush && (
+        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+          Reconnect from AIBL Profile so GoMotivateMe can push campaigns back.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -376,6 +434,7 @@ function GoalDetailContent() {
             onOpenUpdate={(kind) => setShowUpdate(kind)}
           />
         }
+        partnerPanel={<AiblSyncCard goalId={goalId} />}
         onCopyLink={onCopyLink}
         onOpenUpdate={(kind: OwnerUpdateKind) => setShowUpdate(kind)}
         onPostUpdate={postQuickUpdate}

@@ -116,6 +116,19 @@ function parseNotification(
         body: `${payload.goalTitle} is live. Share it to start building momentum.`,
         href: "/dashboard",
       };
+    case "partnerSync":
+      return {
+        title:
+          payload.kind === "connected"
+            ? "AI Boss Leader connected"
+            : payload.kind === "goal_to_aibl"
+            ? "Campaign created in AI Boss Leader"
+            : "Goal synced",
+        body: payload.title
+          ? `${payload.title} is linked between GoMotivateMe and AI Boss Leader.`
+          : "Your accounts can share goals, campaigns, and tasks.",
+        href: "/dashboard",
+      };
     default:
       return {
         title: "Notification",

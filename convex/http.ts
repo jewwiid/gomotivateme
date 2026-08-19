@@ -1,10 +1,41 @@
 import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
 import { auth } from "./auth";
+import {
+  partnerComplete,
+  partnerGoalsCreate,
+  partnerGoalsGet,
+  partnerMe,
+  partnerOptions,
+  partnerProgress,
+  partnerRegisterInbound,
+  partnerToken,
+} from "./partnerHttp";
 
 const http = httpRouter();
 
-// Exposes Convex Auth's OIDC discovery document and JWKS. Convex uses these
-// endpoints to validate the session JWTs issued by this deployment.
+const ping = httpAction(async () => {
+  return new Response(JSON.stringify({ ok: true, service: "gmm-partner" }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+});
+
+http.route({ path: "/partner/ping", method: "GET", handler: ping });
+
 auth.addHttpRoutes(http);
+http.route({ path: "/partner/v1/token", method: "OPTIONS", handler: partnerOptions });
+http.route({ path: "/partner/v1/me", method: "OPTIONS", handler: partnerOptions });
+http.route({ path: "/partner/v1/goals", method: "OPTIONS", handler: partnerOptions });
+http.route({ path: "/partner/v1/progress", method: "OPTIONS", handler: partnerOptions });
+http.route({ path: "/partner/v1/complete", method: "OPTIONS", handler: partnerOptions });
+http.route({ path: "/partner/v1/register-inbound", method: "OPTIONS", handler: partnerOptions });
+http.route({ path: "/partner/v1/token", method: "POST", handler: partnerToken });
+http.route({ path: "/partner/v1/me", method: "GET", handler: partnerMe });
+http.route({ path: "/partner/v1/goals", method: "GET", handler: partnerGoalsGet });
+http.route({ path: "/partner/v1/goals", method: "POST", handler: partnerGoalsCreate });
+http.route({ path: "/partner/v1/progress", method: "POST", handler: partnerProgress });
+http.route({ path: "/partner/v1/complete", method: "POST", handler: partnerComplete });
+http.route({ path: "/partner/v1/register-inbound", method: "POST", handler: partnerRegisterInbound });
 
 export default http;

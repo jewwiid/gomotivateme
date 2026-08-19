@@ -102,6 +102,7 @@ export function OwnerGoalWorkspace({
   circleManager,
   applicationQueue,
   settingsPanel,
+  partnerPanel,
 }: {
   goal: WorkspaceGoal;
   coverUrl: string | null | undefined;
@@ -123,6 +124,7 @@ export function OwnerGoalWorkspace({
   circleManager?: ReactNode;
   applicationQueue?: ReactNode;
   settingsPanel?: ReactNode;
+  partnerPanel?: ReactNode;
 }) {
   const [note, setNote] = useState("");
   const [posting, setPosting] = useState(false);
@@ -520,6 +522,7 @@ export function OwnerGoalWorkspace({
               </div>
             </section>}
             </div>
+            {partnerPanel}
 
             <section className="workspace-card p-4">
               <div className="flex items-center justify-between">

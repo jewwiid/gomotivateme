@@ -827,4 +827,60 @@ export default defineSchema({
     .index("by_followee_status", ["followeeId", "status"])
     .index("by_follower_status", ["followerId", "status"])
     .index("by_follower_followee", ["followerId", "followeeId"]),
+
+  /**
+   * Linked partner apps (currently AI Boss Leader).
+   * Access tokens are stored hashed; the partner keeps the secret.
+   */
+  partnerLinks: defineTable({
+    userId: v.id("users"),
+    partner: v.string(),
+    partnerUserId: v.optional(v.string()),
+    accessTokenHash: v.string(),
+    /** Plain token GMM uses to call AIBL HTTP. */
+    aiblAccessToken: v.optional(v.string()),
+    aiblSiteUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_tokenHash", ["accessTokenHash"])
+    .index("by_user_partner", ["userId", "partner"]),
+
+  partnerAuthCodes: defineTable({
+    userId: v.id("users"),
+    partner: v.string(),
+    codeHash: v.string(),
+    redirectUri: v.string(),
+    state: v.string(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_codeHash", ["codeHash"])
+    .index("by_user_partner", ["userId", "partner"]),
+
+  partnerGoalMaps: defineTable({
+    userId: v.id("users"),
+    partner: v.string(),
+    partnerCampaignId: v.string(),
+    goalId: v.id("goals"),
+    createdAt: v.number(),
+  })
+    .index("by_user_campaign", ["userId", "partner", "partnerCampaignId"])
+    .index("by_goal", ["goalId"]),
+
+  partnerTaskMaps: defineTable({
+    userId: v.id("users"),
+    partner: v.string(),
+    partnerCampaignId: v.string(),
+    partnerTaskId: v.string(),
+    goalId: v.id("goals"),
+    milestoneId: v.optional(v.string()),
+    gmmKey: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_task", ["userId", "partner", "partnerTaskId"])
+    .index("by_goal_task", ["goalId", "partnerTaskId"])
+    .index("by_gmmKey", ["userId", "partner", "gmmKey"]),
 });

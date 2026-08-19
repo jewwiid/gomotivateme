@@ -18,6 +18,7 @@ import { DeadlinePassedEmail, DeadlinePassedEmailProps } from "./deadlinePassed"
 import { StreakReminderEmail, StreakReminderEmailProps } from "./streakReminder";
 import { FollowRequestEmail, FollowRequestEmailProps } from "./followRequest";
 import { NewFollowerEmail, NewFollowerEmailProps } from "./newFollower";
+import { PartnerSyncEmail, PartnerSyncEmailProps } from "./partnerSync";
 import { PlatformDigestEmail, PlatformDigestEmailProps } from "./platformDigest";
 
 /**
@@ -203,6 +204,19 @@ export function renderTemplate(
       return {
         subject: `Your ${p.goalTitle} deadline passed`,
         component: <DeadlinePassedEmail {...p} />,
+      };
+    }
+
+    case "partnerSync": {
+      const p = payload as PartnerSyncEmailProps;
+      return {
+        subject:
+          p.kind === "connected"
+            ? "AI Boss Leader is connected"
+            : p.kind === "goal_to_aibl"
+            ? `${p.title} is now a campaign in AI Boss Leader`
+            : `${p.title} is synced`,
+        component: <PartnerSyncEmail {...p} />,
       };
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAction, useMutation } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -44,6 +44,7 @@ import {
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Wordmark } from "@/components/Wordmark";
+import { AiblWordmark } from "@/components/AiblMark";
 import {
   AiAssistButton,
   AiDraftCard,
@@ -190,6 +191,8 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   const create = useMutation(api.goals.create);
   const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
   const suggest = useAction(api.aiAssistant.suggest);
+  const aiblLinks = useQuery(api.partner.listMine);
+  const pushGoalToAibl = useAction(api.partnerPush.pushGoalToAibl);
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
@@ -209,6 +212,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   const [supporterTarget, setSupporterTarget] = useState("");
   const [supportTypes, setSupportTypes] = useState<string[]>(["encourage", "checkin"]);
   const [visibility, setVisibility] = useState<"public" | "unlisted" | "private">("public");
+  const [syncToAibl, setSyncToAibl] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -497,6 +501,13 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
         isAnonymous,
         coverImageId,
       });
+      if (syncToAibl && (aiblLinks?.length ?? 0) > 0) {
+        try {
+          await pushGoalToAibl({ goalId });
+        } catch (error) {
+          console.error("[partner] create-goal AIBL sync failed", error);
+        }
+      }
       trackDataFastGoal("goal_created", {
         progress_type: progressType,
         visibility,
@@ -1112,6 +1123,44 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   </div>
                 </div>
               </label>
+              {(aiblLinks?.length ?? 0) > 0 && (
+                <label
+                  className={`mt-4 flex cursor-pointer items-start gap-3 rounded-[var(--workspace-radius)] border p-4 transition ${
+                    syncToAibl
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={syncToAibl}
+                    onChange={(e) => setSyncToAibl(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                      syncToAibl
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]"
+                        : "border-[var(--color-border-strong)] bg-white"
+                    }`}
+                    onClick={() => setSyncToAibl((v) => !v)}
+                  >
+                    {syncToAibl && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold">
+                      Also create a campaign in <AiblWordmark className="align-middle text-sm" />
+                    </div>
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                      Turns this goal into operator tasks in AIBL. You will get a confirmation email.
+                    </div>
+                  </div>
+                </label>
+              )}
             </Step>
           )}
 

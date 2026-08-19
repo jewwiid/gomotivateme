@@ -14,6 +14,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@/convex/_generated/api";
+import { AiblWordmark } from "@/components/AiblMark";
 import { Id } from "@/convex/_generated/dataModel";
 import { DashboardWorkspaceShell } from "@/components/DashboardWorkspaceShell";
 import { RequireAuth } from "@/components/RequireAuth";
@@ -447,6 +448,8 @@ function AccountTab() {
       {/* Follow policy */}
       <FollowPolicySection policy={me?.followPolicy ?? "approval"} />
 
+      <AiblConnectionSection />
+
       {/* Deactivate */}
       <DeactivateSection />
     </div>
@@ -536,6 +539,62 @@ function FollowPolicySection({
           );
         })}
       </div>
+    </Section>
+  );
+}
+
+function AiblConnectionSection() {
+  const links = useQuery(api.partner.listMine);
+  const revoke = useMutation(api.partner.revoke);
+  const [busy, setBusy] = useState(false);
+  const connected = (links ?? []).length > 0;
+
+  const onRevoke = async () => {
+    if (!connected) return;
+    if (!confirm("Disconnect AI Boss Leader? Campaigns will stop syncing to goals.")) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await revoke({});
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Section title="AI Boss Leader">
+      <div className="mb-3">
+        <AiblWordmark className="text-base" />
+      </div>
+      <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+        AI Boss Leader is invite-only. Connect from AIBL Profile after you have access.
+        Then campaigns can become public goals and finished tasks sync here.
+      </p>
+      {links === undefined ? (
+        <p className="text-xs text-[var(--color-text-muted)]">Checking connection…</p>
+      ) : connected ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-white px-3 py-3">
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-text)]">Connected</p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Campaigns can create and update goals on this account.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void onRevoke()}
+            disabled={busy}
+            className="rounded-xl border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-text-muted)] disabled:opacity-50"
+          >
+            {busy ? "Disconnecting…" : "Disconnect"}
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Not connected. Start from AI Boss Leader → Profile → GoMotivateMe.
+        </p>
+      )}
     </Section>
   );
 }

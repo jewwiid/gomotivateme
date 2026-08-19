@@ -750,6 +750,13 @@ export const toggleMilestone = mutation({
           publicVisible: true,
           createdAt: Date.now(),
         });
+        await ctx.scheduler.runAfter(0, internal.partnerPush.pushUpdateToAiblInternal, {
+          userId,
+          goalId,
+          gmmKey: `milestone:${milestoneId}`,
+          title: ms.title,
+          completed: true,
+        });
       }
     }
 

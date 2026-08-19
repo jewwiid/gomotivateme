@@ -256,6 +256,13 @@ export const add = mutation({
     if (args.type === "link" && args.linkUrl) {
       await ctx.scheduler.runAfter(0, internal.linkPreview.fetchPreview, { updateId });
     }
+    await ctx.scheduler.runAfter(0, internal.partnerPush.pushUpdateToAiblInternal, {
+      userId,
+      goalId: args.goalId,
+      gmmKey: `update:${updateId}`,
+      title: cleanNote(args.note) || "Progress update",
+      completed: false,
+    });
     return updateId;
   },
 });
