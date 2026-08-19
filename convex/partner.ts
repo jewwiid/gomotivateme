@@ -23,6 +23,36 @@ import { buildSlug } from "./utils";
 const PARTNER = "aibl";
 const AUTH_CODE_TTL_MS = 10 * 60 * 1000;
 
+function isoDateFromMs(ms: number | undefined) {
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms <= 0) return undefined;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function titleForPartnerUpdate(
+  row: {
+    type: string;
+    note?: string;
+    value?: number;
+    linkTitle?: string;
+    linkUrl?: string;
+  },
+  unit: string
+) {
+  const note = row.note?.trim();
+  if (note) return note.slice(0, 120);
+  if (row.type === "value" && typeof row.value === "number") {
+    const unitLabel = unit && unit !== "value" ? ` ${unit}` : "";
+    return `Logged ${row.value}${unitLabel}`.trim().slice(0, 120);
+  }
+  if (row.type === "link") {
+    return (row.linkTitle || row.linkUrl || "Shared a link").slice(0, 120);
+  }
+  if (row.type === "image" || row.type === "media") return "Posted media";
+  if (row.type === "milestone") return "Milestone update";
+  if (row.type === "note") return "Progress note";
+  return "Progress update";
+}
+
 const milestoneInput = v.object({
   id: v.string(),
   title: v.string(),
@@ -744,12 +774,15 @@ export const getGoalPushPayload = internalQuery({
           id: v.string(),
           title: v.string(),
           done: v.boolean(),
+          date: v.optional(v.string()),
         })
       ),
       updates: v.array(
         v.object({
           id: v.string(),
           title: v.string(),
+          date: v.optional(v.string()),
+          description: v.optional(v.string()),
         })
       ),
     }),
@@ -766,7 +799,7 @@ export const getGoalPushPayload = internalQuery({
       .query("updates")
       .withIndex("by_goal_created", (q) => q.eq("goalId", goalId))
       .order("desc")
-      .take(20);
+      .take(100);
     return {
       goalId,
       title: goal.title,
@@ -787,12 +820,15 @@ export const getGoalPushPayload = internalQuery({
         id: item.id,
         title: item.title,
         done: item.done,
+        date: isoDateFromMs(item.completedAt),
       })),
       updates: updates
-        .filter((row) => !row.revertedAt)
+        .filter((row) => !row.revertedAt && row.type !== "milestone")
         .map((row) => ({
           id: row._id,
-          title: (row.note || row.type).slice(0, 120),
+          title: titleForPartnerUpdate(row, goal.unit),
+          date: isoDateFromMs(row.createdAt),
+          description: row.note?.trim().slice(0, 500) || undefined,
         })),
     };
   },

@@ -21,8 +21,8 @@ type GoalPushPayload = {
   targetDate: number | null;
   supportTypes: string[];
   campaignId: string | null;
-  milestones: Array<{ id: string; title: string; done: boolean }>;
-  updates: Array<{ id: string; title: string }>;
+  milestones: Array<{ id: string; title: string; done: boolean; date?: string }>;
+  updates: Array<{ id: string; title: string; date?: string; description?: string }>;
 };
 
 async function aiblRequest(
@@ -104,18 +104,27 @@ export const pushGoalToAibl = action({
     });
 
     let taskCount = 0;
-    const items: Array<{ key: string; title: string; done: boolean }> =
-      payload.milestones.length > 0
-        ? payload.milestones.map((item) => ({
-            key: `milestone:${item.id}`,
-            title: item.title,
-            done: item.done,
-          }))
-        : payload.updates.map((item) => ({
-            key: `update:${item.id}`,
-            title: item.title,
-            done: false,
-          }));
+    const items: Array<{
+      key: string;
+      title: string;
+      done: boolean;
+      date?: string;
+      description?: string;
+    }> = [
+      ...payload.milestones.map((item) => ({
+        key: `milestone:${item.id}`,
+        title: item.title,
+        done: item.done,
+        date: item.date,
+      })),
+      ...payload.updates.map((item) => ({
+        key: `update:${item.id}`,
+        title: item.title,
+        done: true,
+        date: item.date,
+        description: item.description,
+      })),
+    ];
 
     for (const item of items) {
       const task = await aiblRequest(
@@ -128,7 +137,8 @@ export const pushGoalToAibl = action({
           gmmKey: item.key,
           title: item.title,
           completed: item.done,
-          description: payload.summary || payload.story,
+          date: item.date,
+          description: item.description || payload.summary || payload.story,
           websiteUrl: payload.publicUrl,
         }
       );
@@ -186,6 +196,7 @@ export const pushUpdateToAibl = action({
         gmmKey: args.gmmKey,
         title: args.title,
         completed: args.completed ?? false,
+        date: new Date().toISOString().slice(0, 10),
       }
     );
     const taskId = String(task.taskId || "");
@@ -234,6 +245,7 @@ export const pushUpdateToAiblInternal = internalAction({
           gmmKey: args.gmmKey,
           title: args.title,
           completed: args.completed ?? false,
+          date: new Date().toISOString().slice(0, 10),
         }),
       });
       const task = (await response.json().catch(() => ({}))) as Record<string, unknown>;
