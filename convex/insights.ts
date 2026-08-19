@@ -28,6 +28,42 @@ function progressPercent(
 /** Owner-facing seven-day recap, including quiet weeks (unlike the email digest). */
 export const weeklySummary = query({
   args: { tzOffsetMinutes: v.optional(v.number()) },
+  returns: v.union(
+    v.null(),
+    v.object({
+      since: v.number(),
+      through: v.number(),
+      days: v.array(v.object({ key: v.string(), count: v.number() })),
+      updatesPosted: v.number(),
+      activeDays: v.number(),
+      goalsMoved: v.number(),
+      peopleShowingUp: v.number(),
+      messagesReceived: v.number(),
+      checkInsReceived: v.number(),
+      newSupporters: v.number(),
+      achievementsEarned: v.number(),
+      milestonesReached: v.number(),
+      leadingStreak: v.union(
+        v.null(),
+        v.object({
+          goalId: v.id("goals"),
+          title: v.string(),
+          current: v.number(),
+          best: v.number(),
+          loggedToday: v.boolean(),
+        })
+      ),
+      topGoal: v.union(
+        v.null(),
+        v.object({
+          goalId: v.id("goals"),
+          title: v.string(),
+          updates: v.number(),
+          progressPct: v.number(),
+        })
+      ),
+    })
+  ),
   handler: async (ctx, { tzOffsetMinutes }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
@@ -52,6 +88,12 @@ export const weeklySummary = query({
     let checkInsReceived = 0;
     let newSupporters = 0;
     const goalsMoved = new Set<string>();
+    const goalActivity: Array<{
+      goalId: (typeof goals)[number]["_id"];
+      title: string;
+      updates: number;
+      progressPct: number;
+    }> = [];
 
     for (const goal of goals) {
       const [updates, messages, checkIns, supporters] = await Promise.all([
@@ -84,7 +126,20 @@ export const weeklySummary = query({
       messagesReceived += messages.length;
       checkInsReceived += checkIns.length;
       newSupporters += supporters.filter((supporter) => supporter.createdAt >= since).length;
-      if (liveUpdates.length > 0) goalsMoved.add(goal._id);
+      if (liveUpdates.length > 0) {
+        goalsMoved.add(goal._id);
+        goalActivity.push({
+          goalId: goal._id,
+          title: goal.title,
+          updates: liveUpdates.length,
+          progressPct: progressPercent(
+            goal.startValue ?? 0,
+            goal.currentValue ?? 0,
+            goal.targetValue,
+            goal.direction
+          ),
+        });
+      }
 
       for (const update of liveUpdates) {
         const bucket = byDay.get(dayKey(update.createdAt, offset));
@@ -117,6 +172,21 @@ export const weeklySummary = query({
       )
       .collect();
 
+    const milestonesReached = goals.reduce(
+      (total, goal) =>
+        total +
+        (goal.milestones?.filter(
+          (milestone) =>
+            milestone.done &&
+            milestone.completedAt !== undefined &&
+            milestone.completedAt >= since
+        ).length ?? 0),
+      0
+    );
+    const topGoal =
+      goalActivity.sort((a, b) => b.updates - a.updates || b.progressPct - a.progressPct)[0] ??
+      null;
+
     return {
       since,
       through: now,
@@ -129,7 +199,9 @@ export const weeklySummary = query({
       checkInsReceived,
       newSupporters,
       achievementsEarned: recentAchievements.length,
+      milestonesReached,
       leadingStreak: streakGoals[0] ?? null,
+      topGoal,
     };
   },
 });

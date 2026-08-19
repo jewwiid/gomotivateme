@@ -1,8 +1,10 @@
 "use client";
 
 import { useAction, useMutation } from "convex/react";
-import { RotateCcw, Sparkles, X } from "lucide-react";
-import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, RotateCcw, Sparkles, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { AiAssistButton, AiDraftDisclosure } from "@/components/AiAssist";
@@ -21,6 +23,14 @@ const BLOCKERS = [
 
 type Blocker = (typeof BLOCKERS)[number]["id"];
 
+type NextAction = {
+  headline: string;
+  action: string;
+  reason: string;
+  updatePrompt: string;
+  usageEventId: Id<"aiUsageEvents">;
+};
+
 export function GoalMomentumCoach({
   goalId,
   fallbackAction,
@@ -38,7 +48,7 @@ export function GoalMomentumCoach({
   updateDisabled?: boolean;
   updateLabel: string;
   staleDays: number;
-  onOpenUpdate: (kind: OwnerUpdateKind) => void;
+  onOpenUpdate: (kind: OwnerUpdateKind, note?: string) => void;
 }) {
   const suggestNextAction = useAction(api.aiCoach.suggestNextAction);
   const createRecoveryPlan = useAction(api.aiCoach.createRecoveryPlan);
@@ -46,13 +56,8 @@ export function GoalMomentumCoach({
   const [nextBusy, setNextBusy] = useState(false);
   const [recoveryBusy, setRecoveryBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [next, setNext] = useState<{
-    headline: string;
-    action: string;
-    reason: string;
-    updatePrompt: string;
-    usageEventId: Id<"aiUsageEvents">;
-  } | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [next, setNext] = useState<NextAction | null>(null);
   const [showRecovery, setShowRecovery] = useState(false);
   const [blocker, setBlocker] = useState<Blocker>("time");
   const [recovery, setRecovery] = useState<{
@@ -77,6 +82,12 @@ export function GoalMomentumCoach({
     }
   };
 
+  const openPersonalise = () => {
+    setAiOpen(true);
+    setErr(null);
+    if (!next && !nextBusy) void requestNextAction();
+  };
+
   const requestRecovery = async () => {
     setRecoveryBusy(true);
     setErr(null);
@@ -91,10 +102,11 @@ export function GoalMomentumCoach({
     }
   };
 
-  const useNextStep = (usageEventId: Id<"aiUsageEvents">) => {
+  const useNextStep = (usageEventId: Id<"aiUsageEvents">, note?: string) => {
     void recordAiOutcome({ usageEventId, outcome: "applied" });
     trackDataFastGoal("ai_suggestion_applied", { feature: "next_action" });
-    onOpenUpdate(updateKind);
+    setAiOpen(false);
+    onOpenUpdate(updateKind, note);
   };
 
   return (
@@ -113,10 +125,6 @@ export function GoalMomentumCoach({
               <>
                 <p className="mt-1.5 text-sm leading-5 text-[var(--color-text)]">{next.action}</p>
                 <p className="mt-1.5 text-xs leading-5 text-[var(--color-text-muted)]">{next.reason}</p>
-                <p className="mt-2 border-l-2 border-[var(--color-primary)]/35 pl-2 text-[10px] leading-4 text-[var(--color-text-muted)]">
-                  When you finish: {next.updatePrompt}
-                </p>
-                <AiDraftDisclosure />
               </>
             ) : (
               <p className="mt-1.5 text-xs leading-5 text-[var(--color-text-muted)]">
@@ -128,31 +136,21 @@ export function GoalMomentumCoach({
               <button
                 type="button"
                 disabled={updateDisabled}
-                onClick={() => (next ? useNextStep(next.usageEventId) : onOpenUpdate(updateKind))}
+                onClick={() =>
+                  next
+                    ? useNextStep(next.usageEventId, next.updatePrompt)
+                    : onOpenUpdate(updateKind)
+                }
                 className="workspace-button-primary min-h-9 w-auto px-4 disabled:cursor-default disabled:opacity-55 active:scale-[0.98]"
               >
                 {next ? "Start this step" : updateLabel}
               </button>
-              {next ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void recordAiOutcome({ usageEventId: next.usageEventId, outcome: "dismissed" });
-                    setNext(null);
-                  }}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] active:scale-[0.98]"
-                  aria-label="Dismiss AI next action"
-                >
-                  <X size={14} aria-hidden />
-                </button>
-              ) : (
-                <AiAssistButton
-                  label="Personalise with AI"
-                  busyLabel="Finding a next step…"
-                  busy={nextBusy}
-                  onClick={() => void requestNextAction()}
-                />
-              )}
+              <AiAssistButton
+                label={next ? "Refresh with AI" : "Personalise with AI"}
+                busyLabel="Finding a next step…"
+                busy={nextBusy && !aiOpen}
+                onClick={openPersonalise}
+              />
             </div>
           </div>
 
@@ -225,7 +223,7 @@ export function GoalMomentumCoach({
                     <p className="mt-2 text-xs leading-5 text-[var(--color-text-muted)]">{recovery.encouragement}</p>
                     <button
                       type="button"
-                      onClick={() => useNextStep(recovery.usageEventId)}
+                      onClick={() => useNextStep(recovery.usageEventId, recovery.steps[0])}
                       className="workspace-button-primary mt-3 min-h-9 w-auto px-4 active:scale-[0.98]"
                     >
                       Take the first step
@@ -243,9 +241,155 @@ export function GoalMomentumCoach({
               </div>
             )}
           </div>
-          {err ? <p className="mt-3 text-xs text-[var(--color-danger-text)]">{err}</p> : null}
+          {err && !aiOpen ? <p className="mt-3 text-xs text-[var(--color-danger-text)]">{err}</p> : null}
         </div>
       </div>
+
+      <NextActionModal
+        open={aiOpen}
+        busy={nextBusy}
+        error={err}
+        next={next}
+        updateDisabled={updateDisabled}
+        onClose={() => setAiOpen(false)}
+        onRetry={() => void requestNextAction()}
+        onStart={() => next && useNextStep(next.usageEventId, next.updatePrompt)}
+      />
     </section>
+  );
+}
+
+function NextActionModal({
+  open,
+  busy,
+  error,
+  next,
+  updateDisabled,
+  onClose,
+  onRetry,
+  onStart,
+}: {
+  open: boolean;
+  busy: boolean;
+  error: string | null;
+  next: NextAction | null;
+  updateDisabled?: boolean;
+  onClose: () => void;
+  onRetry: () => void;
+  onStart: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          key="next-action-modal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="next-action-title"
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 p-3 sm:items-center sm:p-6"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 18, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            className="workspace-card max-h-[90dvh] w-full max-w-md overflow-y-auto p-5"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] font-medium tracking-[0.04em] text-[var(--color-primary)]">
+                  Next best action
+                </p>
+                <h3 id="next-action-title" className="mt-1 text-lg font-semibold">
+                  Personalise this step
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-elev)] hover:text-[var(--color-text)]"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {busy && !next ? (
+              <div className="grid min-h-40 place-items-center text-center text-[var(--color-text-muted)]">
+                <Loader2 className="mx-auto animate-spin text-[var(--color-primary)]" size={28} />
+                <p className="mt-3 text-sm">Finding a next step for this goal…</p>
+              </div>
+            ) : next ? (
+              <div>
+                <p className="font-display text-2xl font-semibold tracking-[-0.035em]">{next.headline}</p>
+                <p className="mt-3 text-sm leading-6 text-[var(--color-text)]">{next.action}</p>
+                <p className="mt-2 text-xs leading-5 text-[var(--color-text-muted)]">{next.reason}</p>
+                <p className="mt-4 border-l-2 border-[var(--color-primary)]/35 pl-3 text-xs font-semibold leading-5 text-[var(--color-text)]">
+                  When you finish: {next.updatePrompt}
+                </p>
+                <AiDraftDisclosure />
+                <div className="mt-5 space-y-2">
+                  <button
+                    type="button"
+                    disabled={updateDisabled}
+                    onClick={onStart}
+                    className="workspace-button-primary min-h-11 w-full disabled:cursor-default disabled:opacity-55"
+                  >
+                    Start this step
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    disabled={busy}
+                    className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[var(--color-border-strong)] text-sm font-semibold text-[var(--color-primary)] transition hover:border-[var(--color-primary)] disabled:opacity-50"
+                  >
+                    {busy ? "Refreshing…" : "Try another suggestion"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm leading-6 text-[var(--color-text-muted)]">
+                  {error ?? "We could not personalise this step. Try again."}
+                </p>
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  disabled={busy}
+                  className="workspace-button-primary min-h-11 w-full"
+                >
+                  {busy ? "Trying again…" : "Try again"}
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>,
+    document.body
   );
 }

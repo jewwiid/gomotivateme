@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { ArrowRight, CalendarDays, Flame, Plus, Sparkles, Trophy, Users } from "lucide-react";
 import { api } from "@/convex/_generated/api";
@@ -10,8 +10,7 @@ import { GoalCard } from "@/components/GoalCard";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { useState } from "react";
-import { AiAssistButton, AiDraftDisclosure } from "@/components/AiAssist";
-import { aiAssistantErrorMessage } from "@/lib/aiAssistant";
+import { WeeklyRecapExperience } from "@/components/WeeklyRecapExperience";
 import { trackDataFastGoal } from "@/lib/analytics";
 
 export default function DashboardPage() {
@@ -66,7 +65,7 @@ function DashboardContent() {
             <DashboardStat value={supporters} label="supporters" loading={goals === undefined} />
           </dl>
 
-          <WeeklySummary summary={weekly} />
+          <WeeklySummary summary={weekly} firstName={user?.name?.trim().split(/\s+/)[0]} />
 
           <section className="mt-8">
             <div className="flex items-end justify-between gap-4">
@@ -189,40 +188,24 @@ function DashboardContent() {
   );
 }
 
-function WeeklySummary({ summary }: { summary: any }) {
-  const createWeeklyRecap = useAction(api.aiCoach.createWeeklyRecap);
-  const recordAiOutcome = useMutation(api.aiOperations.recordOutcome);
-  const [aiBusy, setAiBusy] = useState(false);
-  const [aiErr, setAiErr] = useState<string | null>(null);
-  const [reflection, setReflection] = useState<{
-    narrative: string;
-    reflectionQuestion: string;
-    highlight: string;
-  } | null>(null);
+function WeeklySummary({ summary, firstName }: { summary: any; firstName?: string }) {
+  const [recapOpen, setRecapOpen] = useState(false);
 
-  const requestReflection = async () => {
-    setAiBusy(true);
-    setAiErr(null);
-    try {
-      const result = await createWeeklyRecap({
-        tzOffsetMinutes: new Date().getTimezoneOffset(),
-      });
-      setReflection({
-        narrative: result.narrative,
-        reflectionQuestion: result.reflectionQuestion,
-        highlight: result.highlight,
-      });
-      void recordAiOutcome({ usageEventId: result.usageEventId, outcome: "viewed" });
-      trackDataFastGoal("ai_summary_viewed", { feature: "weekly_recap" });
-    } catch (error) {
-      setAiErr(aiAssistantErrorMessage(error));
-    } finally {
-      setAiBusy(false);
-    }
+  const openRecap = () => {
+    if (!summary) return;
+    setRecapOpen(true);
+    trackDataFastGoal("ai_summary_viewed", { feature: "weekly_recap" });
   };
 
   return (
     <section className="workspace-card mt-4 overflow-hidden">
+      {recapOpen && summary ? (
+        <WeeklyRecapExperience
+          summary={summary}
+          firstName={firstName}
+          onClose={() => setRecapOpen(false)}
+        />
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] px-5 py-5 sm:px-6">
         <div>
           <div className="flex items-center gap-2">
@@ -237,27 +220,16 @@ function WeeklySummary({ summary }: { summary: any }) {
           <p className="mt-2 text-sm text-[var(--color-text-muted)]">
             A quiet day is information, not failure. The next check-in is the one that matters.
           </p>
-          <div className="mt-4 max-w-xl space-y-2">
-            <AiAssistButton
-              label={reflection ? "Refresh reflection" : "Reflect on this week"}
-              busyLabel="Reflecting on your week…"
-              busy={aiBusy}
+          <div className="mt-4">
+            <button
+              type="button"
               disabled={summary === undefined}
-              onClick={() => void requestReflection()}
-            />
-            {aiErr ? <p className="text-xs text-[var(--color-danger-text)]">{aiErr}</p> : null}
-            {reflection ? (
-              <div className="rounded-2xl border border-[var(--color-primary)]/25 bg-[var(--color-primary-soft)] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-primary)]">
-                  {reflection.highlight}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--color-text)]">{reflection.narrative}</p>
-                <p className="mt-3 border-l-2 border-[var(--color-primary)]/35 pl-3 text-xs font-semibold leading-5 text-[var(--color-text)]">
-                  {reflection.reflectionQuestion}
-                </p>
-                <AiDraftDisclosure />
-              </div>
-            ) : null}
+              onClick={openRecap}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[var(--color-primary)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Sparkles size={15} aria-hidden />
+              Reflect on this week
+            </button>
           </div>
         </div>
         <div className="flex flex-col items-start gap-3 sm:items-end">

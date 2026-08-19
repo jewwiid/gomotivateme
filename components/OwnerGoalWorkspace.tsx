@@ -115,7 +115,7 @@ export function OwnerGoalWorkspace({
   supporterName?: string;
   nextActionPanel?: ReactNode;
   onCopyLink: () => void;
-  onOpenUpdate: (kind: OwnerUpdateKind) => void;
+  onOpenUpdate: (kind: OwnerUpdateKind, note?: string) => void;
   onPostUpdate: (note: string) => Promise<void>;
   onUndoUpdate?: (updateId: string) => void;
   milestoneEditor?: ReactNode;

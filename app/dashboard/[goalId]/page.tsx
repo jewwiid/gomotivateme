@@ -114,8 +114,8 @@ function AiblSyncCard({ goalId }: { goalId: Id<"goals"> }) {
         <AiblWordmark className="text-sm" />
         <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
         {map.partnerCampaignId
-          ? "This goal is linked. Updates and milestones sync as tasks."
-          : "Create a matching campaign and tasks in AI Boss Leader."}
+          ? "This goal is linked. Sync writes the public page, story, and DNA onto the AIBL campaign, then updates tasks."
+          : "Create a matching campaign in AI Boss Leader with this goal’s page, story, and DNA so tasks stay on-brief."}
       </p>
       {message && (
         <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{message}</p>
@@ -128,7 +128,9 @@ function AiblSyncCard({ goalId }: { goalId: Id<"goals"> }) {
           setMessage(null);
           try {
             const result = await pushGoal({ goalId });
-            setMessage(`Synced ${result.taskCount} tasks into AI Boss Leader.`);
+            setMessage(
+              `Updated the AIBL campaign and synced ${result.taskCount} task${result.taskCount === 1 ? "" : "s"}.`
+            );
           } catch (error) {
             setMessage(error instanceof Error ? error.message : "Could not sync");
           } finally {
@@ -281,6 +283,15 @@ function GoalDetailContent() {
   const updateImageUrlOf = (imageId: Id<"_storage">) => updateImageUrls?.[imageId] ?? null;
 
   const [showUpdate, setShowUpdate] = useState<OwnerUpdateKind | null>(null);
+  const [updateDraftNote, setUpdateDraftNote] = useState("");
+  const openUpdate = (kind: OwnerUpdateKind, note?: string) => {
+    setUpdateDraftNote(note ?? "");
+    setShowUpdate(kind);
+  };
+  const closeUpdate = () => {
+    setShowUpdate(null);
+    setUpdateDraftNote("");
+  };
   const [linkCopied, setLinkCopied] = useState(false);
   const [showStatus, setShowStatus] = useState(false);
 
@@ -351,7 +362,7 @@ function GoalDetailContent() {
   const streakLoggedToday = goal.streakLastLoggedDay === streakTodayKey;
   const nextUpdateKind: OwnerUpdateKind =
     goal.progressType === "milestones"
-      ? "milestone"
+      ? "note"
       : goal.progressType === "streak"
       ? "streak"
       : "progress";
@@ -431,12 +442,12 @@ function GoalDetailContent() {
                 : "Log progress"
             }
             staleDays={staleDays}
-            onOpenUpdate={(kind) => setShowUpdate(kind)}
+            onOpenUpdate={openUpdate}
           />
         }
         partnerPanel={<AiblSyncCard goalId={goalId} />}
         onCopyLink={onCopyLink}
-        onOpenUpdate={(kind: OwnerUpdateKind) => setShowUpdate(kind)}
+        onOpenUpdate={openUpdate}
         onPostUpdate={postQuickUpdate}
         onUndoUpdate={(updateId) => {
           const reason = prompt("Why are you undoing this? (optional)");
@@ -587,6 +598,7 @@ function GoalDetailContent() {
             unit={goal.unit}
             milestones={goal.milestones ?? []}
             quickDelta={goal.direction === "decrease" ? -1 : 1}
+            draftNote={updateDraftNote}
             onSelectType={setShowUpdate}
             onQuickIncrement={async (note) => {
               await quickIncrement({
@@ -596,7 +608,7 @@ function GoalDetailContent() {
               });
               trackDataFastGoal("goal_update_posted", { update_type: "quick" });
             }}
-            onClose={() => setShowUpdate(null)}
+            onClose={closeUpdate}
           />
         ) : null}
       </AnimatePresence>
@@ -682,10 +694,11 @@ function ViewportModal({
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}
-      className="fixed inset-x-0 z-[100] flex items-center justify-center overflow-hidden bg-black/60 px-3 sm:px-4"
+      className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-black/60 p-3 sm:p-4"
       style={{
-        top: viewport.offsetTop,
-        height: viewport.height ? `${viewport.height}px` : "100dvh",
+        ...(viewport.height
+          ? { top: viewport.offsetTop, height: `${viewport.height}px` }
+          : {}),
         paddingTop: "max(0.75rem, env(safe-area-inset-top))",
         paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
       }}
@@ -936,6 +949,7 @@ function UpdateModal({
   unit,
   milestones,
   quickDelta,
+  draftNote,
   onSelectType,
   onQuickIncrement,
   onClose,
@@ -946,11 +960,12 @@ function UpdateModal({
   unit: string;
   milestones: any[];
   quickDelta: -1 | 1;
+  draftNote?: string;
   onSelectType: (type: OwnerUpdateKind) => void;
   onQuickIncrement: (note?: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const [progressNote, setProgressNote] = useState("");
+  const [progressNote, setProgressNote] = useState(draftNote ?? "");
   const canReturnToProgress = type === "value";
   return (
     <ViewportModal onClose={onClose} ariaLabel="Goal update">
@@ -996,7 +1011,7 @@ function UpdateModal({
           />
         )}
         {type === "note" && (
-          <NoteForm goalId={goalId} goalTitle={goalTitle} onDone={onClose} />
+          <NoteForm goalId={goalId} goalTitle={goalTitle} initialNote={draftNote} onDone={onClose} />
         )}
         {type === "media" && <MediaForm goalId={goalId} onDone={onClose} />}
         {type === "link" && <LinkForm goalId={goalId} onDone={onClose} />}
@@ -1009,7 +1024,9 @@ function UpdateModal({
             onDone={onClose}
           />
         )}
-        {type === "streak" && <StreakForm goalId={goalId} onDone={onClose} />}
+        {type === "streak" && (
+          <StreakForm goalId={goalId} initialNote={draftNote} onDone={onClose} />
+        )}
         {type === "milestone" && (
           <MilestoneForm goalId={goalId} milestones={milestones} onDone={onClose} />
         )}
@@ -1098,15 +1115,17 @@ function ProgressActionPicker({
 function NoteForm({
   goalId,
   goalTitle,
+  initialNote,
   onDone,
 }: {
   goalId: Id<"goals">;
   goalTitle: string;
+  initialNote?: string;
   onDone: () => void;
 }) {
   const add = useMutation(api.updates.add);
   const suggest = useAction(api.aiAssistant.suggest);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialNote ?? "");
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<AiSuggestion | null>(null);
@@ -1490,9 +1509,17 @@ function ValueForm({
   );
 }
 
-function StreakForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void }) {
+function StreakForm({
+  goalId,
+  initialNote,
+  onDone,
+}: {
+  goalId: Id<"goals">;
+  initialNote?: string;
+  onDone: () => void;
+}) {
   const logStreakDay = useMutation(api.goals.logStreakDay);
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(initialNote ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   return (

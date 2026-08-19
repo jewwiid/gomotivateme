@@ -9,6 +9,17 @@ type GoalPushPayload = {
   goalId: string;
   title: string;
   story: string;
+  summary: string;
+  publicUrl: string;
+  slug: string;
+  category: string;
+  progressType: string;
+  unit: string;
+  metricId: string | null;
+  currentValue: number;
+  targetValue: number;
+  targetDate: number | null;
+  supportTypes: string[];
   campaignId: string | null;
   milestones: Array<{ id: string; title: string; done: boolean }>;
   updates: Array<{ id: string; title: string }>;
@@ -68,6 +79,18 @@ export const pushGoalToAibl = action({
         goalId: payload.goalId,
         title: payload.title,
         story: payload.story,
+        summary: payload.summary,
+        websiteUrl: payload.publicUrl,
+        publicUrl: payload.publicUrl,
+        slug: payload.slug,
+        category: payload.category,
+        progressType: payload.progressType,
+        unit: payload.unit,
+        metricId: payload.metricId,
+        currentValue: payload.currentValue,
+        targetValue: payload.targetValue,
+        targetDate: payload.targetDate,
+        supportTypes: payload.supportTypes,
         campaignId: payload.campaignId,
         milestones: payload.milestones,
       }
@@ -105,6 +128,8 @@ export const pushGoalToAibl = action({
           gmmKey: item.key,
           title: item.title,
           completed: item.done,
+          description: payload.summary || payload.story,
+          websiteUrl: payload.publicUrl,
         }
       );
       const taskId = String(task.taskId || "");
