@@ -84,6 +84,7 @@ git push -u origin main
    - `NEXT_PUBLIC_CONVEX_URL` — the prod URL (we'll get this in the next step)
    - `CONVEX_URL` — same value as above
    - `NEXT_PUBLIC_SITE_URL` — `https://gomotivateme.com` (or your preview domain for now)
+   - `GOOGLE_SITE_VERIFICATION` — optional Search Console HTML-tag token; add it after creating the property
 5. Click **Deploy** — first build will fail because the prod Convex URL isn't live yet. That's fine.
 
 ---
@@ -132,6 +133,7 @@ Then in Vercel → Project → Domains → add `gomotivateme.com` and `www.gomot
 | `CONVEX_URL` | Same as above | Edge OG image route (server-side) |
 | `CONVEX_DEPLOY_KEY` | Set by `npx convex dev` | Convex CLI only — never commit |
 | `NEXT_PUBLIC_SITE_URL` | Your domain | Absolute share links, OG metadata |
+| `GOOGLE_SITE_VERIFICATION` | Vercel (optional) | Google Search Console HTML-tag verification |
 | `RESEND_API_KEY` | Convex env (`npx convex env set`) | Email drain action |
 | `RESEND_FROM_ADDRESS` | Convex env | Email "from" header |
 | `OPENAI_API_KEY` | Convex env (`npx convex env set`) | Optional AI assistance and automated text/image moderation |

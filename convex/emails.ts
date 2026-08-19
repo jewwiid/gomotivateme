@@ -64,6 +64,55 @@ function hasEnabledLifecyclePreference(
   return prefs[preferenceKey] !== false;
 }
 
+/**
+ * How close together two identical sends have to be to count as a duplicate.
+ * Long enough to swallow an upstream retry burst, short enough that a user
+ * who genuinely asks for a new verification link a minute later still gets it.
+ */
+const DEDUPE_WINDOW_MS = 60_000;
+
+/** Rate-limit window and caps for unauthenticated verification/reset mail. */
+const VERIFICATION_WINDOW_MS = 60 * 60 * 1000;
+/** Per address: enough for a genuine retry, not enough to be a nuisance. */
+const VERIFICATION_MAX_PER_ADDRESS = 3;
+/**
+ * Circuit breaker across all addresses. Signup is unauthenticated, so anyone
+ * can make the app send mail to an address they typed; production logged 462
+ * verification emails to scraped-looking addresses that never became users.
+ * This caps the blast radius of that abuse — and of the reputation damage to
+ * the sending domain — without blocking normal signup volume.
+ */
+const VERIFICATION_MAX_GLOBAL = 60;
+
+/**
+ * Conservative deliverability check.
+ *
+ * Resend rejected 24 sends with `422 validation_error: Invalid 'to' field`,
+ * which means malformed addresses were reaching the provider. Catching them
+ * here keeps junk out of the queue and off the domain's bounce record.
+ * Deliberately structural only — the verification link is what actually
+ * proves an address works.
+ */
+export function isPlausibleEmailAddress(raw: string): boolean {
+  const email = raw.trim();
+  if (email.length < 6 || email.length > 254) return false;
+  if (/\s/.test(email)) return false;
+  const parts = email.split("@");
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts;
+  if (!local || local.length > 64) return false;
+  if (!domain || domain.length > 255) return false;
+  if (email.includes("..")) return false;
+  // Domain must have a dot and a plausible TLD.
+  if (!/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(domain)) return false;
+  // Per label, not per domain: `bad-.com` is invalid even though the domain
+  // as a whole does not end in a hyphen.
+  if (domain.split(".").some((label) => label.startsWith("-") || label.endsWith("-"))) {
+    return false;
+  }
+  return /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+$/.test(local);
+}
+
 // =====================================================================
 // Enqueue — write a notification row from a trigger mutation.
 // =====================================================================
@@ -80,6 +129,35 @@ export const enqueue = internalMutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     const { preferenceKey, ...notification } = args;
+
+    // Burst dedupe. Production showed ~40 addresses each receiving four
+    // identical `emailVerification` messages with a near-constant gap
+    // signature (~3s, ~5s, ~7-27s) — a retry loop upstream of here, not four
+    // deliberate requests. Whatever drives the retry, collapsing identical
+    // (toEmail, templateId) sends inside a short window keeps one email going
+    // out instead of four, and protects the sending domain's reputation.
+    //
+    // Scoped to the address, not the user: verification mail is enqueued
+    // before the user row exists, which is exactly where the amplification
+    // was worst. Legitimate resends are minutes apart and unaffected.
+    const dedupeSince = now - DEDUPE_WINDOW_MS;
+    const recentSameEmail = await ctx.db
+      .query("notifications")
+      .withIndex("by_email_template_created", (q) =>
+        q
+          .eq("toEmail", args.toEmail)
+          .eq("templateId", args.templateId)
+          .gte("createdAt", dedupeSince)
+      )
+      .first();
+    if (recentSameEmail) {
+      console.log(
+        `[enqueue] deduped ${args.templateId} to ${args.toEmail} (another was queued <${
+          DEDUPE_WINDOW_MS / 1000
+        }s ago)`
+      );
+      return { status: "deduped" as const };
+    }
 
     // Pref check: suppress lifecycle email to opted-out users.
     if (args.userId && args.category === "lifecycle") {
@@ -136,6 +214,76 @@ export const enqueue = internalMutation({
       createdAt: now,
     });
     return { status: "pending" as const };
+  },
+});
+
+/**
+ * Guarded entry point for verification and password-reset mail.
+ *
+ * `enqueue` is reached from authenticated, already-rate-limited paths. This
+ * one is reached from the *unauthenticated* signup and reset flows, where the
+ * caller chooses the recipient — so it validates the address and rate-limits
+ * before anything is queued. Returns a status instead of throwing: the auth
+ * flow must not leak whether an address is known, and must not fail signup
+ * because mail was throttled.
+ */
+export const enqueueVerification = internalMutation({
+  args: {
+    userId: v.optional(v.id("users")),
+    toEmail: v.string(),
+    templateId: v.string(),
+    payload: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const toEmail = args.toEmail.trim();
+
+    if (!isPlausibleEmailAddress(toEmail)) {
+      console.log(`[verification] rejected malformed address: ${toEmail}`);
+      return { status: "rejected_invalid" as const };
+    }
+
+    const now = Date.now();
+    const since = now - VERIFICATION_WINDOW_MS;
+
+    const forAddress = await ctx.db
+      .query("notifications")
+      .withIndex("by_email_template_created", (q) =>
+        q
+          .eq("toEmail", toEmail)
+          .eq("templateId", args.templateId)
+          .gte("createdAt", since)
+      )
+      .take(VERIFICATION_MAX_PER_ADDRESS + 1);
+    if (forAddress.length >= VERIFICATION_MAX_PER_ADDRESS) {
+      console.log(
+        `[verification] rate-limited ${args.templateId} for ${toEmail} ` +
+          `(${forAddress.length} in the last hour)`
+      );
+      return { status: "rate_limited_address" as const };
+    }
+
+    const globally = await ctx.db
+      .query("notifications")
+      .withIndex("by_template_created", (q) =>
+        q.eq("templateId", args.templateId).gte("createdAt", since)
+      )
+      .take(VERIFICATION_MAX_GLOBAL + 1);
+    if (globally.length >= VERIFICATION_MAX_GLOBAL) {
+      console.log(
+        `[verification] GLOBAL cap hit for ${args.templateId}: ` +
+          `${globally.length} in the last hour — likely signup abuse`
+      );
+      return { status: "rate_limited_global" as const };
+    }
+
+    await ctx.runMutation(internal.emails.enqueue, {
+      userId: args.userId,
+      toEmail,
+      templateId: args.templateId,
+      category: "transactional",
+      payload: args.payload,
+    });
+    return { status: "queued" as const };
   },
 });
 

@@ -36,7 +36,7 @@ Use the alt text exported in `lib/journeyIllustrations.ts` when the image carrie
 
 ## Generation method
 
-Built-in ImageGen was used with `recap-summit.png` as the original style reference. Version 2 preserves each composition and changes the pale halo into the brand-yellow printed sun. The dedicated homepage community composition was then generated from the updated support image.
+Built-in ImageGen was used with an earlier recap-summit composition as the original style reference. Version 2 preserves each composition and changes the pale halo into the brand-yellow printed sun. The dedicated homepage community composition was then generated from the updated support image.
 
 ### Version 2 sun refinement
 

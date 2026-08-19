@@ -15,6 +15,29 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
+/**
+ * Log-and-return for the cron workers below.
+ *
+ * Every worker can legitimately do nothing — nobody opted in, nothing is due,
+ * no content qualifies. Those paths used to return silently, so in
+ * `npx convex logs` a healthy idle job and a job that never ran looked
+ * identical, and telling them apart meant replaying each due-items query by
+ * hand. One line per run makes the state readable.
+ *
+ * Keep everything passed in here locally computed. A value derived from
+ * another Convex function's result (e.g. `subscribers.length` straight off a
+ * `runQuery`) drags that function's type into this one's return type, and
+ * since `_generated/api` already refers back here, TypeScript hits a circular
+ * inference, resolves it to `any`, and silently degrades the generated API
+ * for every consumer. Bind such values to an explicitly annotated local
+ * (`const n: number = ...`) first — that severs the cycle.
+ */
+function report<T>(job: string, result: T): T {
+  console.log(`[${job}] ${JSON.stringify(result)}`);
+  return result;
+}
+
+
 // Public site URL — used for the List-Unsubscribe header and footer links.
 // Matches the default in the email templates.
 const SITE_URL =
@@ -28,11 +51,11 @@ export const drainQueue = internalAction({
       console.log(
         "[emails] RESEND_API_KEY not set — skipping drain. Pending emails will send once the key is added."
       );
-      return { sent: 0, skipped: "no_api_key" };
+      return report("drainQueue", { sent: 0, skipped: "no_api_key" });
     }
 
     const pending = await ctx.runQuery(internal.emails.getPending, { limit: 20 });
-    if (pending.length === 0) return { sent: 0, skipped: "empty" };
+    if (pending.length === 0) return report("drainQueue", { sent: 0, skipped: "empty" });
 
     // Lazy-import Node-only deps inside the action.
     const { render } = await import("@react-email/components");
@@ -107,7 +130,7 @@ export const drainQueue = internalAction({
         });
       }
     }
-    return { sent };
+    return report("drainQueue", { sent });
   },
 });
 
@@ -126,18 +149,25 @@ export const sendWeeklyDigests = internalAction({
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("[digests] RESEND_API_KEY not set — skipping.");
-      return { enqueued: 0, skipped: "no_api_key" };
+      return report("sendWeeklyDigests", { enqueued: 0, skipped: "no_api_key" });
     }
 
     const subscribers = await ctx.runQuery(internal.emails.listDigestSubscribers, {});
-    if (subscribers.length === 0) return { enqueued: 0, skipped: "no_subscribers" };
+    if (subscribers.length === 0) return report("sendWeeklyDigests", { enqueued: 0, skipped: "no_subscribers" });
+    const subscriberCount: number = subscribers.length;
 
     let enqueued = 0;
+    // No goals, no activity this week, or no address on file — all legitimate,
+    // all previously invisible in the logs.
+    let skippedNoActivity = 0;
     for (const sub of subscribers) {
       const data = await ctx.runQuery(internal.emails.getDigestData, {
         userId: sub.userId,
       });
-      if (!data || !data.email) continue; // no goals, no activity, or no email
+      if (!data || !data.email) {
+        skippedNoActivity++;
+        continue;
+      }
 
       await ctx.runMutation(internal.emails.enqueue, {
         userId: sub.userId,
@@ -152,7 +182,11 @@ export const sendWeeklyDigests = internalAction({
       });
       enqueued++;
     }
-    return { enqueued };
+    return report("sendWeeklyDigests", {
+      subscribers: subscriberCount,
+      enqueued,
+      skippedNoActivity,
+    });
   },
 });
 
@@ -160,7 +194,7 @@ async function sendPlatformDigests(ctx: any, cadence: "daily" | "weekly") {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.log(`[platform-${cadence}] RESEND_API_KEY not set — skipping.`);
-    return { enqueued: 0, skipped: "no_api_key" };
+    return report("sendPlatformDigests", { enqueued: 0, skipped: "no_api_key" });
   }
 
   const subscribers = await ctx.runQuery(
@@ -168,16 +202,28 @@ async function sendPlatformDigests(ctx: any, cadence: "daily" | "weekly") {
     { cadence }
   );
   if (subscribers.length === 0) {
-    return { enqueued: 0, skipped: "no_subscribers" };
+    return report("sendPlatformDigests", { enqueued: 0, skipped: "no_subscribers" });
   }
+  const subscriberCount: number = subscribers.length;
 
   let enqueued = 0;
+  // Counted, not silent. `getPlatformDigestData` returns null both when this
+  // period's digest already went out and when no goal qualifies — and a
+  // subscriber never qualifies on goals they own, so on a small platform an
+  // all-skip run is the normal outcome. Reporting it is what separates
+  // "nothing to feature" from "the worker is broken".
+  let skippedNoContent = 0;
+  let suppressedByPrefs = 0;
+  let deduped = 0;
   for (const subscriber of subscribers) {
     const data = await ctx.runQuery(internal.emails.getPlatformDigestData, {
       userId: subscriber.userId,
       cadence,
     });
-    if (!data) continue;
+    if (!data) {
+      skippedNoContent++;
+      continue;
+    }
 
     const result = await ctx.runMutation(internal.emails.enqueue, {
       userId: subscriber.userId,
@@ -188,8 +234,17 @@ async function sendPlatformDigests(ctx: any, cadence: "daily" | "weekly") {
       payload: JSON.stringify(data),
     });
     if (result.status === "pending") enqueued++;
+    else if (result.status === "deduped") deduped++;
+    else suppressedByPrefs++;
   }
-  return { enqueued };
+  return report("sendPlatformDigests", {
+    cadence,
+    subscribers: subscriberCount,
+    enqueued,
+    skippedNoContent,
+    suppressedByPrefs,
+    deduped,
+  });
 }
 
 /** Daily consent-only marketing digest of fresh approved public goals. */
@@ -216,11 +271,11 @@ export const sendCheckInReminders = internalAction({
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("[checkins] RESEND_API_KEY not set — skipping reminders.");
-      return { enqueued: 0, skipped: "no_api_key" };
+      return report("sendCheckInReminders", { enqueued: 0, skipped: "no_api_key" });
     }
 
     const due = await ctx.runQuery(internal.emails.listDueCheckIns, {});
-    if (due.length === 0) return { enqueued: 0, skipped: "none_due" };
+    if (due.length === 0) return report("sendCheckInReminders", { enqueued: 0, skipped: "none_due" });
 
     let enqueued = 0;
     for (const item of due) {
@@ -245,7 +300,7 @@ export const sendCheckInReminders = internalAction({
       });
       enqueued++;
     }
-    return { enqueued };
+    return report("sendCheckInReminders", { enqueued });
   },
 });
 
@@ -256,7 +311,7 @@ export const sendStreakReminders = internalAction({
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("[streaks] RESEND_API_KEY not set — skipping reminders.");
-      return { enqueued: 0, skipped: "no_api_key" };
+      return report("sendStreakReminders", { enqueued: 0, skipped: "no_api_key" });
     }
 
     const due = await ctx.runQuery(internal.emails.listDueStreakReminders, {});
@@ -282,7 +337,7 @@ export const sendStreakReminders = internalAction({
       });
       enqueued++;
     }
-    return { enqueued };
+    return report("sendStreakReminders", { enqueued });
   },
 });
 
@@ -302,11 +357,11 @@ export const sendStaleGoalReminders = internalAction({
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("[stale] RESEND_API_KEY not set — skipping.");
-      return { enqueued: 0, skipped: "no_api_key" };
+      return report("sendStaleGoalReminders", { enqueued: 0, skipped: "no_api_key" });
     }
 
     const stale = await ctx.runQuery(internal.emails.listStaleGoals, {});
-    if (stale.length === 0) return { enqueued: 0, skipped: "none_stale" };
+    if (stale.length === 0) return report("sendStaleGoalReminders", { enqueued: 0, skipped: "none_stale" });
 
     let enqueued = 0;
     for (const owner of stale) {
@@ -334,7 +389,7 @@ export const sendStaleGoalReminders = internalAction({
         enqueued++;
       }
     }
-    return { enqueued };
+    return report("sendStaleGoalReminders", { enqueued });
   },
 });
 
@@ -348,11 +403,11 @@ export const sendDeadlineApproaching = internalAction({
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("[deadline] RESEND_API_KEY not set — skipping.");
-      return { enqueued: 0, skipped: "no_api_key" };
+      return report("sendDeadlineApproaching", { enqueued: 0, skipped: "no_api_key" });
     }
 
     const approaching = await ctx.runQuery(internal.emails.listDeadlineApproaching, {});
-    if (approaching.length === 0) return { enqueued: 0, skipped: "none_approaching" };
+    if (approaching.length === 0) return report("sendDeadlineApproaching", { enqueued: 0, skipped: "none_approaching" });
 
     let enqueued = 0;
     for (const item of approaching) {
@@ -414,7 +469,7 @@ export const sendDeadlineApproaching = internalAction({
         goalId: item.goalId,
       });
     }
-    return { enqueued };
+    return report("sendDeadlineApproaching", { enqueued });
   },
 });
 
@@ -429,11 +484,11 @@ export const sendDeadlinePassed = internalAction({
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("[deadline-passed] RESEND_API_KEY not set — skipping.");
-      return { enqueued: 0, skipped: "no_api_key" };
+      return report("sendDeadlinePassed", { enqueued: 0, skipped: "no_api_key" });
     }
 
     const passed = await ctx.runQuery(internal.emails.listDeadlinePassed, {});
-    if (passed.length === 0) return { enqueued: 0, skipped: "none_passed" };
+    if (passed.length === 0) return report("sendDeadlinePassed", { enqueued: 0, skipped: "none_passed" });
 
     let enqueued = 0;
     for (const item of passed) {
@@ -494,6 +549,6 @@ export const sendDeadlinePassed = internalAction({
         goalId: item.goalId,
       });
     }
-    return { enqueued };
+    return report("sendDeadlinePassed", { enqueued });
   },
 });

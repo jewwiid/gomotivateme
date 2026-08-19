@@ -56,13 +56,22 @@ async function sendVerificationRequest(
   // is fine — the email renders the "service message" footer.
   const user = await ctx.runQuery(api.users.getRawByEmail, { email: identifier });
 
-  await ctx.runMutation(internal.emails.enqueue, {
+  // Routed through `enqueueVerification`, not `enqueue`, because this path is
+  // unauthenticated: the caller picks the recipient, so the address is
+  // validated and the send is rate-limited before anything is queued.
+  //
+  // Its result is deliberately not thrown on. Signup must not fail because
+  // mail was throttled, and the response must not differ by whether the
+  // address is already registered — that would make this an account oracle.
+  const result = await ctx.runMutation(internal.emails.enqueueVerification, {
     userId: user?._id,
     toEmail: identifier,
     templateId,
-    category: "transactional",
     payload: JSON.stringify({ email: identifier, actionUrl: url }),
   });
+  if (result.status !== "queued") {
+    console.log(`[auth] ${templateId} not queued for ${identifier}: ${result.status}`);
+  }
 }
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
