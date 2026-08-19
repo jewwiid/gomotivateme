@@ -529,10 +529,11 @@ function GoalDetailContent() {
             milestones={goal.milestones ?? []}
             quickDelta={goal.direction === "decrease" ? -1 : 1}
             onSelectType={setShowUpdate}
-            onQuickIncrement={async () => {
+            onQuickIncrement={async (note) => {
               await quickIncrement({
                 goalId,
                 delta: goal.direction === "decrease" ? -1 : 1,
+                note: note || undefined,
               });
               trackDataFastGoal("goal_update_posted", { update_type: "quick" });
             }}
@@ -887,9 +888,10 @@ function UpdateModal({
   milestones: any[];
   quickDelta: -1 | 1;
   onSelectType: (type: OwnerUpdateKind) => void;
-  onQuickIncrement: () => Promise<void>;
+  onQuickIncrement: (note?: string) => Promise<void>;
   onClose: () => void;
 }) {
+  const [progressNote, setProgressNote] = useState("");
   const canReturnToProgress = type === "value";
   return (
     <ViewportModal onClose={onClose} ariaLabel="Goal update">
@@ -927,6 +929,8 @@ function UpdateModal({
           <ProgressActionPicker
             unit={unit}
             quickDelta={quickDelta}
+            note={progressNote}
+            onNoteChange={setProgressNote}
             onChoose={onSelectType}
             onQuickIncrement={onQuickIncrement}
             onDone={onClose}
@@ -937,7 +941,15 @@ function UpdateModal({
         )}
         {type === "media" && <MediaForm goalId={goalId} onDone={onClose} />}
         {type === "link" && <LinkForm goalId={goalId} onDone={onClose} />}
-        {type === "value" && <ValueForm goalId={goalId} unit={unit} onDone={onClose} />}
+        {type === "value" && (
+          <ValueForm
+            goalId={goalId}
+            unit={unit}
+            initialNote={progressNote}
+            onNoteChange={setProgressNote}
+            onDone={onClose}
+          />
+        )}
         {type === "streak" && <StreakForm goalId={goalId} onDone={onClose} />}
         {type === "milestone" && (
           <MilestoneForm goalId={goalId} milestones={milestones} onDone={onClose} />
@@ -949,14 +961,18 @@ function UpdateModal({
 function ProgressActionPicker({
   unit,
   quickDelta,
+  note,
+  onNoteChange,
   onChoose,
   onQuickIncrement,
   onDone,
 }: {
   unit: string;
   quickDelta: -1 | 1;
+  note: string;
+  onNoteChange: (note: string) => void;
   onChoose: (type: OwnerUpdateKind) => void;
-  onQuickIncrement: () => Promise<void>;
+  onQuickIncrement: (note?: string) => Promise<void>;
   onDone: () => void;
 }) {
   const [incrementing, setIncrementing] = useState(false);
@@ -967,7 +983,7 @@ function ProgressActionPicker({
     setIncrementing(true);
     setError(null);
     try {
-      await onQuickIncrement();
+      await onQuickIncrement(note.trim() || undefined);
       onDone();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not update progress");
@@ -979,8 +995,16 @@ function ProgressActionPicker({
   return (
     <div>
       <p className="text-sm leading-6 text-[var(--color-text-muted)]">
-        Choose a quick adjustment or enter the current value.
+        Add a note for your supporters, then log a quick adjustment or enter the current value.
       </p>
+      <textarea
+        value={note}
+        onChange={(event) => onNoteChange(event.target.value)}
+        maxLength={2000}
+        rows={3}
+        placeholder="What progress have you made? (optional)"
+        className="mt-3 w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
+      />
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button
           type="button"
@@ -1337,15 +1361,19 @@ function LinkForm({ goalId, onDone }: { goalId: Id<"goals">; onDone: () => void 
 function ValueForm({
   goalId,
   unit,
+  initialNote,
+  onNoteChange,
   onDone,
 }: {
   goalId: Id<"goals">;
   unit: string;
+  initialNote?: string;
+  onNoteChange?: (note: string) => void;
   onDone: () => void;
 }) {
   const recordValue = useMutation(api.goals.recordValue);
   const [value, setValue] = useState("");
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(initialNote ?? "");
   const [busy, setBusy] = useState(false);
   return (
     <form
@@ -1382,9 +1410,13 @@ function ValueForm({
       </div>
       <textarea
         value={note}
-        onChange={(e) => setNote(e.target.value)}
-        rows={2}
-        placeholder="How did it go? (optional)"
+        onChange={(e) => {
+          setNote(e.target.value);
+          onNoteChange?.(e.target.value);
+        }}
+        maxLength={2000}
+        rows={3}
+        placeholder="What progress have you made? (optional)"
         className="w-full resize-none rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-accent)] focus:outline-none"
       />
       <button

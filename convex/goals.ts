@@ -1250,6 +1250,114 @@ export const logStreakDay = mutation({
   },
 });
 
+function cleanProgressNote(note: string | undefined) {
+  const trimmed = note?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.length > 2_000) throw new Error("Updates can be up to 2,000 characters");
+  return trimmed;
+}
+
+async function applyRecordedNumberValue(
+  ctx: any,
+  {
+    userId,
+    goal,
+    value,
+    note,
+  }: {
+    userId: any;
+    goal: any;
+    value: number;
+    note?: string;
+  }
+) {
+  if (goal.status !== "active") throw new Error("This goal isn't active");
+  if (goal.progressType !== "number") {
+    throw new Error(
+      goal.progressType === "milestones"
+        ? "This goal tracks milestones. Tick them off instead of logging a value."
+        : "This goal tracks a streak. Use the daily log instead."
+    );
+  }
+  if (!Number.isFinite(value)) throw new Error("Value must be a number");
+
+  const cleanedNote = cleanProgressNote(note);
+  const now = Date.now();
+  const updateId = await ctx.db.insert("updates", {
+    goalId: goal._id,
+    ownerId: userId,
+    type: "value",
+    value,
+    note: cleanedNote,
+    moderationStatus: cleanedNote ? "pending" : "approved",
+    publicVisible: !cleanedNote,
+    createdAt: now,
+  });
+  await ctx.db.patch(goal._id, { lastStaleReminderAt: undefined });
+  if (cleanedNote) {
+    await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
+  }
+  await ctx.db.patch(goal._id, { currentValue: value, updatedAt: now });
+
+  const pct = computeProgress(goal.startValue, value, goal.targetValue, goal.direction);
+  const existingBadges = await ctx.db
+    .query("badges")
+    .withIndex("by_goal", (q: any) => q.eq("goalId", goal._id))
+    .collect();
+  const awarded = existingBadges.map((b: any) => b.tier);
+  const newTiers = newMilestoneTiers(pct, awarded);
+  for (const tier of newTiers) {
+    await ctx.db.insert("badges", {
+      goalId: goal._id,
+      ownerId: userId,
+      tier,
+      awardedAt: now,
+    });
+  }
+
+  const targetHit =
+    goal.status !== "completed" &&
+    (goal.direction === "increase"
+      ? value >= goal.targetValue
+      : value <= goal.targetValue);
+  if (targetHit) {
+    await ctx.db.patch(goal._id, { status: "completed" as any, updatedAt: now });
+    const owner = await ctx.db.get(userId);
+    if (owner?.email) {
+      await ctx.runMutation(internal.emails.enqueue, {
+        userId,
+        toEmail: owner.email,
+        templateId: "targetHit",
+        category: "lifecycle",
+        preferenceKey: "accountActivity",
+        payload: JSON.stringify({
+          ownerName: owner.name ?? owner.handle ?? "there",
+          goalTitle: goal.title,
+          goalSlug: goal.slug,
+          ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
+          unit: goal.unit,
+          targetValue: goal.targetValue,
+        }),
+      });
+    }
+
+    await ctx.scheduler.runAfter(0, internal.goals.notifyFollowersOfCompletion, {
+      goalId: goal._id,
+      ownerId: userId,
+    });
+  }
+
+  if (!cleanedNote) {
+    await ctx.scheduler.runAfter(0, internal.goals.notifyFollowersOfUpdate, {
+      goalId: goal._id,
+      ownerId: userId,
+      updateId,
+    });
+  }
+
+  return { progress: pct, newBadges: newTiers, newValue: value };
+}
+
 /**
  * Record a new measured value (number-template goals) or log a streak day.
  * Awards milestone badges when crossing 25/50/75/100.
@@ -1265,104 +1373,13 @@ export const recordValue = mutation({
     if (!userId) throw new Error("Not signed in");
     const goal = await ctx.db.get(goalId);
     if (!goal || goal.ownerId !== userId) throw new Error("Not found");
-    if (goal.status !== "active") throw new Error("This goal isn't active");
     // Mirror the guard in `logStreakDay`. Without it this mutation writes
     // `currentValue` directly on any goal type: on a milestones goal that
     // sidesteps the checklist entirely and can flip the goal to "completed"
     // — firing the targetHit email and the completion fan-out to every
     // supporter and motivator — with no milestone actually ticked. On a
     // streak goal it bypasses the once-per-day check.
-    if (goal.progressType !== "number") {
-      throw new Error(
-        goal.progressType === "milestones"
-          ? "This goal tracks milestones. Tick them off instead of logging a value."
-          : "This goal tracks a streak. Use the daily log instead."
-      );
-    }
-    if (!Number.isFinite(value)) throw new Error("Value must be a number");
-
-    const now = Date.now();
-    const updateId = await ctx.db.insert("updates", {
-      goalId,
-      ownerId: userId,
-      type: "value",
-      value,
-      note: note?.trim() || undefined,
-      moderationStatus: note?.trim() ? "pending" : "approved",
-      publicVisible: !note?.trim(),
-      createdAt: now,
-    });
-    // Reset stale-goal reminder so the next staleness window starts fresh.
-    await ctx.db.patch(goalId, { lastStaleReminderAt: undefined });
-    if (note?.trim()) {
-      await ctx.scheduler.runAfter(0, internal.moderation.reviewUpdate, { updateId });
-    }
-    await ctx.db.patch(goalId, { currentValue: value, updatedAt: now });
-
-    const pct = computeProgress(goal.startValue, value, goal.targetValue, goal.direction);
-    const existingBadges = await ctx.db
-      .query("badges")
-      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
-      .collect();
-    const awarded = existingBadges.map((b) => b.tier);
-    const newTiers = newMilestoneTiers(pct, awarded);
-    for (const tier of newTiers) {
-      await ctx.db.insert("badges", {
-        goalId,
-        ownerId: userId,
-        tier,
-        awardedAt: now,
-      });
-    }
-
-    // Email B11 — "Target hit" — fires once, when the value first reaches
-    // the target and the goal wasn't already completed.
-    const targetHit =
-      goal.status !== "completed" &&
-      (goal.direction === "increase"
-        ? value >= goal.targetValue
-        : value <= goal.targetValue);
-    if (targetHit) {
-      await ctx.db.patch(goalId, { status: "completed" as any, updatedAt: now });
-      const owner = await ctx.db.get(userId);
-      if (owner?.email) {
-        await ctx.runMutation(internal.emails.enqueue, {
-          userId,
-          toEmail: owner.email,
-          templateId: "targetHit",
-          category: "lifecycle",
-          preferenceKey: "accountActivity",
-          payload: JSON.stringify({
-            ownerName: owner.name ?? owner.handle ?? "there",
-            goalTitle: goal.title,
-            goalSlug: goal.slug,
-            ownerHandle: goal.ownerHandle ?? owner?.handle ?? undefined,
-            unit: goal.unit,
-            targetValue: goal.targetValue,
-          }),
-        });
-      }
-
-      // Fan out a "goal completed" email to supporters + motivators,
-      // reusing the targetHit template. Gated by each follower's prefs.
-      await ctx.scheduler.runAfter(0, internal.goals.notifyFollowersOfCompletion, {
-        goalId,
-        ownerId: userId,
-      });
-    }
-
-    // Email C4 — "New update" → fan out to followers (motivators + supporters).
-    // Only for auto-approved updates (no text note); text updates gate on
-    // moderation and fan out from applyUpdateDecision when approved.
-    if (!note?.trim()) {
-      await ctx.scheduler.runAfter(0, internal.goals.notifyFollowersOfUpdate, {
-        goalId,
-        ownerId: userId,
-        updateId,
-      });
-    }
-
-    return { progress: pct, newBadges: newTiers };
+    return await applyRecordedNumberValue(ctx, { userId, goal, value, note });
   },
 });
 
@@ -1375,31 +1392,21 @@ export const quickIncrement = mutation({
   args: {
     goalId: v.id("goals"),
     delta: v.optional(v.number()),
+    note: v.optional(v.string()),
   },
-  handler: async (ctx, { goalId, delta }) => {
+  handler: async (ctx, { goalId, delta, note }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
     const goal = await ctx.db.get(goalId);
     if (!goal || goal.ownerId !== userId) throw new Error("Not found");
-    if (goal.progressType !== "number") {
-      throw new Error("Quick increment is only for number-type goals");
-    }
     const step = delta ?? 1;
     const newValue = (goal.currentValue ?? goal.startValue ?? 0) + step;
-    await ctx.db.patch(goalId, {
-      currentValue: newValue,
-      updatedAt: Date.now(),
-    });
-    await ctx.db.insert("updates", {
-      goalId,
-      ownerId: userId,
-      type: "value",
+    return await applyRecordedNumberValue(ctx, {
+      userId,
+      goal,
       value: newValue,
-      moderationStatus: "approved",
-      publicVisible: true,
-      createdAt: Date.now(),
+      note,
     });
-    return { newValue };
   },
 });
 
