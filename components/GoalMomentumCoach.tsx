@@ -1,9 +1,9 @@
 "use client";
 
-import { useAction, useMutation } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, RotateCcw, Sparkles, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertTriangle, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -60,6 +60,24 @@ export function GoalMomentumCoach({
   const [next, setNext] = useState<NextAction | null>(null);
   const [showRecovery, setShowRecovery] = useState(false);
   const [blocker, setBlocker] = useState<Blocker>("time");
+  const [blockerTouched, setBlockerTouched] = useState(false);
+
+  // Rounded to the hour so the query argument is stable across re-renders while
+  // still moving forward as a goal goes quiet.
+  const reviewNow = useMemo(
+    () => Math.floor(Date.now() / 3_600_000) * 3_600_000,
+    []
+  );
+  const review = useQuery(api.goalReview.review, { goalId, now: reviewNow });
+  const signals = review?.signals ?? [];
+  const topSignals = signals.slice(0, 3);
+
+  // Start the planner on the blocker the data actually points at, but never
+  // overwrite a choice the owner has made themselves.
+  useEffect(() => {
+    if (blockerTouched) return;
+    if (review?.primaryBlocker) setBlocker(review.primaryBlocker);
+  }, [review?.primaryBlocker, blockerTouched]);
   const [recovery, setRecovery] = useState<{
     headline: string;
     steps: string[];
@@ -156,21 +174,57 @@ export function GoalMomentumCoach({
 
           <div className="mt-4 border-t border-[var(--color-border)] pt-3">
             {!showRecovery ? (
-              <button
-                type="button"
-                onClick={() => setShowRecovery(true)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-primary)] transition hover:gap-2 active:scale-[0.98]"
-              >
-                <RotateCcw size={13} aria-hidden />
-                {staleDays >= 7 ? `Restart after ${staleDays} quiet days` : "Need a smaller restart?"}
-              </button>
+              <div className="space-y-2">
+                {topSignals.length ? (
+                  <ul className="space-y-1.5">
+                    {topSignals.map((signal) => (
+                      <li
+                        key={signal.id}
+                        className="flex items-start gap-1.5 text-[10px] leading-4"
+                      >
+                        <AlertTriangle
+                          size={12}
+                          aria-hidden
+                          className={
+                            signal.severity === "high"
+                              ? "mt-px shrink-0 text-[var(--color-danger)]"
+                              : "mt-px shrink-0 text-[var(--color-text-muted)]"
+                          }
+                        />
+                        <span>
+                          <span className="font-bold text-[var(--color-text)]">
+                            {signal.title}
+                          </span>{" "}
+                          <span className="text-[var(--color-text-muted)]">
+                            {signal.detail}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setShowRecovery(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-primary)] transition hover:gap-2 active:scale-[0.98]"
+                >
+                  <RotateCcw size={13} aria-hidden />
+                  {topSignals.length
+                    ? "Plan a restart around this"
+                    : staleDays >= 7
+                      ? `Restart after ${staleDays} quiet days`
+                      : "Need a smaller restart?"}
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-xs font-bold text-[var(--color-text)]">What is getting in the way?</p>
                     <p className="mt-1 text-[10px] leading-4 text-[var(--color-text-muted)]">
-                      Choose one blocker so the restart stays practical.
+                      {review?.primaryBlocker && !blockerTouched
+                        ? "Preselected from your goal's activity — change it if that is not the real problem."
+                        : "Choose one blocker so the restart stays practical."}
                     </p>
                   </div>
                   <button
@@ -192,6 +246,7 @@ export function GoalMomentumCoach({
                       type="button"
                       onClick={() => {
                         setBlocker(option.id);
+                        setBlockerTouched(true);
                         setRecovery(null);
                       }}
                       className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold transition active:scale-[0.98] ${
