@@ -49,9 +49,9 @@ The build still reports the repository’s pre-existing multiple-lockfile worksp
 ## Evidence
 
 - Source visual truth: `/Users/judeokun/.codex/generated_images/019ff5d2-978c-76a1-ab59-695654157177/exec-ea7e5037-136b-4e6e-b29c-a32187d0851f.png`
-- Normalized source: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-source-normalized.jpg`
-- Browser-rendered implementation: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-implementation-final-passed.jpg`
-- Full-view comparison: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-design-comparison-final.jpg`
+- Normalized source: `/Users/judeokun/Documents/GitHub/gomotivateme/recap-source-normalized.jpg`
+- Browser-rendered implementation: `/Users/judeokun/Documents/GitHub/gomotivateme/recap-implementation-final-passed.jpg`
+- Full-view comparison: `/Users/judeokun/Documents/GitHub/gomotivateme/recap-design-comparison-final.jpg`
 - Route/state: `/dashboard/recap?preview=1&year=2025`, closing share screen, preview fixtures enabled only by a local server environment flag.
 - CSS viewport: 390 × 844 at device pixel ratio 1.
 - Source pixels: 853 × 1844, normalized to 390 × 844.
@@ -107,9 +107,9 @@ final result: passed
 
 ## Evidence
 
-- Desktop overview: `/Users/judeokun/Documents/GitHub/mie odyssey/dashboard-mosaic-desktop.png`
-- Mobile overview: `/Users/judeokun/Documents/GitHub/mie odyssey/dashboard-mosaic-mobile.png`
-- Mobile work flow: `/Users/judeokun/Documents/GitHub/mie odyssey/dashboard-mosaic-mobile-flow.png`
+- Desktop overview: `/Users/judeokun/Documents/GitHub/gomotivateme/dashboard-mosaic-desktop.png`
+- Mobile overview: `/Users/judeokun/Documents/GitHub/gomotivateme/dashboard-mosaic-mobile.png`
+- Mobile work flow: `/Users/judeokun/Documents/GitHub/gomotivateme/dashboard-mosaic-mobile-flow.png`
 
 ## Review
 
@@ -136,8 +136,8 @@ final result: passed
 
 ## Evidence
 
-- Desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-cover-images-desktop.png`
-- Mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-cover-images-mobile.png`
+- Desktop: `/Users/judeokun/Documents/GitHub/gomotivateme/explore-cover-images-desktop.png`
+- Mobile: `/Users/judeokun/Documents/GitHub/gomotivateme/explore-cover-images-mobile.png`
 
 ## Review
 
@@ -157,8 +157,8 @@ final result: passed
 
 ## Evidence
 
-- Desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/home-how-it-works-faq-cta.png`
-- Mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/home-how-it-works-faq-cta-mobile.png`
+- Desktop: `/Users/judeokun/Documents/GitHub/gomotivateme/home-how-it-works-faq-cta.png`
+- Mobile: `/Users/judeokun/Documents/GitHub/gomotivateme/home-how-it-works-faq-cta-mobile.png`
 
 ## Review
 
@@ -175,10 +175,10 @@ final result: passed
 
 ## Evidence
 
-- Shared-link thumbnail and condensed journal, desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-condensed-journal.png`
-- Recent-activity avatars and condensed journal, mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-condensed-journal-mobile.png`
-- Support sign-in modal, desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-signin-modal.png`
-- Support sign-in modal, mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-signin-modal-mobile.png`
+- Shared-link thumbnail and condensed journal, desktop: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-detail-condensed-journal.png`
+- Recent-activity avatars and condensed journal, mobile: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-detail-condensed-journal-mobile.png`
+- Support sign-in modal, desktop: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-detail-signin-modal.png`
+- Support sign-in modal, mobile: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-detail-signin-modal-mobile.png`
 
 ## Review
 
@@ -205,11 +205,11 @@ final result: passed
 
 ## Evidence
 
-- Explore desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-redesign-desktop.png`
-- Explore goal cards and detail metrics: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-goal-cards-desktop.png` and `/Users/judeokun/Documents/GitHub/mie odyssey/explore-goal-metrics-desktop.png`
-- Explore mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/explore-redesign-mobile.png`
-- Goal setup inputs desktop: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-inputs-desktop.png`
-- Goal setup inputs mobile: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-inputs-mobile.png`
+- Explore desktop: `/Users/judeokun/Documents/GitHub/gomotivateme/explore-redesign-desktop.png`
+- Explore goal cards and detail metrics: `/Users/judeokun/Documents/GitHub/gomotivateme/explore-goal-cards-desktop.png` and `/Users/judeokun/Documents/GitHub/gomotivateme/explore-goal-metrics-desktop.png`
+- Explore mobile: `/Users/judeokun/Documents/GitHub/gomotivateme/explore-redesign-mobile.png`
+- Goal setup inputs desktop: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-setup-inputs-desktop.png`
+- Goal setup inputs mobile: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-setup-inputs-mobile.png`
 
 ## Review
 
@@ -234,11 +234,11 @@ final result: passed
 
 ## Evidence
 
-- Desktop category step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-step-1-desktop.png`
-- Desktop target step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-milestone-desktop.png`
-- Desktop review step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-review-desktop.png`
-- Mobile category step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-step-1-mobile.png`
-- Mobile support step: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-setup-support-mobile.png`
+- Desktop category step: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-setup-step-1-desktop.png`
+- Desktop target step: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-setup-milestone-desktop.png`
+- Desktop review step: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-setup-review-desktop.png`
+- Mobile category step: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-setup-step-1-mobile.png`
+- Mobile support step: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-setup-support-mobile.png`
 - Desktop viewport: 1440 × 1000 CSS px at 1×.
 - Mobile viewport: 390 × 844 CSS px at 1×.
 
@@ -278,14 +278,14 @@ final result: passed
 
 ## Evidence
 
-- Source visual truth and system sheet: `/Users/judeokun/Documents/GitHub/mie odyssey/journey-illustration-system-v2.jpg`
-- Homepage desktop hero: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-home-desktop.png`
-- Homepage mobile hero artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-home-art-mobile.png`
-- Homepage process artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-home-steps-desktop.png`
-- Homepage curated-goal artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-goals-final-desktop.png`
-- Authentication artwork: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-auth-desktop.png`
-- Mobile 404 fallback: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-404-mobile.png`
-- Recap intro, finale, and share composer: `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-recap-intro-mobile.png`, `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-recap-final-mobile.png`, and `/Users/judeokun/Documents/GitHub/mie odyssey/platform-imagery-recap-share-mobile.png`
+- Source visual truth and system sheet: `/Users/judeokun/Documents/GitHub/gomotivateme/journey-illustration-system-v2.jpg`
+- Homepage desktop hero: `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-home-desktop.png`
+- Homepage mobile hero artwork: `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-home-art-mobile.png`
+- Homepage process artwork: `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-home-steps-desktop.png`
+- Homepage curated-goal artwork: `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-goals-final-desktop.png`
+- Authentication artwork: `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-auth-desktop.png`
+- Mobile 404 fallback: `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-404-mobile.png`
+- Recap intro, finale, and share composer: `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-recap-intro-mobile.png`, `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-recap-final-mobile.png`, and `/Users/judeokun/Documents/GitHub/gomotivateme/platform-imagery-recap-share-mobile.png`
 - Desktop viewport: 1440 × 1000 CSS px at 1×.
 - Mobile viewport: 390 × 844 CSS px at 1×.
 
@@ -329,10 +329,10 @@ final result: passed
 ## Evidence
 
 - Source visual truth: `/Users/judeokun/.codex/generated_images/019ff5d2-978c-76a1-ab59-695654157177/exec-ea7e5037-136b-4e6e-b29c-a32187d0851f.png`
-- Generated summit asset: `/Users/judeokun/Documents/GitHub/mie odyssey/public/illustrations/journey/summit.webp` (1254 × 1254)
-- Browser-rendered finale: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-summit-finale-mobile.png`
-- Browser-rendered composer: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-share-composer-mobile.png`
-- Full-view finale comparison: `/Users/judeokun/Documents/GitHub/mie odyssey/recap-summit-comparison-final.jpg`
+- Generated summit asset: `/Users/judeokun/Documents/GitHub/gomotivateme/public/illustrations/journey/summit.webp` (1254 × 1254)
+- Browser-rendered finale: `/Users/judeokun/Documents/GitHub/gomotivateme/recap-summit-finale-mobile.png`
+- Browser-rendered composer: `/Users/judeokun/Documents/GitHub/gomotivateme/recap-share-composer-mobile.png`
+- Full-view finale comparison: `/Users/judeokun/Documents/GitHub/gomotivateme/recap-summit-comparison-final.jpg`
 - Route/state: `/dashboard/recap?preview=1&year=2025`, slide 7 and open share composer.
 - Finale viewport/pixels: 390 × 954 CSS px at 1×; source normalized to the same 390 × 954 pixels for comparison.
 - Composer mobile evidence: 390 × 844 at 1×. Desktop dialog also checked at 1280 × 900.
@@ -388,9 +388,9 @@ final result: passed
 
 ## Evidence
 
-- Desktop overview: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-redesign-desktop.png`
-- Desktop progress and milestones: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-redesign-progress.png`
-- Mobile overview: `/Users/judeokun/Documents/GitHub/mie odyssey/goal-detail-redesign-mobile.png`
+- Desktop overview: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-detail-redesign-desktop.png`
+- Desktop progress and milestones: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-detail-redesign-progress.png`
+- Mobile overview: `/Users/judeokun/Documents/GitHub/gomotivateme/goal-detail-redesign-mobile.png`
 
 ## Review
 

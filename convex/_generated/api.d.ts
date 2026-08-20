@@ -24,6 +24,7 @@ import type * as goals from "../goals.js";
 import type * as http from "../http.js";
 import type * as insights from "../insights.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_goalAccess from "../lib/goalAccess.js";
 import type * as linkPreview from "../linkPreview.js";
 import type * as linkPreviewData from "../linkPreviewData.js";
 import type * as migrations from "../migrations.js";
@@ -68,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   insights: typeof insights;
   "lib/auth": typeof lib_auth;
+  "lib/goalAccess": typeof lib_goalAccess;
   linkPreview: typeof linkPreview;
   linkPreviewData: typeof linkPreviewData;
   migrations: typeof migrations;

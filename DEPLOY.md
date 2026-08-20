@@ -41,7 +41,7 @@ Repeat for the prod deployment (append `--prod` or use `npx convex env set --pro
 ## 1. Set up Convex
 
 ```bash
-cd "/Users/judeokun/Documents/GitHub/mie odyssey"
+cd "/Users/judeokun/Documents/GitHub/gomotivateme"
 npx convex dev
 ```
 
@@ -92,7 +92,7 @@ git push -u origin main
 ## 4. Deploy the production Convex
 
 ```bash
-cd "/Users/judeokun/Documents/GitHub/mie odyssey"
+cd "/Users/judeokun/Documents/GitHub/gomotivateme"
 npx convex deploy
 ```
 
