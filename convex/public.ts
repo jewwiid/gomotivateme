@@ -5,13 +5,13 @@
  */
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { computeProgress, daysUntil } from "./utils";
-
-// Existing goals predate moderation and remain visible. New/edited goals are
-// only exposed once a decision has approved their public content.
-function isModerationApproved(goal: any) {
-  return !goal.moderationStatus || goal.moderationStatus === "approved";
-}
+import {
+  isModerationApproved,
+  presentGoalForViewer,
+  viewerCanAccessGoal,
+} from "./lib/goalAccess";
 
 /**
  * Strip owner identity from a goal for public consumption when the goal is
@@ -47,11 +47,8 @@ export const getGoalByHandleAndSlug = query({
       )
       .first();
     if (!goal) return null;
-    if (goal.visibility !== "public") return null;
-    if (!isModerationApproved(goal)) return null;
-    // Pre-launch goals (status: "draft") are not visible on the public page.
-    // The creator manages them via the dashboard.
-    if (goal.status === "draft") return null;
+    const userId = await getAuthUserId(ctx);
+    if (!(await viewerCanAccessGoal(ctx, goal, userId))) return null;
 
     const progress = computeProgress(
       goal.startValue,
@@ -61,7 +58,11 @@ export const getGoalByHandleAndSlug = query({
     );
     const days = goal.targetDate ? daysUntil(goal.targetDate, Date.now()) : null;
 
-    return { ...stripOwnerIfAnonymous(goal), progress, daysRemaining: days };
+    return {
+      ...presentGoalForViewer(goal, userId),
+      progress,
+      daysRemaining: days,
+    };
   },
 });
 
@@ -79,9 +80,8 @@ export const getGoalBySlug = query({
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     if (!goal) return null;
-    if (goal.visibility !== "public") return null;
-    if (!isModerationApproved(goal)) return null;
-    if (goal.status === "draft") return null;
+    const userId = await getAuthUserId(ctx);
+    if (!(await viewerCanAccessGoal(ctx, goal, userId))) return null;
 
     const progress = computeProgress(
       goal.startValue,
@@ -91,7 +91,11 @@ export const getGoalBySlug = query({
     );
     const days = goal.targetDate ? daysUntil(goal.targetDate, Date.now()) : null;
 
-    return { ...stripOwnerIfAnonymous(goal), progress, daysRemaining: days };
+    return {
+      ...presentGoalForViewer(goal, userId),
+      progress,
+      daysRemaining: days,
+    };
   },
 });
 
@@ -101,11 +105,9 @@ export const getGoalById = query({
   handler: async (ctx, { goalId }) => {
     const goal = await ctx.db.get(goalId);
     if (!goal) return null;
-    if (goal.visibility !== "public") return null;
-    if (!isModerationApproved(goal)) return null;
-    // Pre-launch goals are still public-readable for the apply page — the
-    // widget on the public page is hidden but anyone with the direct link
-    // (which the creator sends in invite flows) can land here.
+    const userId = await getAuthUserId(ctx);
+    if (!(await viewerCanAccessGoal(ctx, goal, userId))) return null;
+    const presented = presentGoalForViewer(goal, userId);
     const progress = computeProgress(
       goal.startValue,
       goal.currentValue,
@@ -113,23 +115,24 @@ export const getGoalById = query({
       goal.direction
     );
     return {
-      _id: goal._id,
-      slug: goal.slug,
-      ownerHandle: goal.ownerHandle,
-      title: goal.title,
-      summary: goal.summary,
-      story: goal.story,
-      category: goal.category,
-      status: goal.status,
-      visibility: goal.visibility,
-      ownerId: goal.isAnonymous ? undefined : goal.ownerId,
-      ownerName: goal.isAnonymous ? "Anonymous" : goal.ownerName,
-      ownerImage: goal.isAnonymous ? undefined : goal.ownerImage,
-      publicMotivatorPolicy: goal.publicMotivatorPolicy,
-      coreMotivatorMin: goal.coreMotivatorMin,
-      preLaunchAt: goal.preLaunchAt,
-      preLaunchDeadline: goal.preLaunchDeadline,
-      coverImageId: goal.coverImageId,
+      _id: presented._id,
+      slug: presented.slug,
+      ownerHandle: presented.ownerHandle,
+      title: presented.title,
+      summary: presented.summary,
+      story: presented.story,
+      category: presented.category,
+      status: presented.status,
+      visibility: presented.visibility,
+      ownerId: presented.ownerId,
+      ownerName: presented.ownerName,
+      ownerImage: presented.ownerImage,
+      viewerIsOwner: presented.viewerIsOwner,
+      publicMotivatorPolicy: presented.publicMotivatorPolicy,
+      coreMotivatorMin: presented.coreMotivatorMin,
+      preLaunchAt: presented.preLaunchAt,
+      preLaunchDeadline: presented.preLaunchDeadline,
+      coverImageId: presented.coverImageId,
       progress,
     };
   },
@@ -173,6 +176,7 @@ export const listRecentPublic = query({
         progressType: stripped.progressType,
         supportTypes: stripped.supportTypes,
         status: stripped.status,
+        isAnonymous: Boolean(g.isAnonymous),
         progress: computeProgress(stripped.startValue, stripped.currentValue, stripped.targetValue, stripped.direction),
         daysRemaining: stripped.targetDate ? daysUntil(stripped.targetDate, Date.now()) : null,
         };

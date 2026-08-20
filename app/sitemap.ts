@@ -57,6 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       for (const goal of goals ?? []) {
         if (!goal.ownerHandle || !goal.slug) continue;
+        if (goal.isAnonymous) continue;
         handles.add(goal.ownerHandle);
         entries.push({
           url: `${SITE_URL}/o/${goal.ownerHandle}/${goal.slug}`,

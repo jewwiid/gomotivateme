@@ -70,7 +70,7 @@ export default function PublicGoalPage() {
             Goal not found
           </h1>
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-            This link might be wrong, or the goal is unlisted.
+            This link might be wrong, or the goal is private.
           </p>
           <Link href="/explore" className="workspace-button-primary mx-auto mt-6 w-auto px-5">
             Explore goals
@@ -91,15 +91,21 @@ function PublicGoalView({
   goal: any;
 }) {
   const { user, isAuthenticated } = useCurrentUser();
-  const isOwner = !!user && user._id === goal.ownerId;
+  const isOwner = Boolean(goal.viewerIsOwner) || (!!user && !!goal.ownerId && user._id === goal.ownerId);
   const updatesCount = useQuery(api.updates.countForGoal, { goalId });
   const badges = useQuery(api.badges.listForGoal, { goalId });
-  const owner = useQuery(api.users.profilesById, { ids: [goal.ownerId] });
+  const owner = useQuery(
+    api.users.profilesById,
+    goal.ownerId ? { ids: [goal.ownerId] } : "skip"
+  );
   const motivators = useQuery(api.motivation.listActiveMotivators, { goalId });
   const supporterRows = useQuery(api.supporters.listForGoal, { goalId, limit: 4 });
   const reactionStats = useQuery(api.reactions.publicStats, { goalId });
   const supporterIds = useMemo(
-    () => (supporterRows ?? []).map((supporter: any) => supporter.userId),
+    () =>
+      (supporterRows ?? [])
+        .map((supporter: any) => supporter.userId)
+        .filter((id): id is Id<"users"> => Boolean(id)),
     [supporterRows]
   );
   const supporterProfiles = useQuery(
@@ -120,8 +126,12 @@ function PublicGoalView({
   const coverUrl = goal.coverImageId
     ? imageUrls?.[goal.coverImageId as Id<"_storage">] ?? undefined
     : null;
-  const ownerName = owner?.[goal.ownerId]?.name ?? goal.ownerName ?? "Someone";
-  const ownerImage = owner?.[goal.ownerId]?.image ?? goal.ownerImage ?? null;
+  const ownerName = goal.isAnonymous && !isOwner
+    ? "Anonymous"
+    : (owner?.[goal.ownerId]?.name ?? goal.ownerName ?? "Someone");
+  const ownerImage = goal.isAnonymous && !isOwner
+    ? null
+    : (owner?.[goal.ownerId]?.image ?? goal.ownerImage ?? null);
   const ownerProfileHref =
     !goal.isAnonymous && goal.ownerHandle
       ? `/@${goal.ownerHandle}`
@@ -130,7 +140,14 @@ function PublicGoalView({
   const supporterTarget = goal.supporterTarget ?? null;
   const supporterPreview = (supporterRows ?? [])
     .map((supporter: any) => {
-      const profile = supporterProfiles?.[supporter.userId];
+      const profile = supporter.userId ? supporterProfiles?.[supporter.userId] : null;
+      if (supporter.isAnonymous && !supporter.userId) {
+        return {
+          id: String(supporter._id),
+          name: "Someone",
+          image: null as string | null,
+        };
+      }
       if (!profile) return null;
       return {
         id: String(supporter.userId),

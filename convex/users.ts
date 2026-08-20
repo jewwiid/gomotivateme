@@ -220,6 +220,8 @@ export const profileSummary = query({
         if (!g || g.visibility !== "public" || g.status === "draft") {
           return null;
         }
+        const ownerName = g.isAnonymous ? "Anonymous" : g.ownerName;
+        const ownerImage = g.isAnonymous ? null : (g.ownerImage ?? null);
         return {
           _id: p._id,
           role: p.role,
@@ -230,7 +232,7 @@ export const profileSummary = query({
           goal: {
             _id: g._id,
             slug: g.slug,
-            ownerHandle: g.ownerHandle,
+            ownerHandle: g.isAnonymous ? undefined : g.ownerHandle,
             title: g.title,
             summary: g.summary ?? null,
             category: g.category,
@@ -239,8 +241,8 @@ export const profileSummary = query({
             targetValue: g.targetValue,
             unit: g.unit,
             direction: g.direction,
-            ownerName: g.ownerName,
-            ownerImage: g.ownerImage ?? null,
+            ownerName,
+            ownerImage,
           },
         };
       })

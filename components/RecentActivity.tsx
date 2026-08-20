@@ -57,10 +57,12 @@ export function RecentActivity({
   const profileIds = useMemo(
     () =>
       Array.from(
-        new Set([
-          ...((supporters as any[]) ?? []).map((supporter) => supporter.userId),
-          ...((messages as any[]) ?? []).map((message) => message.authorId),
-        ])
+        new Set(
+          [
+            ...((supporters as any[]) ?? []).map((supporter) => supporter.userId),
+            ...((messages as any[]) ?? []).map((message) => message.authorId),
+          ].filter((id): id is Id<"users"> => Boolean(id))
+        )
       ),
     [supporters, messages]
   );
@@ -74,16 +76,16 @@ export function RecentActivity({
         kind: "supporter",
         at: s.createdAt,
         supportType: s.supportType,
-        name: profiles?.[s.userId]?.name ?? null,
-        image: profiles?.[s.userId]?.image ?? null,
+        name: s.isAnonymous && !s.userId ? "Someone" : profiles?.[s.userId]?.name ?? null,
+        image: s.isAnonymous && !s.userId ? null : profiles?.[s.userId]?.image ?? null,
       });
     }
     for (const m of (messages as any[]) ?? []) {
       out.push({
         kind: "message",
         at: m.createdAt,
-        name: profiles?.[m.authorId]?.name ?? null,
-        image: profiles?.[m.authorId]?.image ?? null,
+        name: m.isAnonymous && !m.authorId ? "Someone" : profiles?.[m.authorId]?.name ?? null,
+        image: m.isAnonymous && !m.authorId ? null : profiles?.[m.authorId]?.image ?? null,
         supportType: m.supportType,
         body: m.body,
       });

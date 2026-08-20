@@ -7,6 +7,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireGoalAccess } from "./lib/goalAccess";
 
 const SUPPORT_TYPES = ["encourage", "experience", "advice", "checkin", "join"] as const;
 
@@ -16,8 +17,9 @@ export const create = mutation({
     goalId: v.id("goals"),
     supportType: v.string(),
     body: v.string(),
+    isAnonymous: v.optional(v.boolean()),
   },
-  handler: async (ctx, { goalId, supportType, body }) => {
+  handler: async (ctx, { goalId, supportType, body, isAnonymous }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
     if (!SUPPORT_TYPES.includes(supportType as (typeof SUPPORT_TYPES)[number])) {
@@ -29,6 +31,7 @@ export const create = mutation({
 
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
+    await requireGoalAccess(ctx, goal);
     if (goal.status === "closed") {
       throw new Error("This campaign is closed");
     }
@@ -38,11 +41,13 @@ export const create = mutation({
       .query("supporters")
       .withIndex("by_goal_user", (q) => q.eq("goalId", goalId).eq("userId", userId))
       .first();
+    const hideName = Boolean(isAnonymous ?? existing?.isAnonymous);
     if (!existing) {
       await ctx.db.insert("supporters", {
         goalId,
         userId,
         supportType: supportType as any,
+        isAnonymous: hideName,
         createdAt: Date.now(),
       });
       await ctx.db.patch(goalId, {
@@ -55,6 +60,7 @@ export const create = mutation({
       authorId: userId,
       supportType: supportType as any,
       body: trimmed,
+      isAnonymous: hideName,
       moderationStatus: "pending",
       createdAt: Date.now(),
     });
@@ -99,13 +105,24 @@ export const create = mutation({
 export const listForGoal = query({
   args: { goalId: v.id("goals") },
   handler: async (ctx, { goalId }) => {
+    const userId = await getAuthUserId(ctx);
+    const goal = await ctx.db.get(goalId);
+    const viewerIsOwner = !!goal && !!userId && goal.ownerId === userId;
     const all = await ctx.db
       .query("supportMessages")
       .withIndex("by_goal", (q) => q.eq("goalId", goalId))
       .collect();
     return all
       .filter((m) => !m.hiddenAt && (!m.moderationStatus || m.moderationStatus === "approved"))
-      .sort((a, b) => a.createdAt - b.createdAt);
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .map((m) => {
+        const hide = Boolean(m.isAnonymous) && !viewerIsOwner;
+        return {
+          ...m,
+          authorId: hide ? undefined : m.authorId,
+          isAnonymous: Boolean(m.isAnonymous),
+        };
+      });
   },
 });
 

@@ -2053,7 +2053,7 @@ function GoalSettings({
                     </button>
                   ) : null}
                 </SettingsField>
-                <SettingsField label="Visibility" helper="Private goals are visible only to you.">
+                <SettingsField label="Visibility" helper="Private goals are visible to you and people who follow you. Unlisted goals work for anyone with the link.">
                   <select
                     value={draftVisibility}
                     onChange={(event) => setDraftVisibility(event.target.value as "public" | "unlisted" | "private")}
@@ -2061,7 +2061,7 @@ function GoalSettings({
                   >
                     <option value="public">Public — searchable</option>
                     <option value="unlisted">Unlisted — link only</option>
-                    <option value="private">Private — only me</option>
+                    <option value="private">Private — you and your followers</option>
                   </select>
                 </SettingsField>
                 <SettingsField label="Identity" helper="Anonymous goals hide your name, avatar, and profile link.">

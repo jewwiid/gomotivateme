@@ -30,7 +30,10 @@ export function PublicGoalCard({
   const reactionStats = useQuery(api.reactions.publicStats, { goalId });
   const supporterRows = useQuery(api.supporters.listForGoal, { goalId, limit: 3 });
   const supporterIds = useMemo(
-    () => (supporterRows ?? []).map((supporter) => supporter.userId),
+    () =>
+      (supporterRows ?? [])
+        .map((supporter) => supporter.userId)
+        .filter((id): id is Id<"users"> => Boolean(id)),
     [supporterRows]
   );
   const supporterProfiles = useQuery(
@@ -41,7 +44,7 @@ export function PublicGoalCard({
   const ownerName = displayName(goal.ownerName ?? "Anonymous");
   const supporters = (supporterRows ?? [])
     .map((supporter) => {
-      const profile = supporterProfiles?.[supporter.userId];
+      const profile = supporter.userId ? supporterProfiles?.[supporter.userId] : null;
       if (!profile) return null;
       return {
         name: profile.name ?? profile.handle ?? "Supporter",

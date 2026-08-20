@@ -93,6 +93,7 @@ export function StructuredSupportComposer({
   const [frequency, setFrequency] = useState<"daily" | "weekly" | "monthly" | "justThisOne">(
     "weekly"
   );
+  const [hideName, setHideName] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -217,6 +218,11 @@ export function StructuredSupportComposer({
             <span className="block text-sm font-semibold text-[var(--color-text)]">
               You're supporting as "{meta.label.toLowerCase()}"
             </span>
+            {amISupporting.isAnonymous ? (
+              <span className="block text-xs text-[var(--color-text-muted)]">
+                Showing as Someone on the public page. They still know it's you.
+              </span>
+            ) : null}
           </div>
         </div>
         {amISupporting.pledge && (
@@ -226,13 +232,20 @@ export function StructuredSupportComposer({
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setHideName(Boolean(amISupporting?.isAnonymous));
+              setOpen(true);
+            }}
             className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)] hover:border-[var(--color-primary-dark)]"
           >
             Update your support
           </button>
           <LeaveSupportButton goalId={goalId} />
         </div>
+
+        {amISupporting.supportType === "checkin" ? (
+          <SupportCheckInBox goalId={goalId} />
+        ) : null}
 
         {/* Follow-up message form */}
         <div className="mt-3 border-t border-[var(--color-success)]/30 pt-3">
@@ -292,6 +305,7 @@ export function StructuredSupportComposer({
                         goalId,
                         supportType: amISupporting.supportType as SupportType,
                         body: followUpBody,
+                        isAnonymous: Boolean(amISupporting.isAnonymous),
                       });
                       setFollowUpDone(true);
                       setShowFollowUp(false);
@@ -373,9 +387,10 @@ export function StructuredSupportComposer({
         supportType,
         pledge: pledge || undefined,
         checkInFrequency: supportType === "checkin" ? frequency : undefined,
+        isAnonymous: hideName,
       });
       if (body.trim()) {
-        await createMessage({ goalId, supportType, body });
+        await createMessage({ goalId, supportType, body, isAnonymous: hideName });
         if (aiUsageEventId && aiTarget === "message") {
           void recordAiOutcome({ usageEventId: aiUsageEventId, outcome: "sent" });
         }
@@ -542,6 +557,23 @@ export function StructuredSupportComposer({
 
             {err && <p className="text-xs text-[var(--color-danger)]">{err}</p>}
 
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-3">
+              <input
+                type="checkbox"
+                checked={hideName}
+                onChange={(e) => setHideName(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-[var(--color-border-strong)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-[var(--color-text)]">
+                  Stay anonymous on this goal
+                </span>
+                <span className="mt-0.5 block text-xs leading-5 text-[var(--color-text-muted)]">
+                  The public page shows you as Someone. The owner still sees your name so they know who showed up.
+                </span>
+              </span>
+            </label>
+
             <div className="flex gap-2 pt-1">
               <button
                 onClick={() => setOpen(false)}
@@ -604,5 +636,82 @@ function LeaveSupportButton({ goalId }: { goalId: Id<"goals"> }) {
     >
       Leave support
     </button>
+  );
+}
+
+function SupportCheckInBox({ goalId }: { goalId: Id<"goals"> }) {
+  const send = useMutation(api.motivation.createSupportCheckIn);
+  const [open, setOpen] = useState(false);
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  if (done) {
+    return (
+      <p className="mt-3 text-xs font-medium text-[var(--color-success)]">
+        Check-in sent ✓
+      </p>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-3 inline-flex min-h-8 items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-1.5 text-xs font-semibold text-[var(--color-primary)] transition hover:border-[var(--color-primary)]"
+      >
+        Send a check-in
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-2 border-t border-[var(--color-success)]/30 pt-3">
+      <textarea
+        autoFocus
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={3}
+        placeholder="How are they doing? What did you notice?"
+        maxLength={1000}
+        className="w-full resize-none rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-bg-elev)] px-3 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-dim)] focus:border-[var(--color-primary)] focus:outline-none"
+      />
+      {err ? <p className="text-xs text-[var(--color-danger)]">{err}</p> : null}
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setBody("");
+            setErr(null);
+          }}
+          className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--color-border-strong)]"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={busy || !body.trim()}
+          onClick={async () => {
+            setBusy(true);
+            setErr(null);
+            try {
+              await send({ goalId, type: "accountability", body });
+              trackDataFastGoal("checkin_sent", { checkin_type: "accountability" });
+              setDone(true);
+            } catch (e) {
+              setErr(e instanceof Error ? e.message : "Couldn't send check-in");
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="rounded-lg bg-[var(--color-primary)] px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
+        >
+          {busy ? "Sending..." : "Send check-in"}
+        </button>
+      </div>
+    </div>
   );
 }

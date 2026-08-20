@@ -57,7 +57,7 @@ export function CheckInList({ goalId }: { goalId: Id<"goals"> }) {
       <div className="workspace-card p-5">
         <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
           <MessageCircle size={16} />
-          No check-ins yet. Your motivators will show up here.
+          No check-ins yet. Motivators and check-in supporters will show up here.
         </div>
       </div>
     );

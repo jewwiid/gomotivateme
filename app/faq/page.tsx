@@ -53,7 +53,7 @@ const SECTIONS: FaqSection[] = [
       {
         q: "Do I need an account to look around?",
         answer:
-          "No. Browsing goals and profiles is open to everyone, and you can leave a reaction on a goal without signing up. You'll need an account to create a goal of your own or to formally join someone's support team.",
+          "No. Browsing public goals and profiles is open to everyone, and you can leave a reaction without signing up. You'll need an account to create a goal, join a support team, or check in. When you support someone you can hide your name on that goal: the public page shows you as Someone, and the owner still sees who you are.",
         links: [{ label: "Explore goals", href: "/explore" }],
       },
       {
@@ -75,7 +75,7 @@ const SECTIONS: FaqSection[] = [
       {
         q: "Can I keep a goal private?",
         answer:
-          "Yes. Every goal is public, unlisted, or private. Public goals appear in Explore and can be found by search engines. Unlisted goals are reachable only by direct link, so you can share with a few people without publishing to the world. Private goals are yours alone.",
+          "Yes. Every goal is public, unlisted, or private. Public goals appear in Explore and can be found by search engines. Unlisted goals are reachable only by direct link, so you can share with a few people without publishing to the world. Private goals are visible to you and to people you've approved as followers. You can also hide your name on a public or unlisted goal.",
       },
       {
         q: "Can I post a goal without my name on it?",
@@ -102,6 +102,11 @@ const SECTIONS: FaqSection[] = [
         q: "How often will I have to check in?",
         answer:
           "Whatever cadence you agree to when you join a goal: after each update, weekly, monthly, or only when the person asks. We'll email you a reminder when a check-in you committed to is overdue, and nothing more often than that.",
+      },
+      {
+        q: "Can I support someone without my name showing?",
+        answer:
+          "Yes, once you have an account. When you join a support team you can stay anonymous on that goal. The public page lists you as Someone, and it won't appear on your profile. The owner still sees your name, because a check-in or a pledge from a stranger isn't useful. Cheers (the emoji bar) don't need an account at all.",
       },
       {
         q: "How do I get people onto my support team?",

@@ -84,6 +84,10 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical },
+    robots:
+      goal.visibility !== "public" || goal.isAnonymous
+        ? { index: false, follow: false }
+        : undefined,
     openGraph,
     twitter,
   };
@@ -111,18 +115,21 @@ export default async function GoalLayout({
    * BreadcrumbList so search results show "gomotivateme.com › Explore › @handle"
    * instead of a raw URL.
    */
+  const ownerCrumb = goal.isAnonymous
+    ? { "@type": "ListItem", position: 3, name: "Anonymous", item: `${SITE_URL}/explore` }
+    : {
+        "@type": "ListItem",
+        position: 3,
+        name: goal.ownerName ?? `@${normalizedHandle}`,
+        item: `${SITE_URL}/@${normalizedHandle}`,
+      };
   const breadcrumbs = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
       { "@type": "ListItem", position: 2, name: "Explore", item: `${SITE_URL}/explore` },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: goal.ownerName ?? `@${normalizedHandle}`,
-        item: `${SITE_URL}/@${normalizedHandle}`,
-      },
+      ownerCrumb,
       {
         "@type": "ListItem",
         position: 4,

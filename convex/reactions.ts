@@ -8,6 +8,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireGoalAccess } from "./lib/goalAccess";
 
 const EMOJI_KINDS = ["thumbsup", "muscle", "heart", "fire"] as const;
 type EmojiKind = (typeof EMOJI_KINDS)[number];
@@ -166,7 +167,7 @@ export const setEmoji = mutation({
     if (!EMOJI_KINDS.includes(emoji)) throw new Error("Invalid emoji kind");
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
-    if (goal.visibility !== "public") throw new Error("This goal isn't public");
+    await requireGoalAccess(ctx, goal);
 
     await enforceRateLimit(ctx, visitorKey);
 
@@ -301,7 +302,7 @@ export const setUpdateEmoji = mutation({
     if (!EMOJI_KINDS.includes(emoji)) throw new Error("Invalid emoji kind");
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
-    if (goal.visibility !== "public") throw new Error("This goal isn't public");
+    await requireGoalAccess(ctx, goal);
 
     await enforceRateLimit(ctx, visitorKey);
 

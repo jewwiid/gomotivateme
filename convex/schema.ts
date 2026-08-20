@@ -422,6 +422,11 @@ export default defineSchema({
         v.literal("justThisOne")
       )
     ),
+    /**
+     * When true, the public wall hides this supporter's name, photo, and
+     * profile link. The owner still sees who they are. Account required.
+     */
+    isAnonymous: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("by_goal", ["goalId"])
@@ -444,6 +449,8 @@ export default defineSchema({
       v.literal("join")
     ),
     body: v.string(),
+    /** Snapshot of the author's hide-name choice at post time. */
+    isAnonymous: v.optional(v.boolean()),
     /** Soft-delete for moderation. */
     hiddenAt: v.optional(v.number()),
     moderationStatus: v.optional(
@@ -708,6 +715,8 @@ export default defineSchema({
     /** Optional reference to the update that prompted this check-in. */
     updateId: v.optional(v.id("updates")),
     body: v.string(),
+    /** Hide the sender's name on any public surface. Owner still sees them. */
+    isAnonymous: v.optional(v.boolean()),
     acknowledgedAt: v.optional(v.number()),
     createdAt: v.number(),
   })

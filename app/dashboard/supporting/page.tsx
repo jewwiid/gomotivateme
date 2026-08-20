@@ -93,6 +93,12 @@ function SupportingContent() {
                     </span>
                     <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
                     <span>by {s.ownerName ?? "Someone"}</span>
+                    {s.isAnonymousSupport && (
+                      <>
+                        <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
+                        <span>Shown as Someone</span>
+                      </>
+                    )}
                     {s.goalStatus === "completed" && (
                       <>
                         <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />

@@ -955,6 +955,80 @@ export const createCheckIn = mutation({
   },
 });
 
+const CHECK_IN_TYPE_SET = new Set(CHECK_IN_TYPES);
+
+/**
+ * Casual supporter with type "checkin": send a check-in without a
+ * Motivation Circle pledge. Account required. Can hide their name on
+ * any public surface; the owner still sees who wrote it.
+ */
+export const createSupportCheckIn = mutation({
+  args: {
+    goalId: v.id("goals"),
+    type: v.string(),
+    body: v.string(),
+  },
+  handler: async (ctx, { goalId, type, body }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not signed in");
+    if (!CHECK_IN_TYPE_SET.has(type as (typeof CHECK_IN_TYPES)[number])) {
+      throw new Error("Invalid check-in type");
+    }
+    const trimmed = body.trim();
+    if (trimmed.length === 0) throw new Error("Check-in message is empty");
+    if (trimmed.length > 1000) throw new Error("Check-in is too long (1000 max)");
+
+    const goal = await ctx.db.get(goalId);
+    if (!goal) throw new Error("Goal not found");
+
+    const support = await ctx.db
+      .query("supporters")
+      .withIndex("by_goal_user", (q) => q.eq("goalId", goalId).eq("userId", userId))
+      .first();
+    if (!support || support.supportType !== "checkin") {
+      throw new Error("Join as a check-in supporter first");
+    }
+
+    const now = Date.now();
+    await ctx.db.insert("checkIns", {
+      goalId,
+      motivatorId: userId,
+      creatorId: goal.ownerId,
+      type: type as any,
+      body: trimmed,
+      isAnonymous: Boolean(support.isAnonymous),
+      createdAt: now,
+    });
+
+    if (goal.ownerId !== userId) {
+      const owner = await ctx.db.get(goal.ownerId);
+      if (owner?.email) {
+        const author = await ctx.db.get(userId);
+        await ctx.runMutation(internal.emails.enqueue, {
+          userId: goal.ownerId,
+          toEmail: owner.email,
+          templateId: "supportMessageReceived",
+          category: "lifecycle",
+          preferenceKey: "goalActivity",
+          payload: JSON.stringify({
+            ownerName: owner.name ?? owner.handle ?? "there",
+            authorName: author?.name ?? author?.handle ?? "Someone",
+            goalTitle: goal.title,
+            goalSlug: goal.slug,
+            ownerHandle: goal.isAnonymous
+              ? undefined
+              : (goal.ownerHandle ?? owner?.handle ?? undefined),
+            messageExcerpt: trimmed.slice(0, 160),
+            supportTypeLabel: `a ${type} check-in`,
+          }),
+        });
+      }
+    }
+
+    return { ok: true as const };
+  },
+});
+
 /**
  * List check-ins for a goal. Visible to the goal owner and to active
  * motivators on that goal. Returns hydrated check-ins (motivator profile
@@ -969,8 +1043,8 @@ export const listCheckInsForGoal = query({
     if (!goal) return [];
 
     const isOwner = goal.ownerId === userId;
-    let isMotivator = false;
-    if (!isOwner) {
+    let canView = isOwner;
+    if (!canView) {
       const pledge = await ctx.db
         .query("motivatorPledges")
         .withIndex("by_goal_status", (q) =>
@@ -978,9 +1052,16 @@ export const listCheckInsForGoal = query({
         )
         .filter((q) => q.eq(q.field("userId"), userId))
         .first();
-      isMotivator = !!pledge;
+      if (pledge) canView = true;
     }
-    if (!isOwner && !isMotivator) return [];
+    if (!canView) {
+      const support = await ctx.db
+        .query("supporters")
+        .withIndex("by_goal_user", (q) => q.eq("goalId", goalId).eq("userId", userId))
+        .first();
+      if (support?.supportType === "checkin") canView = true;
+    }
+    if (!canView) return [];
 
     const checkIns = await ctx.db
       .query("checkIns")
@@ -1003,14 +1084,21 @@ export const listCheckInsForGoal = query({
     );
     const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
-    return checkIns.map((c) => ({
-      _id: c._id,
-      type: c.type,
-      body: c.body,
-      createdAt: c.createdAt,
-      acknowledgedAt: c.acknowledgedAt ?? null,
-      motivator: profileMap.get(c.motivatorId)!,
-    }));
+    return checkIns.map((c) => {
+      const hide = Boolean(c.isAnonymous) && !isOwner;
+      const profile = profileMap.get(c.motivatorId)!;
+      return {
+        _id: c._id,
+        type: c.type,
+        body: c.body,
+        createdAt: c.createdAt,
+        acknowledgedAt: c.acknowledgedAt ?? null,
+        isAnonymous: Boolean(c.isAnonymous),
+        motivator: hide
+          ? { id: undefined, name: "Someone", image: null, handle: null }
+          : profile,
+      };
+    });
   },
 });
 

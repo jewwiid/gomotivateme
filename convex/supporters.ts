@@ -7,6 +7,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireGoalAccess } from "./lib/goalAccess";
 
 const SUPPORT_TYPES = ["encourage", "experience", "advice", "checkin", "join"] as const;
 
@@ -24,8 +25,9 @@ export const join = mutation({
         v.literal("justThisOne")
       )
     ),
+    isAnonymous: v.optional(v.boolean()),
   },
-  handler: async (ctx, { goalId, supportType, pledge, checkInFrequency }) => {
+  handler: async (ctx, { goalId, supportType, pledge, checkInFrequency, isAnonymous }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
     if (!SUPPORT_TYPES.includes(supportType as (typeof SUPPORT_TYPES)[number])) {
@@ -33,6 +35,7 @@ export const join = mutation({
     }
     const goal = await ctx.db.get(goalId);
     if (!goal) throw new Error("Goal not found");
+    await requireGoalAccess(ctx, goal);
     if (goal.status === "draft") {
       throw new Error("This campaign hasn't launched yet");
     }
@@ -45,12 +48,15 @@ export const join = mutation({
       .withIndex("by_goal_user", (q) => q.eq("goalId", goalId).eq("userId", userId))
       .first();
 
+    const hideName = Boolean(isAnonymous);
+
     if (existing) {
       // Update existing membership.
       await ctx.db.patch(existing._id, {
         supportType: supportType as any,
         pledge: pledge?.trim() || undefined,
         checkInFrequency,
+        isAnonymous: hideName,
         createdAt: Date.now(), // bump so they show up at the top of "recent"
       });
       return { id: existing._id, created: false };
@@ -62,6 +68,7 @@ export const join = mutation({
       supportType: supportType as any,
       pledge: pledge?.trim() || undefined,
       checkInFrequency,
+      isAnonymous: hideName,
       createdAt: Date.now(),
     });
     // Maintain the denormalized supporter count.
@@ -140,20 +147,27 @@ export const listForGoal = query({
   args: { goalId: v.id("goals"), limit: v.optional(v.number()) },
   handler: async (ctx, { goalId, limit }) => {
     const take = Math.min(Math.max(limit ?? 50, 1), 200);
+    const userId = await getAuthUserId(ctx);
+    const goal = await ctx.db.get(goalId);
+    const viewerIsOwner = !!goal && !!userId && goal.ownerId === userId;
     const all = await ctx.db
       .query("supporters")
       .withIndex("by_goal", (q) => q.eq("goalId", goalId))
       .take(take * 2);
     all.sort((a, b) => b.createdAt - a.createdAt);
-    return all.slice(0, take).map((s) => ({
-      _id: s._id,
-      goalId: s.goalId,
-      userId: s.userId,
-      supportType: s.supportType,
-      pledge: s.pledge,
-      checkInFrequency: s.checkInFrequency,
-      createdAt: s.createdAt,
-    }));
+    return all.slice(0, take).map((s) => {
+      const hide = Boolean(s.isAnonymous) && !viewerIsOwner;
+      return {
+        _id: s._id,
+        goalId: s.goalId,
+        userId: hide ? undefined : s.userId,
+        supportType: s.supportType,
+        pledge: s.pledge,
+        checkInFrequency: s.checkInFrequency,
+        createdAt: s.createdAt,
+        isAnonymous: Boolean(s.isAnonymous),
+      };
+    });
   },
 });
 
@@ -173,6 +187,7 @@ export const amISupporting = query({
       pledge: row.pledge,
       checkInFrequency: row.checkInFrequency,
       createdAt: row.createdAt,
+      isAnonymous: Boolean(row.isAnonymous),
     };
   },
 });
@@ -221,6 +236,7 @@ export const listMySupports = query({
         goalStatus: goal.status,
         goalCategory: goal.category,
         ownerName: isAnon ? ("Anonymous" as string | null) : (null as string | null),
+        isAnonymousSupport: Boolean(s.isAnonymous),
       });
       if (!isAnon) {
         const owner = await ctx.db.get(goal.ownerId);

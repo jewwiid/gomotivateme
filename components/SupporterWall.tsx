@@ -38,6 +38,7 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
   const messagesByUser = useMemo(() => {
     const map = new Map<string, Array<{ body: string; createdAt: number }>>();
     for (const m of messages ?? []) {
+      if (!m.authorId) continue;
       const arr = map.get(m.authorId) ?? [];
       arr.push({ body: m.body, createdAt: m.createdAt });
       map.set(m.authorId, arr);
@@ -46,6 +47,8 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
   }, [messages]);
 
   if (!supporters || supporters.length === 0) return null;
+
+  const anonymousNotes = (messages ?? []).filter((m: any) => !m.authorId);
 
   return (
     <section className="mt-3 rounded-[1.75rem] bg-[var(--color-bg-elev)] p-4 sm:p-5">
@@ -61,10 +64,11 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
 
       <div className="grid gap-2 sm:grid-cols-2">
         {supporters.map((s: any, i: number) => {
-          const profile = profiles?.[s.userId];
-          const name = profile?.name ?? "Someone";
+          const hidden = Boolean(s.isAnonymous) && !s.userId;
+          const profile = s.userId ? profiles?.[s.userId] : null;
+          const name = hidden ? "Someone" : (profile?.name ?? "Someone");
           const initial = name[0]?.toUpperCase() ?? "?";
-          const userMessages = messagesByUser.get(s.userId) ?? [];
+          const userMessages = s.userId ? (messagesByUser.get(s.userId) ?? []) : [];
           return (
             <motion.div
               key={s._id}
@@ -74,7 +78,7 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
               className="rounded-[1.25rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4"
             >
               <div className="flex items-center gap-3">
-                {profile?.image ? (
+                {profile?.image && !hidden ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={profile.image}
@@ -89,6 +93,11 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {displayName(name)}
+                    {hidden ? (
+                      <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-dim)]">
+                        Anonymous
+                      </span>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-[var(--color-text-dim)]">
                     <span>{SUPPORT_GLYPH[s.supportType] ?? "💛"}</span>
@@ -122,6 +131,21 @@ export function SupporterWall({ goalId }: { goalId: Id<"goals"> }) {
           );
         })}
       </div>
+      {anonymousNotes.length > 0 ? (
+        <div className="mt-3 space-y-2 rounded-[1.25rem] border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-dim)]">
+            Notes from Someone
+          </p>
+          {anonymousNotes.map((m: any) => (
+            <div key={m._id} className="text-sm leading-relaxed text-[var(--color-text)]">
+              <p>{m.body}</p>
+              <div className="mt-0.5 text-[10px] text-[var(--color-text-dim)]">
+                {relativeTime(m.createdAt)}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
