@@ -428,6 +428,10 @@ export default defineSchema({
      */
     isAnonymous: v.optional(v.boolean()),
     createdAt: v.number(),
+    /** Last time this supporter sent a check-in. */
+    lastCheckInAt: v.optional(v.number()),
+    /** Last time we emailed them that a check-in is due. */
+    lastReminderAt: v.optional(v.number()),
   })
     .index("by_goal", ["goalId"])
     .index("by_goal_user", ["goalId", "userId"])

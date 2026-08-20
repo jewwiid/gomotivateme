@@ -8,6 +8,7 @@ export interface CheckInDueEmailProps {
   goalTitle: string;
   goalSlug: string;
   daysSinceLastCheckin: number;
+  checkInPath?: string;
   siteUrl?: string;
   unsubscribeToken?: string;
 }
@@ -17,10 +18,12 @@ export function CheckInDueEmail({
   ownerName,
   goalTitle,
   daysSinceLastCheckin,
+  checkInPath,
   siteUrl = "https://www.gomotivateme.com",
   unsubscribeToken,
 }: CheckInDueEmailProps) {
   const firstName = motivatorName?.split(" ")[0] || "there";
+  const href = `${siteUrl}${checkInPath ?? "/motivate"}`;
 
   return (
     <EmailLayout
@@ -41,7 +44,7 @@ export function CheckInDueEmail({
         enough.
       </Text>
 
-      <CTAButton href={`${siteUrl}/motivate`}>Send a quick check-in</CTAButton>
+      <CTAButton href={href}>Send a quick check-in</CTAButton>
     </EmailLayout>
   );
 }

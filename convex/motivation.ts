@@ -546,6 +546,15 @@ export const listMyMotivations = query({
         .filter((p) => statuses.includes(p.status))
         .map(async (p) => {
           const g = await ctx.db.get(p.goalId);
+          let lastUpdateAt: number | null = null;
+          if (g) {
+            const lastUpdate = await ctx.db
+              .query("updates")
+              .withIndex("by_goal_created", (q) => q.eq("goalId", g._id))
+              .order("desc")
+              .first();
+            lastUpdateAt = lastUpdate?.createdAt ?? null;
+          }
           return {
             _id: p._id,
             goalId: p.goalId,
@@ -558,6 +567,7 @@ export const listMyMotivations = query({
             isCoreMotivator: p.isCoreMotivator,
             acceptedAt: p.acceptedAt,
             lastCheckInAt: p.lastCheckInAt ?? null,
+            lastUpdateAt,
           };
         })
     );
@@ -999,6 +1009,7 @@ export const createSupportCheckIn = mutation({
       isAnonymous: Boolean(support.isAnonymous),
       createdAt: now,
     });
+    await ctx.db.patch(support._id, { lastCheckInAt: now });
 
     if (goal.ownerId !== userId) {
       const owner = await ctx.db.get(goal.ownerId);

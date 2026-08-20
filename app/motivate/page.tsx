@@ -20,6 +20,11 @@ import { Id } from "@/convex/_generated/dataModel";
 import { DashboardWorkspaceShell } from "@/components/DashboardWorkspaceShell";
 import { RequireAuth } from "@/components/RequireAuth";
 import { CheckInComposer } from "@/components/CheckInComposer";
+import {
+  isAfterUpdateDue,
+  isCadenceOverdue,
+  pledgeCadenceDays,
+} from "@/lib/checkInCadence";
 
 const ROLE_META: Record<string, { label: string; icon: typeof Heart; color: string }> = {
   encourager: { label: "Encourager", icon: Heart, color: "text-[var(--color-danger)]" },
@@ -121,6 +126,8 @@ function MotivateRow({
     status: string;
     isCoreMotivator: boolean;
     lastCheckInAt: number | null;
+    lastUpdateAt?: number | null;
+    acceptedAt?: number;
   };
   index: number;
   goalTitle?: string;
@@ -128,6 +135,14 @@ function MotivateRow({
   const [expanded, setExpanded] = useState(false);
   const meta = ROLE_META[pledge.role] ?? ROLE_META.encourager;
   const Icon = meta.icon;
+  const cadenceDays = pledgeCadenceDays(pledge.checkInFrequency);
+  const now = Date.now();
+  const lastActivity = pledge.lastCheckInAt ?? pledge.acceptedAt ?? 0;
+  const due =
+    pledge.status === "active" &&
+    ((cadenceDays !== null && lastActivity > 0 && isCadenceOverdue(lastActivity, cadenceDays, now)) ||
+      (pledge.checkInFrequency === "afterUpdate" &&
+        isAfterUpdateDue(pledge.lastCheckInAt, pledge.lastUpdateAt, pledge.acceptedAt ?? 0)));
 
   const lastCheckInLabel = pledge.lastCheckInAt
     ? `Last check-in ${timeAgoShort(pledge.lastCheckInAt)}`
@@ -159,6 +174,12 @@ function MotivateRow({
             <span>{FREQ_LABEL[pledge.checkInFrequency] ?? pledge.checkInFrequency}</span>
             <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
             <span className="text-[var(--color-text-dim)]">{lastCheckInLabel}</span>
+            {due ? (
+              <>
+                <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
+                <span className="font-semibold text-[var(--color-gold-text)]">Check-in due</span>
+              </>
+            ) : null}
           </div>
           {pledge.pledgeText && <p className="mt-2 line-clamp-1 text-sm italic text-[var(--color-text-muted)]">“{pledge.pledgeText}”</p>}
         </div>
@@ -170,7 +191,9 @@ function MotivateRow({
             className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
               expanded
                 ? "bg-[var(--color-bg-elev)] text-[var(--color-text)]"
-                : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
+                : due
+                  ? "border border-[var(--color-gold-text)] bg-[var(--color-gold-soft)] text-[var(--color-gold-text)] hover:opacity-90"
+                  : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
             }`}
           >
             <MessageSquare size={13} />

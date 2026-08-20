@@ -18,6 +18,13 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { computeProgress } from "./utils";
 import { firstNameOf } from "./users";
+import {
+  alreadyRemindedThisCycle,
+  daysSince,
+  isCadenceOverdue,
+  pledgeCadenceDays,
+  supportCadenceDays,
+} from "../lib/checkInCadence";
 
 type LifecyclePreferenceKey =
   | "goalActivity"
@@ -608,7 +615,6 @@ export const listDueCheckIns = internalQuery({
   args: { nowMs: v.optional(v.number()) },
   handler: async (ctx, { nowMs }) => {
     const now = nowMs ?? Date.now();
-    const DAY = 24 * 60 * 60 * 1000;
 
     // Scan all active pledges. This is a table scan but the pledges table
     // stays small (one row per motivator commitment). Acceptable at scale.
@@ -622,40 +628,62 @@ export const listDueCheckIns = internalQuery({
     const due = [];
     for (const pledge of pledges) {
       if (pledge.status !== "active") continue;
-      // Only weekly + monthly have time-based cadences.
-      if (pledge.checkInFrequency !== "weekly" && pledge.checkInFrequency !== "monthly") {
-        continue;
-      }
-      const cadenceDays = pledge.checkInFrequency === "weekly" ? 7 : 30;
+      const cadenceDays = pledgeCadenceDays(pledge.checkInFrequency);
+      if (cadenceDays === null) continue;
       const lastActivity = pledge.lastCheckInAt ?? pledge.acceptedAt;
-      const elapsed = now - lastActivity;
-      const cadenceMs = cadenceDays * DAY;
-
-      // Only remind if overdue AND we haven't already reminded for this cycle.
-      // lastReminderAt is set when we send; a new check-in resets lastCheckInAt
-      // so the next overdue window starts fresh.
-      if (elapsed < cadenceMs) continue;
-      if (pledge.lastReminderAt && pledge.lastReminderAt > lastActivity) {
-        // Already reminded for this overdue cycle — skip until they check in.
-        continue;
-      }
+      if (!isCadenceOverdue(lastActivity, cadenceDays, now)) continue;
+      if (alreadyRemindedThisCycle(lastActivity, pledge.lastReminderAt)) continue;
 
       const motivator = await ctx.db.get(pledge.userId);
       const goal = await ctx.db.get(pledge.goalId);
       if (!motivator?.email || !goal) continue;
+      if (goal.status !== "active") continue;
 
       due.push({
+        kind: "pledge" as const,
         pledgeId: pledge._id,
+        supportId: undefined,
         motivatorName: motivator.name ?? motivator.handle ?? "there",
         motivatorEmail: motivator.email,
         motivatorId: pledge.userId,
-        ownerName: goal.ownerName ?? "Someone",
+        ownerName: goal.isAnonymous ? "Someone" : (goal.ownerName ?? "Someone"),
         goalTitle: goal.title,
         goalSlug: goal.slug,
         ownerHandle: goal.ownerHandle ?? undefined,
-        daysSinceLastCheckin: Math.floor(elapsed / DAY),
+        daysSinceLastCheckin: daysSince(lastActivity, now),
       });
     }
+
+    const supporters = await ctx.db.query("supporters").collect();
+    for (const support of supporters) {
+      if (support.supportType !== "checkin") continue;
+      const cadenceDays = supportCadenceDays(support.checkInFrequency);
+      if (cadenceDays === null) continue;
+      const lastActivity = support.lastCheckInAt ?? support.createdAt;
+      if (!isCadenceOverdue(lastActivity, cadenceDays, now)) continue;
+      if (alreadyRemindedThisCycle(lastActivity, support.lastReminderAt)) continue;
+
+      const user = await ctx.db.get(support.userId);
+      const goal = await ctx.db.get(support.goalId);
+      if (!user?.email || !goal) continue;
+      if (goal.status !== "active") continue;
+      if (goal.ownerId === support.userId) continue;
+
+      due.push({
+        kind: "support" as const,
+        pledgeId: undefined,
+        supportId: support._id,
+        motivatorName: user.name ?? user.handle ?? "there",
+        motivatorEmail: user.email,
+        motivatorId: support.userId,
+        ownerName: goal.isAnonymous ? "Someone" : (goal.ownerName ?? "Someone"),
+        goalTitle: goal.title,
+        goalSlug: goal.slug,
+        ownerHandle: goal.ownerHandle ?? undefined,
+        daysSinceLastCheckin: daysSince(lastActivity, now),
+      });
+    }
+
     return due;
   },
 });
@@ -665,6 +693,13 @@ export const markPledgeReminded = internalMutation({
   args: { pledgeId: v.id("motivatorPledges") },
   handler: async (ctx, { pledgeId }) => {
     await ctx.db.patch(pledgeId, { lastReminderAt: Date.now() });
+  },
+});
+
+export const markSupportReminded = internalMutation({
+  args: { supportId: v.id("supporters") },
+  handler: async (ctx, { supportId }) => {
+    await ctx.db.patch(supportId, { lastReminderAt: Date.now() });
   },
 });
 

@@ -101,7 +101,7 @@ const SECTIONS: FaqSection[] = [
       {
         q: "How often will I have to check in?",
         answer:
-          "Whatever cadence you agree to when you join a goal: after each update, weekly, monthly, or only when the person asks. We'll email you a reminder when a check-in you committed to is overdue, and nothing more often than that.",
+          "Whatever cadence you agree to when you join a goal: after each update, weekly, monthly, or only when the person asks. We'll email you a reminder when a check-in you committed to is overdue, including if you joined as a check-in supporter rather than a motivator, and nothing more often than that.",
       },
       {
         q: "Can I support someone without my name showing?",

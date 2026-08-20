@@ -237,6 +237,8 @@ export const listMySupports = query({
         goalCategory: goal.category,
         ownerName: isAnon ? ("Anonymous" as string | null) : (null as string | null),
         isAnonymousSupport: Boolean(s.isAnonymous),
+        checkInFrequency: s.checkInFrequency ?? undefined,
+        lastCheckInAt: s.lastCheckInAt ?? null,
       });
       if (!isAnon) {
         const owner = await ctx.db.get(goal.ownerId);

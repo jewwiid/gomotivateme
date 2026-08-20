@@ -7,6 +7,7 @@ import { Heart, ArrowRight, Sparkles } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { DashboardWorkspaceShell } from "@/components/DashboardWorkspaceShell";
 import { RequireAuth } from "@/components/RequireAuth";
+import { isCadenceOverdue, supportCadenceDays } from "@/lib/checkInCadence";
 
 const SUPPORT_LABELS: Record<string, string> = {
   encourage: "Encouraging",
@@ -71,7 +72,16 @@ function SupportingContent() {
           </div>
         ) : (
           <div className="workspace-card mt-7 divide-y divide-[var(--color-border)] overflow-hidden px-5">
-            {supports.map((s: any, i: number) => (
+            {supports.map((s: any, i: number) => {
+              const cadenceDays = supportCadenceDays(s.checkInFrequency);
+              const lastActivity = s.lastCheckInAt ?? s.createdAt ?? 0;
+              const due =
+                s.supportType === "checkin" &&
+                s.goalStatus === "active" &&
+                cadenceDays !== null &&
+                lastActivity > 0 &&
+                isCadenceOverdue(lastActivity, cadenceDays, Date.now());
+              return (
               <motion.div
                 key={s._id}
                 initial={{ opacity: 0, y: 4 }}
@@ -99,6 +109,12 @@ function SupportingContent() {
                         <span>Shown as Someone</span>
                       </>
                     )}
+                    {due && (
+                      <>
+                        <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
+                        <span className="font-semibold text-[var(--color-gold-text)]">Check-in due</span>
+                      </>
+                    )}
                     {s.goalStatus === "completed" && (
                       <>
                         <span className="h-4 w-px bg-[var(--color-bg-sunken)]" />
@@ -119,7 +135,8 @@ function SupportingContent() {
                   )}
                 </Link>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

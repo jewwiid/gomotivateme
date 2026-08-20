@@ -731,7 +731,7 @@ function NotificationsTab() {
           />
           <Toggle
             label="Motivation Circle activity"
-            description="Invitations, application decisions, and check-in reminders"
+            description="Invitations, application decisions, and check-in reminders for goals you motivate or pledged to check in on"
             on={prefs?.motivationActivity ?? true}
             onChange={() => toggle("motivationActivity")}
           />

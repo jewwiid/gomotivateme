@@ -260,10 +260,9 @@ export const sendWeeklyPlatformDigests = internalAction({
 });
 
 /**
- * Daily check-in reminder worker (C5). Finds active pledges where the
- * motivator's chosen cadence (weekly/monthly) has elapsed and they haven't
- * checked in. Sends one reminder per overdue pledge, then stamps
- * lastReminderAt so we don't spam them daily.
+ * Daily check-in reminder worker. Finds overdue weekly/monthly (and daily
+ * supporter) check-in commitments, sends one reminder per overdue cycle,
+ * then stamps lastReminderAt so we don't spam them daily.
  */
 export const sendCheckInReminders = internalAction({
   args: {},
@@ -279,6 +278,12 @@ export const sendCheckInReminders = internalAction({
 
     let enqueued = 0;
     for (const item of due) {
+      const checkInUrl =
+        item.ownerHandle && item.goalSlug
+          ? `/o/${item.ownerHandle}/${item.goalSlug}`
+          : item.kind === "support"
+            ? "/dashboard/supporting"
+            : "/motivate";
       await ctx.runMutation(internal.emails.enqueue, {
         userId: item.motivatorId,
         toEmail: item.motivatorEmail,
@@ -292,12 +297,18 @@ export const sendCheckInReminders = internalAction({
           goalSlug: item.goalSlug,
           ownerHandle: item.ownerHandle,
           daysSinceLastCheckin: item.daysSinceLastCheckin,
+          checkInPath: checkInUrl,
         }),
       });
-      // Stamp so we don't remind again until they check in.
-      await ctx.runMutation(internal.emails.markPledgeReminded, {
-        pledgeId: item.pledgeId,
-      });
+      if (item.kind === "support" && item.supportId) {
+        await ctx.runMutation(internal.emails.markSupportReminded, {
+          supportId: item.supportId,
+        });
+      } else if (item.pledgeId) {
+        await ctx.runMutation(internal.emails.markPledgeReminded, {
+          pledgeId: item.pledgeId,
+        });
+      }
       enqueued++;
     }
     return report("sendCheckInReminders", { enqueued });
