@@ -266,6 +266,20 @@
     outline: none;
   }
 
+  /* iOS Safari sizes date inputs from the native control's intrinsic width and
+     ignores `width: 100%`, so the field overflows its column — measured 396px
+     inside a 362px container on a 402px viewport, which scrolls the whole page
+     sideways. Dropping the native appearance makes it honour the declared
+     width; the system date picker still opens normally, and Chrome is
+     unaffected (it keeps its calendar indicator either way). The colour is
+     restored because removing the appearance drops the value text to the UA
+     accent blue on iOS. */
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    color: var(--color-text);
+  }
+
   .workspace-detail-section {
     margin-top: 1rem;
   }
