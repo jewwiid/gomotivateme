@@ -334,6 +334,10 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
     }
   };
 
+  const addSuggestedMilestone = (title: string) => {
+    setMilestones((current) => mergeMilestones(current, [title]));
+  };
+
   const applyAiSuggestion = () => {
     if (!aiSuggestion) return;
     if (aiSuggestion.task === "shapeGoal") {
@@ -344,11 +348,8 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
       aiSuggestion.task === "suggestMilestones" &&
       aiSuggestion.milestones.length
     ) {
-      setMilestones(
-        aiSuggestion.milestones.map((milestone, index) => ({
-          id: `ai_${Date.now()}_${index}`,
-          title: milestone,
-        }))
+      setMilestones((current) =>
+        mergeMilestones(current, aiSuggestion.milestones)
       );
     }
     if (aiSuggestion.task === "draftStory" && aiSuggestion.story) {
@@ -879,13 +880,36 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                         rationale={aiSuggestion.rationale}
                         onApply={applyAiSuggestion}
                         onDismiss={() => setAiSuggestion(null)}
-                        applyLabel="Use these milestones"
+                        applyLabel="Add all"
                       >
-                        <ol className="list-decimal space-y-1 pl-5">
-                          {aiSuggestion.milestones.map((milestone) => (
-                            <li key={milestone}>{milestone}</li>
-                          ))}
-                        </ol>
+                        <ul className="space-y-2">
+                          {aiSuggestion.milestones.map((milestone) => {
+                            const added = milestones.some(
+                              (existing) =>
+                                milestoneKey(existing.title) ===
+                                milestoneKey(milestone)
+                            );
+                            const full =
+                              !added && milestones.length >= MAX_MILESTONES &&
+                              milestones.every((entry) => entry.title.trim());
+                            return (
+                              <li
+                                key={milestone}
+                                className="flex items-start justify-between gap-3"
+                              >
+                                <span className="flex-1">{milestone}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => addSuggestedMilestone(milestone)}
+                                  disabled={added || full}
+                                  className="shrink-0 rounded-full border border-[var(--color-primary)]/40 bg-white px-3 py-1 text-xs font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-white disabled:cursor-default disabled:border-[var(--color-border)] disabled:bg-transparent disabled:text-[var(--color-text-muted)] disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-muted)]"
+                                >
+                                  {added ? "Added" : full ? "Full" : "Add"}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
                       </AiDraftCard>
                     ) : null}
                   </div>
@@ -1364,6 +1388,43 @@ function ReviewItem({
       </button>
     </div>
   );
+}
+
+const MAX_MILESTONES = 8;
+
+/** Case- and whitespace-insensitive key, so "Run 5k" and "run 5k " count as one. */
+function milestoneKey(title: string) {
+  return title.trim().toLowerCase();
+}
+
+/**
+ * Folds suggested milestones into whatever the user has already written instead of
+ * replacing it. Blank rows are filled first, duplicates are skipped, and the list
+ * stays within the 8-milestone cap the form enforces elsewhere.
+ */
+function mergeMilestones(
+  existing: Array<{ id: string; title: string }>,
+  incoming: string[]
+) {
+  const seen = new Set(
+    existing.map((milestone) => milestoneKey(milestone.title)).filter(Boolean)
+  );
+  const next = [...existing];
+
+  for (const raw of incoming) {
+    const title = raw.trim();
+    if (!title || seen.has(milestoneKey(title))) continue;
+
+    const blank = next.findIndex((milestone) => !milestone.title.trim());
+    if (blank >= 0) {
+      next[blank] = { ...next[blank], title };
+    } else {
+      if (next.length >= MAX_MILESTONES) break;
+      next.push({ id: `ai_${Date.now()}_${next.length}`, title });
+    }
+    seen.add(milestoneKey(title));
+  }
+  return next;
 }
 
 function Step({ title, children }: { title: string; children: React.ReactNode }) {
