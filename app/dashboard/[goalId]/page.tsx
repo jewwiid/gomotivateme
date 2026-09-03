@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Calendar,
   Check,
+  ChevronDown,
   Copy,
   ExternalLink,
   Eye,
@@ -372,6 +373,9 @@ function GitHubActivityTimeline({ goalId }: { goalId: Id<"goals"> }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [days, setDays] = useState(7);
   const [freshSummary, setFreshSummary] = useState<string | null>(null);
+  // Day groups collapse so a long history stays scannable. Undefined means
+  // "not touched yet", which leaves the newest day open and the rest closed.
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
   if (timeline === undefined || !timeline || timeline.links.length === 0) return null;
 
@@ -474,13 +478,31 @@ function GitHubActivityTimeline({ goalId }: { goalId: Id<"goals"> }) {
         </div>
       ) : (
         <div className="mt-5 space-y-5">
-          {grouped.map((group) => (
+          {grouped.map((group, groupIndex) => {
+            const expanded = expandedDays[group.date] ?? groupIndex === 0;
+            return (
             <div key={group.date} className="relative border-l border-[var(--color-border)] pl-5">
               <div className="-ml-[1.68rem] flex flex-wrap items-center justify-between gap-2">
-                <p className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-secondary)]">
-                  <span className="h-3 w-3 rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-surface)]" />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedDays((current) => ({ ...current, [group.date]: !expanded }))
+                  }
+                  aria-expanded={expanded}
+                  aria-controls={`github-day-${group.date}`}
+                  className="flex items-center gap-2 rounded-lg text-xs font-bold text-[var(--color-text-secondary)] transition hover:text-[var(--color-text)]"
+                >
+                  <span className="h-3 w-3 shrink-0 rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-surface)]" />
                   {formatDate(new Date(`${group.date}T12:00:00Z`).getTime())}
-                </p>
+                  <span className="font-medium text-[var(--color-text-muted)]">
+                    {group.rows.length} {group.rows.length === 1 ? "item" : "items"}
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    aria-hidden
+                    className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+                  />
+                </button>
                 <button
                   type="button"
                   disabled={dailySummaryDay !== null}
@@ -508,7 +530,7 @@ function GitHubActivityTimeline({ goalId }: { goalId: Id<"goals"> }) {
                   <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">{summaryForDay(group.date)}</p>
                 </div>
               ) : null}
-              <div className="mt-3 space-y-2">
+              <div id={`github-day-${group.date}`} hidden={!expanded} className="mt-3 space-y-2">
                 {group.rows.map((activity) => {
                   const Icon = activity.kind === "commit" ? GitCommitHorizontal : GitPullRequest;
                   return (
@@ -527,7 +549,8 @@ function GitHubActivityTimeline({ goalId }: { goalId: Id<"goals"> }) {
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>
