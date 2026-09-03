@@ -9,6 +9,7 @@ import {
   Check,
   CircleGauge,
   Flag,
+  Flame,
   Heart,
   Home,
   MessageCircle,
@@ -384,12 +385,34 @@ function PublicGoalView({
                 className="col-span-2 sm:col-span-1"
               />
               <MomentumStat
-                icon={Flag}
-                label="Milestones"
-                value={`${goal.currentValue ?? milestones.filter((m: any) => m.done).length} of ${
-                  goal.targetValue ?? milestones.length
-                }`}
-                detail={firstIncomplete?.title ?? "All complete"}
+                icon={
+                  goal.progressType === "streak"
+                    ? Flame
+                    : goal.progressType === "number"
+                    ? CircleGauge
+                    : Flag
+                }
+                label={
+                  goal.progressType === "streak"
+                    ? "Streak"
+                    : goal.progressType === "number"
+                    ? "Progress"
+                    : "Milestones"
+                }
+                value={
+                  goal.progressType === "streak"
+                    ? `${goal.currentValue ?? 0}d`
+                    : `${goal.currentValue ?? milestones.filter((m: any) => m.done).length} of ${
+                        goal.targetValue ?? milestones.length
+                      }`
+                }
+                detail={
+                  goal.progressType === "milestones"
+                    ? firstIncomplete?.title || "All complete"
+                    : goal.progressType === "streak"
+                    ? `best ${goal.streakBest ?? goal.currentValue ?? 0}d`
+                    : goal.unit ?? "units"
+                }
                 variant="card"
               />
               <MomentumStat
