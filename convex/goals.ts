@@ -61,6 +61,23 @@ function localDayKey(timestamp: number, offsetMinutes: number) {
   return new Date(timestamp - offsetMinutes * 60_000).toISOString().slice(0, 10);
 }
 
+/**
+ * How long after local midnight a log may still be credited to the previous
+ * day. Work finished at 00:05 belongs to the night before, and without this
+ * the log silently eats the new day's slot instead.
+ */
+const STREAK_GRACE_MS = 4 * 3_600_000;
+
+/** Milliseconds elapsed since the caller's local midnight. */
+function msSinceLocalMidnight(timestamp: number, offsetMinutes: number) {
+  return (((timestamp - offsetMinutes * 60_000) % DAY_MS) + DAY_MS) % DAY_MS;
+}
+
+/** True while a log may still be credited to yesterday instead of today. */
+function withinStreakGrace(timestamp: number, offsetMinutes: number) {
+  return msSinceLocalMidnight(timestamp, offsetMinutes) < STREAK_GRACE_MS;
+}
+
 function withEffectiveStreak<T extends Record<string, any>>(goal: T): T {
   if (goal.progressType !== "streak" || !goal.streakLastLoggedDay) return goal;
   const offset = safeTimezoneOffset(goal.streakTimezoneOffsetMinutes);
@@ -1116,8 +1133,14 @@ export const logStreakDay = mutation({
      * keep working; omitted means UTC.
      */
     tzOffsetMinutes: v.optional(v.number()),
+    /**
+     * Credit this log to yesterday rather than today. Only honoured inside the
+     * post-midnight grace window, so a session that ran past 00:00 books the
+     * day it actually belonged to instead of consuming the new one.
+     */
+    creditPreviousDay: v.optional(v.boolean()),
   },
-  handler: async (ctx, { goalId, note, tzOffsetMinutes }) => {
+  handler: async (ctx, { goalId, note, tzOffsetMinutes, creditPreviousDay }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not signed in");
     const goal = await ctx.db.get(goalId);
@@ -1145,16 +1168,36 @@ export const logStreakDay = mutation({
       if (lastValue) lastLoggedDay = localDayKey(lastValue.createdAt, offset);
     }
 
-    if (lastLoggedDay === todayKey) throw new Error("Already logged today");
+    let targetDay = todayKey;
+    if (creditPreviousDay) {
+      if (!withinStreakGrace(now, offset)) {
+        throw new Error("It is too late in the day to log this for yesterday");
+      }
+      if (lastLoggedDay === todayKey) {
+        throw new Error("Today is already logged");
+      }
+      targetDay = yesterdayKey;
+    }
+    if (lastLoggedDay === targetDay) {
+      throw new Error(
+        targetDay === todayKey ? "Already logged today" : "Yesterday is already logged"
+      );
+    }
 
+    // The day immediately before whichever day this log lands on.
+    const previousDay = localDayKey(
+      now - (targetDay === todayKey ? DAY_MS : 2 * DAY_MS),
+      offset
+    );
     const newValue =
-      lastLoggedDay === yesterdayKey ? (goal.currentValue ?? 0) + 1 : 1;
+      lastLoggedDay === previousDay ? (goal.currentValue ?? 0) + 1 : 1;
     const bestStreak = Math.max(goal.streakBest ?? goal.currentValue ?? 0, newValue);
     const updateId = await ctx.db.insert("updates", {
       goalId,
       ownerId: userId,
       type: "value",
       value: newValue,
+      streakDay: targetDay,
       note: note?.trim() || undefined,
       moderationStatus: note?.trim() ? "pending" : "approved",
       publicVisible: !note?.trim(),
@@ -1166,7 +1209,7 @@ export const logStreakDay = mutation({
     await ctx.db.patch(goalId, {
       currentValue: newValue,
       streakBest: bestStreak,
-      streakLastLoggedDay: todayKey,
+      streakLastLoggedDay: targetDay,
       streakTimezoneOffsetMinutes: offset,
       lastStaleReminderAt: undefined,
       updatedAt: now,
@@ -1252,7 +1295,8 @@ export const logStreakDay = mutation({
       newAchievements: earnedAchievements,
       streakCount: newValue,
       bestStreak,
-      loggedDay: todayKey,
+      loggedDay: targetDay,
+      creditedPreviousDay: targetDay !== todayKey,
     };
   },
 });

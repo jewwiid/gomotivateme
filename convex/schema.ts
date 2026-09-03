@@ -270,6 +270,13 @@ export default defineSchema({
     ),
     /** For type === "value" — measured value. */
     value: v.optional(v.number()),
+    /**
+     * For streak goals — the local day this log is credited to, which is not
+     * always the day it was written: `goals.logStreakDay` lets a log made in
+     * the small hours be credited to the previous day. Persisted because the
+     * day can no longer be re-derived from `createdAt`.
+     */
+    streakDay: v.optional(v.string()),
     /** For type === "milestone" — id of the milestone that flipped to done. */
     milestoneId: v.optional(v.string()),
     note: v.optional(v.string()),
@@ -898,4 +905,154 @@ export default defineSchema({
     .index("by_task", ["userId", "partner", "partnerTaskId"])
     .index("by_goal_task", ["goalId", "partnerTaskId"])
     .index("by_gmmKey", ["userId", "partner", "gmmKey"]),
+
+  /**
+   * A GitHub App installation is connected once in GoMotivateMe. App tokens
+   * are short-lived and minted per request, never stored in this table.
+   * Optional OAuth fields preserve existing connections during migration.
+   */
+  githubConnections: defineTable({
+    userId: v.id("users"),
+    authType: v.optional(v.union(v.literal("github_app"), v.literal("legacy_oauth"))),
+    installationId: v.optional(v.string()),
+    installationAccountType: v.optional(v.string()),
+    repositorySelection: v.optional(v.string()),
+    accessToken: v.optional(v.string()),
+    githubUserId: v.string(),
+    login: v.string(),
+    avatarUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_github_user", ["githubUserId"])
+    .index("by_installation", ["installationId"]),
+
+  /** Short-lived, single-use OAuth state for the GitHub callback. */
+  githubOAuthStates: defineTable({
+    userId: v.id("users"),
+    stateHash: v.string(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_state_hash", ["stateHash"]),
+
+  /** Short-lived, single-use state that binds a GitHub App installation to a user. */
+  githubAppInstallStates: defineTable({
+    userId: v.id("users"),
+    stateHash: v.string(),
+    /** Safe in-app destination to resume after GitHub installation. */
+    returnTo: v.optional(v.string()),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_state_hash", ["stateHash"]),
+
+  /**
+   * A GitHub App install page alone cannot prove which GoMotivateMe profile
+   * owns an already-existing installation. This short-lived state binds a
+   * GitHub user authorization back to the signed-in GoMotivateMe user.
+   */
+  githubAppAuthorizationStates: defineTable({
+    userId: v.id("users"),
+    stateHash: v.string(),
+    /** Safe in-app destination to resume after GitHub authorization. */
+    returnTo: v.optional(v.string()),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_state_hash", ["stateHash"]),
+
+  /** Installations the verified GitHub user may choose when they have more than one. */
+  githubAppAuthorizationCandidates: defineTable({
+    userId: v.id("users"),
+    githubUserId: v.string(),
+    githubLogin: v.string(),
+    githubAvatarUrl: v.optional(v.string()),
+    installationId: v.string(),
+    installationLogin: v.string(),
+    installationAvatarUrl: v.optional(v.string()),
+    installationAccountType: v.optional(v.string()),
+    repositorySelection: v.optional(v.string()),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_installation", ["userId", "installationId"]),
+
+  /** Repositories the owner selected after connecting GitHub. */
+  githubRepositories: defineTable({
+    userId: v.id("users"),
+    installationId: v.optional(v.string()),
+    githubRepositoryId: v.string(),
+    fullName: v.string(),
+    owner: v.string(),
+    name: v.string(),
+    defaultBranch: v.optional(v.string()),
+    private: v.boolean(),
+    htmlUrl: v.string(),
+    archived: v.optional(v.boolean()),
+    updatedAtGithub: v.optional(v.number()),
+    syncedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_repository", ["userId", "githubRepositoryId"])
+    .index("by_github_repository", ["githubRepositoryId"]),
+
+  /**
+   * A repository can feed any existing goal. `activity` only logs history;
+   * `progress` also updates an explicitly compatible commits/PR metric.
+   */
+  githubGoalLinks: defineTable({
+    userId: v.id("users"),
+    goalId: v.id("goals"),
+    repositoryId: v.id("githubRepositories"),
+    branch: v.optional(v.string()),
+    activityKind: v.union(
+      v.literal("commits"),
+      v.literal("merged_prs"),
+      v.literal("both")
+    ),
+    progressMode: v.union(v.literal("activity"), v.literal("progress")),
+    /** When omitted, legacy links count all backfilled activity toward progress. */
+    progressFrom: v.optional(v.number()),
+    autoComplete: v.optional(v.boolean()),
+    backfillFrom: v.optional(v.number()),
+    lastSyncedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_goal", ["goalId"])
+    .index("by_repository", ["repositoryId"]),
+
+  /** Immutable GitHub facts, deduplicated per repository-to-goal link. */
+  githubActivities: defineTable({
+    userId: v.id("users"),
+    goalId: v.id("goals"),
+    linkId: v.id("githubGoalLinks"),
+    eventKey: v.string(),
+    kind: v.union(v.literal("commit"), v.literal("merged_pr")),
+    title: v.string(),
+    url: v.string(),
+    authorLogin: v.optional(v.string()),
+    occurredAt: v.number(),
+    rawSummary: v.optional(v.string()),
+    importedAt: v.number(),
+  })
+    .index("by_link_event", ["linkId", "eventKey"])
+    .index("by_goal_occurred", ["goalId", "occurredAt"])
+    .index("by_user_occurred", ["userId", "occurredAt"]),
+
+  /** AI-generated (or deterministic fallback) recaps of verified GitHub facts. */
+  githubSummaries: defineTable({
+    userId: v.id("users"),
+    goalId: v.id("goals"),
+    periodStart: v.number(),
+    periodEnd: v.number(),
+    content: v.string(),
+    activityCount: v.number(),
+    createdAt: v.number(),
+  }).index("by_goal_created", ["goalId", "createdAt"]),
 });

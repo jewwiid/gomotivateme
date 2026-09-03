@@ -78,9 +78,11 @@ export function UpdateCard({
           />
         )}
 
-        {update.type === "media" && (
+        {/* Presence, not type: `media` is optional on every update kind, and a
+            streak log can carry the video that day's work produced. */}
+        {update.media?.length ? (
           <UpdateMedia media={update.media} imageUrlOf={imageUrlOf} />
-        )}
+        ) : null}
 
         {update.type === "link" && update.linkUrl && (
           <div className="mb-3">

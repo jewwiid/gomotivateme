@@ -88,9 +88,9 @@ export function MotivationCircleManager({
 
   const isPreLaunch = goalStatus === "draft";
   const allInvites = invites ?? [];
-  const core = (motivators ?? []).filter((m) => m.isCoreMotivator);
+  const core = (motivators ?? []).filter((m: any) => m.isCoreMotivator);
   const acceptedCount = core.length;
-  const pendingCount = allInvites.filter((i) => i.status === "pending").length;
+  const pendingCount = allInvites.filter((i: any) => i.status === "pending").length;
 
   const onAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,7 +227,7 @@ export function MotivationCircleManager({
       {/* Active motivators list with remove controls */}
       {(motivators ?? []).length > 0 && (
         <div className="mt-4 space-y-2">
-          {(motivators ?? []).map((m) => {
+          {(motivators ?? []).map((m: any) => {
             const meta = ROLE_META[m.role] ?? ROLE_META.encourager;
             const Icon = meta.icon;
             return (
@@ -292,7 +292,7 @@ export function MotivationCircleManager({
       {/* Pending invites — with copyable links */}
       {allInvites.length > 0 && (
         <div className="mt-5 space-y-2">
-          {allInvites.map((inv) => {
+          {allInvites.map((inv: any) => {
             const meta = ROLE_META[inv.proposedRole] ?? ROLE_META.encourager;
             const Icon = meta.icon;
             const isPending = inv.status === "pending";

@@ -20,6 +20,8 @@ import type * as crons from "../crons.js";
 import type * as emails from "../emails.js";
 import type * as emailsActions from "../emailsActions.js";
 import type * as follows from "../follows.js";
+import type * as github from "../github.js";
+import type * as githubHttp from "../githubHttp.js";
 import type * as goalReview from "../goalReview.js";
 import type * as goals from "../goals.js";
 import type * as http from "../http.js";
@@ -67,6 +69,8 @@ declare const fullApi: ApiFromModules<{
   emails: typeof emails;
   emailsActions: typeof emailsActions;
   follows: typeof follows;
+  github: typeof github;
+  githubHttp: typeof githubHttp;
   goalReview: typeof goalReview;
   goals: typeof goals;
   http: typeof http;

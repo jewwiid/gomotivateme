@@ -486,8 +486,13 @@ export const undoUpdate = mutation({
         currentValue: latestValue?.value ?? goal.startValue ?? 0,
         ...(goal.progressType === "streak"
           ? {
+              // Prefer the day the log was credited to. Deriving it from
+              // `createdAt` is only a fallback for rows written before
+              // `streakDay` existed, and is wrong for any log that the
+              // post-midnight grace window credited to the previous day.
               streakLastLoggedDay: latestValue
-                ? new Date(
+                ? latestValue.streakDay ??
+                  new Date(
                     latestValue.createdAt -
                       (goal.streakTimezoneOffsetMinutes ?? 0) * 60_000
                   )

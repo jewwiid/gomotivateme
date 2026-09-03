@@ -110,7 +110,7 @@ export function NotificationBell() {
                   </p>
                 </div>
               ) : (
-                notifications.map((n) => (
+                notifications.map((n: any) => (
                   <button
                     key={n._id}
                     type="button"

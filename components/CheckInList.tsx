@@ -69,7 +69,7 @@ export function CheckInList({ goalId }: { goalId: Id<"goals"> }) {
         Check-ins from your circle
       </h3>
       <div className="space-y-4">
-        {checkIns.map((c) => (
+        {checkIns.map((c: any) => (
           <div
             key={c._id}
             className={`flex gap-3 ${c.acknowledgedAt ? "opacity-60" : ""}`}

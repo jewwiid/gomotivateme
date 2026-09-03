@@ -65,4 +65,9 @@ crons.cron(
 // Accountability — daily at 13:00 UTC
 crons.cron("deadlinePassed", "0 13 * * *", internal.emailsActions.sendDeadlinePassed, {});
 
+// GitHub activity is factual, deduplicated by commit SHA / pull request number,
+// and can be backfilled from each link's chosen start date. AI recaps remain
+// user-triggered so a background sync never creates surprise model cost.
+crons.cron("syncGitHubGoalActivity", "15 * * * *", internal.github.syncAll, {});
+
 export default crons;

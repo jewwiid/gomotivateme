@@ -139,7 +139,7 @@ export default function ProfilePage() {
 
   // For "Discover more people" sidebar — exclude the current user.
   const otherMotivators = (motivators ?? [])
-    .filter((m) => m.handle && m.handle !== user.handle)
+    .filter((m: any) => m.handle && m.handle !== user.handle)
     .slice(0, 5);
 
   return (

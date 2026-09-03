@@ -181,8 +181,8 @@ export const reviewUpdate = internalAction({
     const imageIds = [
       update.imageId,
       ...(update.media ?? [])
-        .filter((item) => item.kind === "image")
-        .map((item) => item.storageId),
+        .filter((item: any) => item.kind === "image")
+        .map((item: any) => item.storageId),
     ].filter(Boolean);
 
     const input: Array<Record<string, unknown>> = [];

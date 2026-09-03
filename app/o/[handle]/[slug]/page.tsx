@@ -105,7 +105,7 @@ function PublicGoalView({
     () =>
       (supporterRows ?? [])
         .map((supporter: any) => supporter.userId)
-        .filter((id): id is Id<"users"> => Boolean(id)),
+        .filter((id: any): id is Id<"users"> => Boolean(id)),
     [supporterRows]
   );
   const supporterProfiles = useQuery(

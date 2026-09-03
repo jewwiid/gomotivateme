@@ -11,6 +11,7 @@ import {
   partnerRegisterInbound,
   partnerToken,
 } from "./partnerHttp";
+import { githubAppAuthorization, githubAppSetup, githubWebhook } from "./githubHttp";
 
 const http = httpRouter();
 
@@ -24,6 +25,9 @@ const ping = httpAction(async () => {
 http.route({ path: "/partner/ping", method: "GET", handler: ping });
 
 auth.addHttpRoutes(http);
+http.route({ path: "/github/app/setup", method: "GET", handler: githubAppSetup });
+http.route({ path: "/github/app/authorize", method: "GET", handler: githubAppAuthorization });
+http.route({ path: "/github/webhook", method: "POST", handler: githubWebhook });
 http.route({ path: "/partner/v1/token", method: "OPTIONS", handler: partnerOptions });
 http.route({ path: "/partner/v1/me", method: "OPTIONS", handler: partnerOptions });
 http.route({ path: "/partner/v1/goals", method: "OPTIONS", handler: partnerOptions });

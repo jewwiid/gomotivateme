@@ -167,7 +167,7 @@ export function ApplicationQueue({ goalId }: { goalId: Id<"goals"> }) {
 
       <div className="mt-4 space-y-2">
         <AnimatePresence>
-          {list.map((app, index) => {
+          {list.map((app: any, index: number) => {
             const meta = ROLE_META[app.requestedRole] ?? ROLE_META.encourager;
             const Icon = meta.icon;
             const summary = aiSummary?.applications.find((item) => item.index === index);

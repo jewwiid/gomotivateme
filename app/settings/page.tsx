@@ -1,15 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
+  Plus,
   Image as ImageIcon,
   Loader2,
   X,
   Camera,
+  GitBranch,
+  Link2,
+  RefreshCw,
+  Sparkles,
+  Unplug,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -25,7 +31,7 @@ import {
 } from "@/lib/handle";
 import { trackDataFastGoal } from "@/lib/analytics";
 
-type Tab = "account" | "notifications";
+type Tab = "account" | "integrations" | "notifications";
 
 export default function SettingsPage() {
   return (
@@ -37,10 +43,10 @@ export default function SettingsPage() {
 
 function SettingsContent() {
   const [tab, setTab] = useState<Tab>("account");
+  const githubConnection = useQuery(api.github.getConnection);
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "notifications") {
-      setTab("notifications");
-    }
+    const selected = new URLSearchParams(window.location.search).get("tab");
+    if (selected === "notifications" || selected === "integrations") setTab(selected);
   }, []);
   return (
     <DashboardWorkspaceShell active="settings">
@@ -57,6 +63,19 @@ function SettingsContent() {
                 onClick={() => setTab("account")}
               >
                 Account
+              </TabButton>
+              <TabButton
+                active={tab === "integrations"}
+                onClick={() => setTab("integrations")}
+              >
+                <span className="inline-flex items-center gap-2">
+                  Integrations
+                  {githubConnection?.connected && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-success-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-success-text)]">
+                      <Check size={11} strokeWidth={3} /> GitHub installed
+                    </span>
+                  )}
+                </span>
               </TabButton>
               <TabButton
                 active={tab === "notifications"}
@@ -77,6 +96,15 @@ function SettingsContent() {
                   exit={{ opacity: 0 }}
                 >
                   <AccountTab />
+                </motion.div>
+              ) : tab === "integrations" ? (
+                <motion.div
+                  key="integrations"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <IntegrationsTab />
                 </motion.div>
               ) : (
                 <motion.div
@@ -244,7 +272,7 @@ function AccountTab() {
 
   const profileInitials = (me?.name ?? me?.handle ?? "?")
     .split(/\s+/)
-    .map((w) => w[0])
+    .map((w: string) => w[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
@@ -692,6 +720,357 @@ function DeactivateSection() {
 }
 
 // =====================
+// Integrations tab
+// =====================
+
+function IntegrationsTab() {
+  const router = useRouter();
+  const connection = useQuery(api.github.getConnection);
+  const authorizationCandidates = useQuery(api.github.listAuthorizationCandidates);
+  const repositories = useQuery(api.github.listRepositories);
+  const goals = useQuery(api.goals.listMine);
+  const links = useQuery(api.github.listGoalLinks);
+  const beginConnect = useAction(api.github.beginConnect);
+  const selectAuthorizedInstallation = useAction(api.github.selectAuthorizedInstallation);
+  const refreshRepositories = useAction(api.github.refreshRepositories);
+  const syncLink = useAction(api.github.syncLink);
+  const summarizeGoal = useAction(api.github.summarizeGoal);
+  const createGoalLink = useMutation(api.github.createGoalLink);
+  const disconnect = useMutation(api.github.disconnect);
+  const deleteGoalLink = useMutation(api.github.deleteGoalLink);
+  const [repositoryId, setRepositoryId] = useState("");
+  const [goalId, setGoalId] = useState("");
+  const [activityKind, setActivityKind] = useState<"commits" | "merged_prs" | "both">("commits");
+  const [progressMode, setProgressMode] = useState<"activity" | "progress">("activity");
+  const [backfillDate, setBackfillDate] = useState(() => new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10));
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const hasAutoRefreshedRepositories = useRef(false);
+
+  useEffect(() => {
+    const githubResult = new URLSearchParams(window.location.search).get("github");
+    if (githubResult === "connected") setMessage("GitHub is connected. Choose a repository and link it to a goal below.");
+    if (githubResult === "choose-installation") setMessage("Choose the GitHub installation you want to use with this profile.");
+    if (githubResult === "failed") setMessage("GitHub could not complete the connection. Please try again.");
+    if (githubResult === "cancelled") setMessage("GitHub connection was cancelled.");
+  }, []);
+
+  const selectedGoal = goals?.find((goal: any) => String(goal._id) === goalId);
+  const selectedRepository = repositories?.find((repository: any) => String(repository._id) === repositoryId);
+  const canCountProgress = Boolean(
+    selectedGoal &&
+      selectedGoal.progressType === "number" &&
+      selectedGoal.direction === "increase" &&
+      ((activityKind === "commits" && String(selectedGoal.metricId || "").endsWith("github-commits")) ||
+        (activityKind === "merged_prs" && String(selectedGoal.metricId || "").endsWith("github-pull-requests")))
+  );
+
+  const onConnect = async () => {
+    setBusy("connect");
+    setMessage(null);
+    try {
+      const { authorizationUrl } = await beginConnect({});
+      window.location.assign(authorizationUrl);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not start GitHub connection");
+      setBusy(null);
+    }
+  };
+
+  const onSelectInstallation = async (installationId: string) => {
+    setBusy(`installation-${installationId}`);
+    setMessage(null);
+    try {
+      await selectAuthorizedInstallation({ installationId });
+      setMessage("GitHub is connected. Your repositories are ready to link to goals.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not connect that GitHub installation");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onRefresh = async () => {
+    setBusy("repositories");
+    setMessage(null);
+    try {
+      const result = await refreshRepositories({});
+      setMessage(`Loaded ${result.count} GitHub repositories.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not load repositories");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!connection?.connected || !repositories || repositories.length > 0 || hasAutoRefreshedRepositories.current) return;
+    hasAutoRefreshedRepositories.current = true;
+    void onRefresh();
+  }, [connection?.connected, repositories]);
+
+  useEffect(() => {
+    const requestedGoalId = new URLSearchParams(window.location.search).get("goalId");
+    if (requestedGoalId && goals?.some((goal: any) => String(goal._id) === requestedGoalId)) setGoalId(requestedGoalId);
+  }, [goals]);
+
+  const onCreateLink = async () => {
+    if (!repositoryId || !goalId) {
+      setMessage("Choose both a repository and a goal.");
+      return;
+    }
+    setBusy("link");
+    setMessage(null);
+    try {
+      const backfillFrom = Date.parse(`${backfillDate}T00:00:00`);
+      const result = await createGoalLink({
+        repositoryId: repositoryId as Id<"githubRepositories">,
+        goalId: goalId as Id<"goals">,
+        activityKind,
+        progressMode: progressMode === "progress" && canCountProgress ? "progress" : "activity",
+        backfillFrom: Number.isFinite(backfillFrom) ? backfillFrom : undefined,
+      });
+      const synced = await syncLink({ linkId: result.linkId });
+      setMessage(`Linked and backfilled ${synced.imported} verified GitHub activities.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not link this repository");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onCreateGoalFromRepository = () => {
+    if (!repositoryId) {
+      setMessage("Choose the repository you want this goal to represent.");
+      return;
+    }
+    const backfillFrom = Date.parse(`${backfillDate}T00:00:00`);
+    const parameters = new URLSearchParams({
+      githubRepositoryId: repositoryId,
+      githubActivity: activityKind === "merged_prs" ? "merged_prs" : "commits",
+      githubTarget: activityKind === "merged_prs" ? "10" : "50",
+    });
+    if (Number.isFinite(backfillFrom)) parameters.set("githubBackfillFrom", String(backfillFrom));
+    router.push(`/dashboard/new?${parameters.toString()}`);
+  };
+
+  const onSync = async (linkId: Id<"githubGoalLinks">) => {
+    setBusy(`sync-${linkId}`);
+    setMessage(null);
+    try {
+      const result = await syncLink({ linkId });
+      setMessage(result.imported > 0 ? `Imported ${result.imported} new GitHub activities.` : "GitHub is already up to date.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not sync GitHub activity");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onSummary = async (goal: Id<"goals">) => {
+    setBusy(`summary-${goal}`);
+    setSummary(null);
+    try {
+      const result = await summarizeGoal({ goalId: goal, days: 7 });
+      setSummary(result.content);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not create a GitHub summary");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Section title="GitHub App">
+        {!connection?.connected && authorizationCandidates && authorizationCandidates.length > 0 && (
+          <div className="mb-4 rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-4">
+            <p className="text-sm font-bold text-[var(--color-text)]">Choose where GitHub should send progress</p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">We found more than one installation you can manage. Select the one that contains the repositories for these goals.</p>
+            <div className="mt-3 space-y-2">
+              {authorizationCandidates.map((candidate: any) => (
+                <button
+                  key={candidate.installationId}
+                  type="button"
+                  onClick={() => void onSelectInstallation(candidate.installationId)}
+                  disabled={busy !== null}
+                  className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-white px-3 py-3 text-left transition hover:border-[var(--color-primary)]/40 active:scale-[0.99] disabled:opacity-50"
+                >
+                  {candidate.installationAvatarUrl ? (
+                    <img src={candidate.installationAvatarUrl} alt="" className="h-8 w-8 rounded-lg" />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-bg-sunken)] text-[var(--color-text-muted)]"><GitBranch size={15} /></div>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-[var(--color-text)]">{candidate.installationLogin}</span>
+                    <span className="block text-xs text-[var(--color-text-muted)]">{candidate.repositorySelection === "selected" ? "Selected repositories" : "All repositories"}</span>
+                  </span>
+                  {busy === `installation-${candidate.installationId}` ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} className="text-[var(--color-primary)]" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {connection?.connected ? (
+          <div className="rounded-2xl border border-[var(--color-success-soft)] bg-[var(--color-success-soft)]/40 p-4">
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[var(--color-primary)] shadow-sm">
+                <GitBranch size={19} />
+              </div>
+              <div className="mr-auto">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-bold text-[var(--color-text)]">GoMotivateMe GitHub App</p>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-success-text)] px-2 py-0.5 text-[10px] font-bold text-white">
+                    <Check size={11} strokeWidth={3} /> Installed
+                  </span>
+                </div>
+                <p className="mt-1 text-sm font-medium text-[var(--color-text-secondary)]">Connected as @{connection.login}</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  {connection.repositorySelection === "selected" ? "Selected repositories only" : "Repository-scoped read access"} · Never pushes code or stores a personal token.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void onRefresh()}
+                  disabled={busy !== null}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--color-text)] disabled:opacity-50"
+                >
+                  <RefreshCw size={14} className={busy === "repositories" ? "animate-spin" : ""} />
+                  Refresh repositories
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void disconnect({})}
+                  disabled={busy !== null}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[var(--color-danger-text)] disabled:opacity-50"
+                >
+                  <Unplug size={14} /> Disconnect
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-bg-sunken)] text-[var(--color-text-muted)]">
+                <GitBranch size={19} />
+              </div>
+              <div className="mr-auto">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-[var(--color-text)]">GoMotivateMe GitHub App</p>
+                  <span className="rounded-full bg-[var(--color-bg-sunken)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-text-muted)]">Not installed</span>
+                </div>
+                <p className="mt-1 max-w-2xl text-xs text-[var(--color-text-secondary)]">Connect once and we will verify your existing GitHub App installation, or guide you through a new one. Then link verified repository progress to any existing goal.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void onConnect()}
+                disabled={busy === "connect"}
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {busy === "connect" ? <Loader2 size={15} className="animate-spin" /> : <GitBranch size={15} />}
+                Connect GitHub
+              </button>
+            </div>
+          </div>
+        )}
+        {message && <p className="mt-3 rounded-lg bg-[var(--color-bg-sunken)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">{message}</p>}
+      </Section>
+
+      {connection?.connected && (
+        <Section title="Link a repository to a goal">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">
+              Repository
+              <select value={repositoryId} onChange={(event) => setRepositoryId(event.target.value)} className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text)]">
+                <option value="">Select a repository</option>
+                {repositories?.filter((repository: any) => !repository.archived).map((repository: any) => <option key={repository._id} value={repository._id}>{repository.fullName}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">
+              GoMotivateMe goal
+              <select value={goalId} onChange={(event) => setGoalId(event.target.value)} className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text)]">
+                <option value="">Select a goal</option>
+                {goals?.filter((goal: any) => goal.status !== "closed").map((goal: any) => <option key={goal._id} value={goal._id}>{goal.title}</option>)}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">
+              Measure
+              <select value={activityKind} onChange={(event) => setActivityKind(event.target.value as "commits" | "merged_prs" | "both")} className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text)]">
+                <option value="commits">Commits</option>
+                <option value="merged_prs">Merged pull requests</option>
+                <option value="both">Commits and merged pull requests</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">
+              Backfill from
+              <input type="date" value={backfillDate} onChange={(event) => setBackfillDate(event.target.value)} className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text)]" />
+            </label>
+          </div>
+          <label className="mt-4 flex items-start gap-3 rounded-lg bg-[var(--color-bg-sunken)] p-3 text-xs text-[var(--color-text-secondary)]">
+            <input type="checkbox" checked={progressMode === "progress"} disabled={!canCountProgress} onChange={(event) => setProgressMode(event.target.checked ? "progress" : "activity")} className="mt-0.5" />
+            <span>
+              Count this activity toward the goal measurement.
+              {!canCountProgress && " Choose a goal created with the GitHub commits or merged pull requests measurement to enable this; every other goal can still receive activity, backfill, and summaries."}
+            </span>
+          </label>
+          {selectedGoal && selectedRepository && (
+            <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white px-3 py-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+              {canCountProgress ? (
+                <span><strong className="text-[var(--color-text)]">GitHub will update the primary measurement.</strong> Verified {activityKind === "merged_prs" ? "merged pull requests" : "commits"} from {selectedRepository.fullName} will count toward this goal.</span>
+              ) : (
+                <span><strong className="text-[var(--color-text)]">Keep {selectedGoal.currentValue ?? selectedGoal.startValue ?? 0} / {selectedGoal.targetValue} {selectedGoal.unit} as the primary measurement.</strong> GitHub activity from {selectedRepository.fullName} will be backfilled as a dated delivery signal, used in updates and AI recaps, without changing what this goal promises.</span>
+              )}
+            </div>
+          )}
+          <button type="button" onClick={() => void onCreateLink()} disabled={busy !== null || !repositories?.length || !goals?.length} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+            {busy === "link" ? <Loader2 size={15} className="animate-spin" /> : <Link2 size={15} />}
+            {canCountProgress ? "Link, count and backfill" : "Link delivery activity and backfill"}
+          </button>
+          <button
+            type="button"
+            onClick={onCreateGoalFromRepository}
+            disabled={busy !== null || !repositories?.length}
+            className="mt-4 ml-2 inline-flex items-center gap-2 rounded-xl border border-[var(--color-primary)]/30 bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary)]/5 active:scale-[0.98] disabled:opacity-50"
+          >
+            <Plus size={15} /> Create goal from repo
+          </button>
+          <p className="mt-2 text-xs text-[var(--color-text-muted)]">Creates a pre-filled GitHub commits or pull-requests goal, then links and backfills this repository when you publish it.</p>
+        </Section>
+      )}
+
+      {links && links.length > 0 && (
+        <Section title="Linked repositories">
+          <div className="space-y-3">
+            {links.map((link: any) => (
+              <div key={link.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+                <div className="flex flex-wrap items-start gap-3">
+                  <div className="mr-auto">
+                    <p className="text-sm font-semibold text-[var(--color-text)]">{link.goalTitle}</p>
+                    <a href={link.repositoryUrl} target="_blank" rel="noreferrer" className="text-xs text-[var(--color-primary)] hover:underline">{link.repository}</a>
+                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">{link.activityCount} logged · {link.progressMode === "progress" ? "updates the goal measurement" : "activity and summary only"}{link.lastSyncedAt ? ` · last synced ${new Date(link.lastSyncedAt).toLocaleString()}` : ""}</p>
+                  </div>
+                  <button type="button" onClick={() => void onSync(link.id as Id<"githubGoalLinks">)} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold disabled:opacity-50">
+                    <RefreshCw size={13} className={busy === `sync-${link.id}` ? "animate-spin" : ""} /> Sync
+                  </button>
+                  <button type="button" onClick={() => void onSummary(link.goalId as Id<"goals">)} disabled={busy !== null} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold disabled:opacity-50">
+                    <Sparkles size={13} /> AI recap
+                  </button>
+                  <button type="button" onClick={() => void deleteGoalLink({ linkId: link.id as Id<"githubGoalLinks"> })} disabled={busy !== null} className="text-xs text-[var(--color-danger-text)] disabled:opacity-50">Unlink</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {summary && <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-sunken)] p-4 text-sm leading-6 text-[var(--color-text-secondary)]"><div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">GitHub AI recap</div>{summary}</div>}
+        </Section>
+      )}
+    </div>
+  );
+}
+
+// =====================
 // Notifications tab
 // =====================
 
@@ -838,10 +1217,10 @@ function PlatformDigestCadence({
           Discover new goals
         </div>
         <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">
-          Marketing email with a short selection of new, approved public goals
+          A short selection of new, approved public goals from other members
         </div>
         <div className="mt-1 text-[10px] text-[var(--color-text-dim)]">
-          Off by default. Choosing Daily or Weekly is your explicit opt-in.
+          Sent on your chosen schedule when new goals are available. Off by default.
         </div>
       </div>
       <select

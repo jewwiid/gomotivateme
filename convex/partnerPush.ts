@@ -23,6 +23,10 @@ type GoalPushPayload = {
   campaignId: string | null;
   milestones: Array<{ id: string; title: string; done: boolean; date?: string }>;
   updates: Array<{ id: string; title: string; date?: string; description?: string }>;
+  github: {
+    links: Array<{ repository: string; repositoryUrl: string; activityKind: string; progressMode: string; lastSyncedAt: number | null }>;
+    latestSummary: string | null;
+  };
 };
 
 async function aiblRequest(
@@ -93,6 +97,7 @@ export const pushGoalToAibl = action({
         supportTypes: payload.supportTypes,
         campaignId: payload.campaignId,
         milestones: payload.milestones,
+        github: payload.github,
       }
     );
     const campaignId = String(campaign.campaignId || payload.campaignId || "");
@@ -118,7 +123,7 @@ export const pushGoalToAibl = action({
         date: item.date,
       })),
       ...payload.updates.map((item) => ({
-        key: `update:${item.id}`,
+        key: item.id.startsWith("github-day:") ? item.id : `update:${item.id}`,
         title: item.title,
         done: true,
         date: item.date,
@@ -219,6 +224,8 @@ export const pushUpdateToAiblInternal = internalAction({
     goalId: v.id("goals"),
     gmmKey: v.string(),
     title: v.string(),
+    description: v.optional(v.string()),
+    date: v.optional(v.string()),
     completed: v.optional(v.boolean()),
   },
   returns: v.null(),
@@ -245,7 +252,8 @@ export const pushUpdateToAiblInternal = internalAction({
           gmmKey: args.gmmKey,
           title: args.title,
           completed: args.completed ?? false,
-          date: new Date().toISOString().slice(0, 10),
+          date: args.date || new Date().toISOString().slice(0, 10),
+          description: args.description,
         }),
       });
       const task = (await response.json().catch(() => ({}))) as Record<string, unknown>;

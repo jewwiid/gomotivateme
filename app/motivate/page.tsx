@@ -84,7 +84,7 @@ function MotivateContent() {
             <EmptyState />
           ) : (
             <div className="workspace-card mt-7 divide-y divide-[var(--color-border)] overflow-hidden px-5">
-              {pledges.map((pledge, index) => (
+              {pledges.map((pledge: any, index: number) => (
                 <MotivateRow
                   key={pledge._id}
                   pledge={pledge}

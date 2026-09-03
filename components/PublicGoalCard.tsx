@@ -32,8 +32,8 @@ export function PublicGoalCard({
   const supporterIds = useMemo(
     () =>
       (supporterRows ?? [])
-        .map((supporter) => supporter.userId)
-        .filter((id): id is Id<"users"> => Boolean(id)),
+        .map((supporter: any) => supporter.userId)
+        .filter((id: any): id is Id<"users"> => Boolean(id)),
     [supporterRows]
   );
   const supporterProfiles = useQuery(
@@ -43,7 +43,7 @@ export function PublicGoalCard({
   const progress = Math.max(0, Math.min(100, Number(goal.progress ?? 0)));
   const ownerName = displayName(goal.ownerName ?? "Anonymous");
   const supporters = (supporterRows ?? [])
-    .map((supporter) => {
+    .map((supporter: any) => {
       const profile = supporter.userId ? supporterProfiles?.[supporter.userId] : null;
       if (!profile) return null;
       return {

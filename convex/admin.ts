@@ -44,6 +44,7 @@ import {
 } from "./_generated/server";
 import { modifyAccountCredentials } from "@convex-dev/auth/server";
 import { DEFAULT_PREFS } from "./notificationPrefs";
+import { computeProgress, newMilestoneTiers } from "./utils";
 
 /**
  * Reset the password for the user with the given email. Keeps all
@@ -470,5 +471,336 @@ export const setNotificationPrefs = internalMutation({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .first();
     return { ok: true, userId: user._id, email, created: !existing, prefs: after };
+  },
+});
+
+/**
+ * Repair a streak goal's day accounting.
+ *
+ * Streak logs made near local midnight can be credited to the wrong day, and
+ * a goal whose `streakTimezoneOffsetMinutes` was captured from the wrong
+ * device compounds it. This re-stamps existing value updates with the day
+ * they belong to, appends any missing days, and rebuilds `currentValue`,
+ * `streakBest` and `streakLastLoggedDay` from the resulting set.
+ *
+ * `days` must be the complete, ascending list of logged days for the goal.
+ * Consecutive days chain; a gap restarts the count, exactly as
+ * `goals.logStreakDay` would have.
+ */
+export const repairStreakDays = internalMutation({
+  args: {
+    goalId: v.id("goals"),
+    tzOffsetMinutes: v.optional(v.number()),
+    days: v.array(
+      v.object({
+        /** Local day key, `YYYY-MM-DD`. */
+        day: v.string(),
+        /** Re-stamp this existing update instead of inserting a new one. */
+        updateId: v.optional(v.id("updates")),
+        /** Overrides `createdAt` on an inserted row so the timeline sorts right. */
+        createdAt: v.optional(v.number()),
+        note: v.optional(v.string()),
+        embedUrl: v.optional(v.string()),
+        canonicalUrl: v.optional(v.string()),
+        providerId: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, { goalId, tzOffsetMinutes, days }) => {
+    const goal = await ctx.db.get(goalId);
+    if (!goal) throw new Error(`Goal not found: ${goalId}`);
+    if (goal.progressType !== "streak") throw new Error("Not a streak goal");
+    if (days.length === 0) throw new Error("Pass at least one day");
+
+    const sorted = [...days].sort((a, b) => a.day.localeCompare(b.day));
+    if (new Set(sorted.map((d) => d.day)).size !== sorted.length) {
+      throw new Error("Duplicate day in `days`");
+    }
+
+    const DAY = 86_400_000;
+    const dayMs = (key: string) => new Date(`${key}T00:00:00Z`).getTime();
+
+    // Walk the days in order, chaining consecutive ones the way logStreakDay does.
+    let running = 0;
+    let best = 0;
+    const touched: Array<{ day: string; value: number; updateId: string }> = [];
+    for (let i = 0; i < sorted.length; i += 1) {
+      const entry = sorted[i];
+      const prev = i > 0 ? sorted[i - 1] : undefined;
+      running = prev && dayMs(entry.day) - dayMs(prev.day) === DAY ? running + 1 : 1;
+      best = Math.max(best, running);
+
+      const media = entry.embedUrl
+        ? [
+            {
+              kind: "embed" as const,
+              provider: "youtube" as const,
+              providerId: entry.providerId,
+              canonicalUrl: entry.canonicalUrl,
+              embedUrl: entry.embedUrl,
+            },
+          ]
+        : undefined;
+
+      if (entry.updateId) {
+        const existing = await ctx.db.get(entry.updateId);
+        if (!existing || existing.goalId !== goalId) {
+          throw new Error(`Update ${entry.updateId} is not on this goal`);
+        }
+        await ctx.db.patch(entry.updateId, {
+          value: running,
+          streakDay: entry.day,
+          ...(entry.note !== undefined ? { note: entry.note } : {}),
+          ...(media ? { media } : {}),
+        });
+        touched.push({ day: entry.day, value: running, updateId: entry.updateId });
+      } else {
+        const inserted = await ctx.db.insert("updates", {
+          goalId,
+          ownerId: goal.ownerId,
+          type: "value",
+          value: running,
+          streakDay: entry.day,
+          note: entry.note,
+          media,
+          // Already reviewed by a human at the point of running this repair.
+          moderationStatus: "approved",
+          publicVisible: true,
+          createdAt: entry.createdAt ?? Date.now(),
+        });
+        touched.push({ day: entry.day, value: running, updateId: inserted });
+      }
+    }
+
+    const last = sorted[sorted.length - 1];
+    await ctx.db.patch(goalId, {
+      currentValue: running,
+      streakBest: Math.max(goal.streakBest ?? 0, best),
+      streakLastLoggedDay: last.day,
+      ...(tzOffsetMinutes !== undefined
+        ? { streakTimezoneOffsetMinutes: tzOffsetMinutes }
+        : {}),
+      updatedAt: Date.now(),
+    });
+
+    return {
+      ok: true,
+      currentValue: running,
+      streakBest: Math.max(goal.streakBest ?? 0, best),
+      streakLastLoggedDay: last.day,
+      touched,
+    };
+  },
+});
+
+/**
+ * Record a measured value on a `number` goal, bypassing auth.
+ *
+ * Mirrors the durable effects of `goals.recordValue`: appends a `value`
+ * update, moves `currentValue`, and awards any newly reached badge tiers.
+ * It deliberately does NOT fan out to followers or send email — an admin
+ * backfill is a correction, not the owner posting progress.
+ *
+ * Refuses a value that would hit the target, because completing a goal has
+ * side effects (status change, targetHit email, supporter fan-out) that
+ * should run through the app rather than an escape hatch.
+ */
+export const recordGoalValue = internalMutation({
+  args: {
+    goalId: v.id("goals"),
+    value: v.number(),
+    note: v.optional(v.string()),
+    /** Backdate the update row so the timeline sorts correctly. */
+    createdAt: v.optional(v.number()),
+  },
+  handler: async (ctx, { goalId, value, note, createdAt }) => {
+    const goal = await ctx.db.get(goalId);
+    if (!goal) throw new Error(`Goal not found: ${goalId}`);
+    if (goal.progressType !== "number") {
+      throw new Error(`Goal is a ${goal.progressType} goal, not a number goal`);
+    }
+    if (!Number.isFinite(value)) throw new Error("Value must be a number");
+
+    const hitsTarget =
+      goal.direction === "increase" ? value >= goal.targetValue : value <= goal.targetValue;
+    if (hitsTarget) {
+      throw new Error(
+        "That value completes the goal — record it from the app so the completion flow runs"
+      );
+    }
+
+    const now = Date.now();
+    const updateId = await ctx.db.insert("updates", {
+      goalId,
+      ownerId: goal.ownerId,
+      type: "value",
+      value,
+      note: note?.trim() || undefined,
+      // Already reviewed by a human at the point of running this.
+      moderationStatus: "approved",
+      publicVisible: true,
+      createdAt: createdAt ?? now,
+    });
+
+    await ctx.db.patch(goalId, {
+      currentValue: value,
+      lastStaleReminderAt: undefined,
+      updatedAt: now,
+    });
+
+    const pct = computeProgress(goal.startValue, value, goal.targetValue, goal.direction);
+    const existing = await ctx.db
+      .query("badges")
+      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
+      .collect();
+    const newTiers = newMilestoneTiers(
+      pct,
+      existing.map((b) => b.tier)
+    );
+    for (const tier of newTiers) {
+      await ctx.db.insert("badges", { goalId, ownerId: goal.ownerId, tier, awardedAt: now });
+    }
+
+    return {
+      ok: true,
+      previousValue: goal.currentValue,
+      newValue: value,
+      progress: pct,
+      newBadges: newTiers,
+      updateId,
+    };
+  },
+});
+
+/**
+ * Backfill a `number` goal's day-by-day history from an external source
+ * (App Store Connect exports and the like).
+ *
+ * Inserts one `value` update per supplied day, backdated to the end of that
+ * local day so each sorts after any manual log already made on it, then sets
+ * `currentValue` from the final entry and awards newly reached badge tiers.
+ *
+ * Like `recordGoalValue` this skips follower fan-out and email — a backfill is
+ * a correction, not seventeen fresh progress posts — and refuses a series that
+ * would complete the goal.
+ *
+ * `revertUpdateIds` soft-reverts superseded manual logs, keeping them in the
+ * audit trail rather than deleting them. Pass the approximate ones that the
+ * accurate series replaces, or omit to leave every existing update in place.
+ */
+export const backfillGoalValues = internalMutation({
+  args: {
+    goalId: v.id("goals"),
+    /** Minutes behind UTC, browser convention: US Pacific daylight time is 420. */
+    tzOffsetMinutes: v.number(),
+    entries: v.array(
+      v.object({
+        /** Local day key, `YYYY-MM-DD`. */
+        day: v.string(),
+        /** Cumulative value as of the end of that day. */
+        value: v.number(),
+        note: v.optional(v.string()),
+      })
+    ),
+    revertUpdateIds: v.optional(v.array(v.id("updates"))),
+    revertReason: v.optional(v.string()),
+  },
+  handler: async (ctx, { goalId, tzOffsetMinutes, entries, revertUpdateIds, revertReason }) => {
+    const goal = await ctx.db.get(goalId);
+    if (!goal) throw new Error(`Goal not found: ${goalId}`);
+    if (goal.progressType !== "number") {
+      throw new Error(`Goal is a ${goal.progressType} goal, not a number goal`);
+    }
+    if (entries.length === 0) throw new Error("Pass at least one entry");
+
+    const sorted = [...entries].sort((a, b) => a.day.localeCompare(b.day));
+    if (new Set(sorted.map((e) => e.day)).size !== sorted.length) {
+      throw new Error("Duplicate day in `entries`");
+    }
+    for (const entry of sorted) {
+      if (!Number.isFinite(entry.value)) throw new Error(`Bad value on ${entry.day}`);
+    }
+
+    const final = sorted[sorted.length - 1];
+    const hitsTarget =
+      goal.direction === "increase"
+        ? final.value >= goal.targetValue
+        : final.value <= goal.targetValue;
+    if (hitsTarget) {
+      throw new Error(
+        "That series completes the goal — record the final value from the app so the completion flow runs"
+      );
+    }
+
+    const now = Date.now();
+    for (const updateId of revertUpdateIds ?? []) {
+      const existing = await ctx.db.get(updateId);
+      if (!existing || existing.goalId !== goalId) {
+        throw new Error(`Update ${updateId} is not on this goal`);
+      }
+      if (!existing.revertedAt) {
+        await ctx.db.patch(updateId, {
+          revertedAt: now,
+          revertReason: revertReason?.trim() || undefined,
+        });
+      }
+    }
+
+    // End of the given local day, expressed as an instant.
+    const endOfLocalDay = (day: string) =>
+      new Date(`${day}T00:00:00Z`).getTime() +
+      86_400_000 -
+      1_000 +
+      tzOffsetMinutes * 60_000;
+
+    const inserted: Array<{ day: string; value: number; updateId: string }> = [];
+    for (const entry of sorted) {
+      const updateId = await ctx.db.insert("updates", {
+        goalId,
+        ownerId: goal.ownerId,
+        type: "value",
+        value: entry.value,
+        note: entry.note?.trim() || undefined,
+        // Already reviewed by a human at the point of running this.
+        moderationStatus: "approved",
+        publicVisible: true,
+        createdAt: endOfLocalDay(entry.day),
+      });
+      inserted.push({ day: entry.day, value: entry.value, updateId });
+    }
+
+    await ctx.db.patch(goalId, {
+      currentValue: final.value,
+      lastStaleReminderAt: undefined,
+      updatedAt: now,
+    });
+
+    const pct = computeProgress(
+      goal.startValue,
+      final.value,
+      goal.targetValue,
+      goal.direction
+    );
+    const existingBadges = await ctx.db
+      .query("badges")
+      .withIndex("by_goal", (q) => q.eq("goalId", goalId))
+      .collect();
+    const newTiers = newMilestoneTiers(
+      pct,
+      existingBadges.map((b) => b.tier)
+    );
+    for (const tier of newTiers) {
+      await ctx.db.insert("badges", { goalId, ownerId: goal.ownerId, tier, awardedAt: now });
+    }
+
+    return {
+      ok: true,
+      previousValue: goal.currentValue,
+      newValue: final.value,
+      progress: pct,
+      newBadges: newTiers,
+      reverted: (revertUpdateIds ?? []).length,
+      inserted,
+    };
   },
 });

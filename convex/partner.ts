@@ -785,6 +785,18 @@ export const getGoalPushPayload = internalQuery({
           description: v.optional(v.string()),
         })
       ),
+      github: v.object({
+        links: v.array(
+          v.object({
+            repository: v.string(),
+            repositoryUrl: v.string(),
+            activityKind: v.string(),
+            progressMode: v.string(),
+            lastSyncedAt: v.union(v.number(), v.null()),
+          })
+        ),
+        latestSummary: v.union(v.string(), v.null()),
+      }),
     }),
     v.null()
   ),
@@ -795,11 +807,41 @@ export const getGoalPushPayload = internalQuery({
       .query("partnerGoalMaps")
       .withIndex("by_goal", (q) => q.eq("goalId", goalId))
       .first();
-    const updates = await ctx.db
-      .query("updates")
-      .withIndex("by_goal_created", (q) => q.eq("goalId", goalId))
-      .order("desc")
-      .take(100);
+    const [updates, githubLinks, githubSummaries, githubActivities] = await Promise.all([
+      ctx.db.query("updates").withIndex("by_goal_created", (q) => q.eq("goalId", goalId)).order("desc").take(100),
+      ctx.db.query("githubGoalLinks").withIndex("by_goal", (q) => q.eq("goalId", goalId)).collect(),
+      ctx.db.query("githubSummaries").withIndex("by_goal_created", (q) => q.eq("goalId", goalId)).order("desc").take(1),
+      ctx.db.query("githubActivities").withIndex("by_goal_occurred", (q) => q.eq("goalId", goalId)).order("desc").take(500),
+    ]);
+    const github = [];
+    for (const githubLink of githubLinks) {
+      const repository = await ctx.db.get(githubLink.repositoryId);
+      if (!repository) continue;
+      github.push({
+        repository: repository.fullName,
+        repositoryUrl: repository.htmlUrl,
+        activityKind: githubLink.activityKind,
+        progressMode: githubLink.progressMode,
+        lastSyncedAt: githubLink.lastSyncedAt ?? null,
+      });
+    }
+    const githubByDay = new Map<string, typeof githubActivities>();
+    for (const row of githubActivities) {
+      const day = isoDateFromMs(row.occurredAt);
+      if (!day) continue;
+      githubByDay.set(day, [...(githubByDay.get(day) ?? []), row]);
+    }
+    const githubUpdates = Array.from(githubByDay.entries()).map(([day, rows]) => {
+      const commitCount = rows.filter((row) => row.kind === "commit").length;
+      const prCount = rows.filter((row) => row.kind === "merged_pr").length;
+      const parts = [commitCount ? `${commitCount} commit${commitCount === 1 ? "" : "s"}` : "", prCount ? `${prCount} merged PR${prCount === 1 ? "" : "s"}` : ""].filter(Boolean);
+      return {
+        id: `github-day:${day}`,
+        title: `GitHub: ${parts.join(" and ") || "activity"}`,
+        date: day,
+        description: rows.slice(0, 4).map((row) => row.title).join(" · "),
+      };
+    });
     return {
       goalId,
       title: goal.title,
@@ -822,14 +864,21 @@ export const getGoalPushPayload = internalQuery({
         done: item.done,
         date: isoDateFromMs(item.completedAt),
       })),
-      updates: updates
-        .filter((row) => !row.revertedAt && row.type !== "milestone")
-        .map((row) => ({
-          id: row._id,
-          title: titleForPartnerUpdate(row, goal.unit),
-          date: isoDateFromMs(row.createdAt),
-          description: row.note?.trim().slice(0, 500) || undefined,
-        })),
+      updates: [
+        ...updates
+          .filter((row) => !row.revertedAt && row.type !== "milestone")
+          .map((row) => ({
+            id: row._id,
+            title: titleForPartnerUpdate(row, goal.unit),
+            date: isoDateFromMs(row.createdAt),
+            description: row.note?.trim().slice(0, 500) || undefined,
+          })),
+        ...githubUpdates,
+      ].slice(0, 180),
+      github: {
+        links: github,
+        latestSummary: githubSummaries[0]?.content ?? null,
+      },
     };
   },
 });

@@ -193,7 +193,7 @@ export default function ApplyPage() {
 
   // Already motivating.
   const alreadyMotivating = (myPledges ?? []).some(
-    (p) => p.goalId === goalId && (p.status === "active" || p.status === "paused")
+    (p: any) => p.goalId === goalId && (p.status === "active" || p.status === "paused")
   );
   if (alreadyMotivating) {
     return (

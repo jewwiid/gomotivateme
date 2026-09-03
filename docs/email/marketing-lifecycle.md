@@ -11,8 +11,11 @@ promotional content into accountability or security mail.
 
 - Audience: signed-in users who explicitly select Daily or Weekly in Settings.
 - Default: Off. Existing and new accounts are not enrolled automatically.
-- Daily send: 08:30 UTC, up to four recently launched goals.
-- Weekly send: Sunday 17:00 UTC, up to six goals from the week.
+- Daily send: 08:30 UTC, up to four recently launched goals. The worker sends
+  nothing when there are no eligible goals from another member.
+- Weekly send: Sunday 17:00 UTC, up to six goals from the week. The same
+  no-content rule applies, so selecting a cadence is not a promise of an empty
+  email on every scheduled run.
 - Content: approved, active, public, non-anonymous goals with a public creator.
 - Safety: sensitive categories and flagged moderation topics are excluded.
 - Suppression: global unsubscribe and the newsletter frequency are checked

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { WorkspaceShell, type WorkspaceNavItem } from "@/components/WorkspaceShell";
+import { useLocalDayKey } from "@/lib/streakDay";
 
 export type OwnerUpdateKind =
   | "note"
@@ -103,6 +104,7 @@ export function OwnerGoalWorkspace({
   applicationQueue,
   settingsPanel,
   partnerPanel,
+  githubTimeline,
 }: {
   goal: WorkspaceGoal;
   coverUrl: string | null | undefined;
@@ -125,9 +127,11 @@ export function OwnerGoalWorkspace({
   applicationQueue?: ReactNode;
   settingsPanel?: ReactNode;
   partnerPanel?: ReactNode;
+  githubTimeline?: ReactNode;
 }) {
   const [note, setNote] = useState("");
   const [posting, setPosting] = useState(false);
+  const streakTodayKey = useLocalDayKey();
   const safeProgress = Math.max(0, Math.min(100, progress));
   const milestones = goal.milestones ?? [];
   const firstIncomplete = milestones.find((milestone) => !milestone.done);
@@ -135,11 +139,6 @@ export function OwnerGoalWorkspace({
   const coreMotivators = (motivators ?? []).filter((motivator: any) =>
     "isCoreMotivator" in motivator ? motivator.isCoreMotivator : true
   );
-  const streakOffset =
-    goal.streakTimezoneOffsetMinutes ?? new Date().getTimezoneOffset();
-  const streakTodayKey = new Date(Date.now() - streakOffset * 60_000)
-    .toISOString()
-    .slice(0, 10);
   const streakLoggedToday = goal.streakLastLoggedDay === streakTodayKey;
   const publicPath = publicUrl
     ? publicUrl.replace(/^https?:\/\/[^/]+/, "")
@@ -475,6 +474,8 @@ export function OwnerGoalWorkspace({
                 )}
               </div>
             </section>
+
+            {githubTimeline}
           </div>
 
           <aside className="space-y-4 xl:col-span-4">

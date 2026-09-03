@@ -341,7 +341,8 @@ function EntryBody({
   unit: string;
   imageUrlOf?: (imageId: Id<"_storage">) => string | null;
 }) {
-  if (u.type === "media") {
+  // Presence, not type: a streak log can carry that day's video.
+  if (u.media?.length) {
     return <UpdateMedia media={u.media} imageUrlOf={imageUrlOf} />;
   }
   if (u.type === "image" && u.imageId && imageUrlOf) {

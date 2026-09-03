@@ -21,6 +21,7 @@ import {
   ChevronRight,
   BarChart3,
   CircleDollarSign,
+  GitBranch,
   Clock3,
   Dumbbell,
   Flame,
@@ -188,11 +189,22 @@ export default function NewGoalPage() {
 
 function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const create = useMutation(api.goals.create);
+  const createGitHubGoalLink = useMutation(api.github.createGoalLink);
   const generateUploadUrl = useMutation(api.updates.generateUploadUrl);
   const suggest = useAction(api.aiAssistant.suggest);
+  const syncGitHubLink = useAction(api.github.syncLink);
   const aiblLinks = useQuery(api.partner.listMine);
   const pushGoalToAibl = useAction(api.partnerPush.pushGoalToAibl);
+  const githubRepositoryId = searchParams.get("githubRepositoryId");
+  const githubActivity = searchParams.get("githubActivity") === "merged_prs" ? "merged_prs" : "commits";
+  const githubTarget = Number(searchParams.get("githubTarget"));
+  const githubBackfillFrom = Number(searchParams.get("githubBackfillFrom"));
+  const githubDraft = useQuery(
+    api.github.getRepositoryGoalDraft,
+    githubRepositoryId ? { repositoryId: githubRepositoryId as Id<"githubRepositories"> } : "skip"
+  );
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
@@ -211,6 +223,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   );
   const [supporterTarget, setSupporterTarget] = useState("");
   const [supportTypes, setSupportTypes] = useState<string[]>(["encourage", "checkin"]);
+  const [countBackfilledGitHubProgress, setCountBackfilledGitHubProgress] = useState(false);
   const [visibility, setVisibility] = useState<"public" | "unlisted" | "private">("public");
   const [syncToAibl, setSyncToAibl] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -218,6 +231,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverDropRef = useRef<HTMLLabelElement>(null);
+  const githubDraftApplied = useRef(false);
 
   const handleCoverDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -256,6 +270,26 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  useEffect(() => {
+    if (!githubDraft || githubDraftApplied.current) return;
+    githubDraftApplied.current = true;
+    const metricId = githubActivity === "merged_prs" ? "launch.github-pull-requests" : "launch.github-commits";
+    const target = Number.isFinite(githubTarget) && githubTarget > 0
+      ? githubTarget
+      : githubActivity === "merged_prs" ? 10 : githubDraft.suggestedTarget;
+    setCategory("launch");
+    setMetricId(metricId);
+    setProgressType("number");
+    setDirection("increase");
+    setUnit(githubActivity === "merged_prs" ? "pull requests" : "commits");
+    setStartValue("0");
+    setTargetValue(String(target));
+    setTitle(`Build ${githubDraft.name}`);
+    setSummary(`Build and maintain ${githubDraft.fullName}; verified GitHub ${githubActivity === "merged_prs" ? "pull requests" : "commits"} will show the project's progress.`);
+    setStory(`Project context\n${githubDraft.htmlUrl}\n\nDefault branch: ${githubDraft.defaultBranch}\n\nGitHub activity from this repository will be linked and backfilled after this goal is published.`);
+    setStep(1);
+  }, [githubActivity, githubDraft, githubTarget]);
+
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<AiTask | null>(null);
@@ -267,6 +301,10 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
   const measurementOptions = getMeasurementsForCategory(category);
   const selectedMeasurement =
     getMeasurementMetric(category, metricId) ?? getDefaultMeasurement(category);
+  const isGitHubMetric = metricId.endsWith("github-commits") || metricId.endsWith("github-pull-requests");
+  const githubBackfillDate = githubDraft
+    ? new Date(Number.isFinite(githubBackfillFrom) ? githubBackfillFrom : githubDraft.suggestedBackfillFrom)
+    : null;
 
   const requestAiSuggestion = async (task: AiTask) => {
     setAiBusy(task);
@@ -509,6 +547,31 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
           console.error("[partner] create-goal AIBL sync failed", error);
         }
       }
+      // A goal started from a repository is connected automatically. If the
+      // creator changes its metric in the wizard, we preserve the activity
+      // link but only update the measurement when that metric is compatible.
+      if (githubRepositoryId && githubDraft) {
+        try {
+          const progressMode = metricId === "launch.github-commits" || metricId === "career.github-commits" || metricId === "launch.github-pull-requests" || metricId === "career.github-pull-requests"
+            ? "progress"
+            : "activity";
+          const link = await createGitHubGoalLink({
+            goalId,
+            repositoryId: githubRepositoryId as Id<"githubRepositories">,
+            activityKind: githubActivity,
+            progressMode,
+            countBackfilledProgress: countBackfilledGitHubProgress,
+            backfillFrom: Number.isFinite(githubBackfillFrom) && githubBackfillFrom < Date.now()
+              ? githubBackfillFrom
+              : githubDraft.suggestedBackfillFrom,
+          });
+          await syncGitHubLink({ linkId: link.linkId });
+        } catch (githubError) {
+          // The goal itself is valid even if GitHub is temporarily unavailable.
+          // The owner can retry from Settings without losing their draft.
+          console.error("[github] create-from-repository sync failed", githubError);
+        }
+      }
       trackDataFastGoal("goal_created", {
         progress_type: progressType,
         visibility,
@@ -569,6 +632,15 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
         </div>
         <div className="flex-1 px-5 pb-10 pt-8 sm:px-12 sm:pt-12 lg:px-[8vw] lg:pt-24">
           <div className="mx-auto w-full max-w-[42rem]">
+          {githubDraft && (
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-4">
+              <GitBranch size={18} className="mt-0.5 shrink-0 text-[var(--color-primary)]" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[var(--color-text)]">Goal from {githubDraft.fullName}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">{githubActivity === "merged_prs" ? "Merged pull requests" : "Commits"} will measure this goal. We will backfill verified activity from {new Date(Number.isFinite(githubBackfillFrom) ? githubBackfillFrom : githubDraft.suggestedBackfillFrom).toLocaleDateString()} after you publish.</p>
+              </div>
+            </div>
+          )}
           {step === 0 && (
             <Step title="Pick a category">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -731,6 +803,8 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                   ? "Map the steps"
                   : progressType === "streak"
                   ? "Set your streak target"
+                  : isGitHubMetric
+                  ? `Set your ${selectedMeasurement.label} target`
                   : `Set your ${selectedMeasurement.label.toLowerCase()} target`
               }
             >
@@ -745,26 +819,52 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                       <DirectionToggle value={direction} onChange={setDirection} />
                     </div>
                   ) : null}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {isGitHubMetric ? (
+                    <div className="mb-4 rounded-xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-4">
+                      <p className="text-sm font-semibold text-[var(--color-text)]">Backfill preserves history; your goal begins fresh</p>
+                      <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">
+                        We will import verified {metricId.endsWith("github-pull-requests") ? "merged pull requests" : "commits"}{githubBackfillDate ? ` from ${githubBackfillDate.toLocaleDateString()}` : " from the selected backfill date"} for your timeline, AI recaps, and AIBL context. They will not count toward this new target unless you choose otherwise below.
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className={`grid grid-cols-1 gap-3 ${isGitHubMetric ? "" : "sm:grid-cols-2"}`}>
+                    {!isGitHubMetric ? (
+                      <Field
+                        label={selectedMeasurement.startLabel ?? "Starting value"}
+                        value={startValue}
+                        onChange={setStartValue}
+                        type="number"
+                        step="any"
+                      />
+                    ) : null}
                     <Field
-                      label={selectedMeasurement.startLabel ?? "Starting value"}
-                      value={startValue}
-                      onChange={setStartValue}
-                      type="number"
-                      step="any"
-                    />
-                    <Field
-                      label={selectedMeasurement.targetLabel ?? "Target value"}
+                      label={isGitHubMetric ? `New verified ${metricId.endsWith("github-pull-requests") ? "pull requests" : "commits"} target` : selectedMeasurement.targetLabel ?? "Target value"}
                       value={targetValue}
                       onChange={setTargetValue}
                       type="number"
                       step="any"
                     />
                   </div>
+                  {isGitHubMetric ? (
+                    <label className="mt-3 flex items-start gap-3 rounded-xl border border-[var(--color-border)] bg-white p-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+                      <input
+                        type="checkbox"
+                        checked={countBackfilledGitHubProgress}
+                        onChange={(event) => setCountBackfilledGitHubProgress(event.target.checked)}
+                        className="mt-0.5"
+                      />
+                      <span><strong className="text-[var(--color-text)]">Include historic activity in this target.</strong> Turn this on only when the target means the total commits or pull requests since the backfill date. Choose a target higher than your existing history.</span>
+                    </label>
+                  ) : null}
                   <div className="mt-3">
                     <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
                       Unit
                     </label>
+                    {isGitHubMetric ? (
+                      <div className="workspace-input bg-[var(--color-bg-elev)] px-3 py-3 text-[var(--color-text-secondary)]">
+                        {metricId.endsWith("github-pull-requests") ? "Merged pull requests" : "Commits"} · verified by GitHub
+                      </div>
+                    ) : (
                     <select
                       value={
                         selectedMeasurement.units.includes(unit)
@@ -790,6 +890,7 @@ function NewGoalContent({ designPreview = false }: { designPreview?: boolean }) 
                       )}
                       {selectedMeasurement.allowsCustomUnit ? <option value="__custom">Custom…</option> : null}
                     </select>
+                    )}
                     {selectedMeasurement.allowsCustomUnit && !selectedMeasurement.units.includes(unit) && (
                       <input
                         type="text"

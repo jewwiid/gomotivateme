@@ -68,6 +68,7 @@ export const drainQueue = internalAction({
     const marketingFromAddress =
       process.env.RESEND_MARKETING_FROM_ADDRESS ??
       "GoMotivateMe Discover <discover@gomotivateme.com>";
+    const replyToAddress = process.env.RESEND_REPLY_TO ?? "hello@gomotivateme.com";
 
     let sent = 0;
     for (const notification of pending) {
@@ -78,7 +79,13 @@ export const drainQueue = internalAction({
         // where Next.js public environment variables are not guaranteed.
         payload.siteUrl ??= SITE_URL;
         const { subject, component } = renderTemplate(notification.templateId, payload);
-        const html = await render(component);
+        // Send a real multipart alternative instead of HTML only. Gmail and
+        // other mailbox providers can use the plain-text part for filtering,
+        // previews, accessibility, and clients that suppress HTML.
+        const [html, text] = await Promise.all([
+          render(component),
+          render(component, { plainText: true }),
+        ]);
 
         // List-Unsubscribe headers (Gmail/Yahoo 2024 bulk-sender requirement).
         // Only present for user-recipient emails where enqueue injected a token.
@@ -100,6 +107,8 @@ export const drainQueue = internalAction({
           to: notification.toEmail,
           subject,
           html,
+          text,
+          replyTo: replyToAddress,
           headers,
           tags: [
             { name: "template", value: notification.templateId },

@@ -49,7 +49,7 @@ export function MotivationCircleWidget({
   isLoggedIn?: boolean;
 }) {
   const motivators = useQuery(api.motivation.listActiveMotivators, { goalId });
-  const core = (motivators ?? []).filter((m) => m.isCoreMotivator);
+  const core = (motivators ?? []).filter((m: any) => m.isCoreMotivator);
   const publicCount = (motivators ?? []).length - core.length;
 
   if (motivators === undefined) {
@@ -114,7 +114,7 @@ export function MotivationCircleWidget({
       {/* Pledges list */}
       {core.length > 0 && (
         <div className="mt-5 space-y-2">
-          {core.map((m) => {
+          {core.map((m: any) => {
             const meta = ROLE_META[m.role] ?? ROLE_META.encourager;
             const Icon = meta.icon;
             return (
@@ -154,8 +154,8 @@ export function MotivationCircleWidget({
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {(motivators ?? [])
-              .filter((m) => !m.isCoreMotivator)
-              .map((m) => {
+              .filter((m: any) => !m.isCoreMotivator)
+              .map((m: any) => {
                 const meta = ROLE_META[m.role] ?? ROLE_META.encourager;
                 return (
                   <span

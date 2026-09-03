@@ -29,6 +29,12 @@ import {
   Pencil,
   UserRound,
   Users,
+  GitBranch,
+  GitCommitHorizontal,
+  GitPullRequest,
+  RefreshCw,
+  Sparkles,
+  Link2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -54,6 +60,12 @@ import { prepareProgressImage } from "@/lib/media";
 import { RequireAuth } from "@/components/RequireAuth";
 import { AiblWordmark } from "@/components/AiblMark";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import {
+  formatDayKey,
+  previousDayKey,
+  useLocalDayKey,
+  withinStreakGrace,
+} from "@/lib/streakDay";
 import {
   AiAssistButton,
   AiDraftCard,
@@ -145,6 +157,378 @@ function AiblSyncCard({ goalId }: { goalId: Id<"goals"> }) {
         <p className="mt-2 text-xs text-[var(--color-text-muted)]">
           Reconnect from AIBL Profile so GoMotivateMe can push campaigns back.
         </p>
+      )}
+    </section>
+  );
+}
+
+function GitHubGoalLinker({
+  goalId,
+  progressActivityKind,
+}: {
+  goalId: Id<"goals">;
+  progressActivityKind: "commits" | "merged_prs" | null;
+}) {
+  const connection = useQuery(api.github.getConnection);
+  const candidates = useQuery(api.github.listAuthorizationCandidates);
+  const repositories = useQuery(api.github.listRepositories);
+  const beginConnect = useAction(api.github.beginConnect);
+  const selectInstallation = useAction(api.github.selectAuthorizedInstallation);
+  const refreshRepositories = useAction(api.github.refreshRepositories);
+  const createGoalLink = useMutation(api.github.createGoalLink);
+  const syncLink = useAction(api.github.syncLink);
+  const [repositoryId, setRepositoryId] = useState("");
+  const [activityKind, setActivityKind] = useState<"commits" | "merged_prs" | "both">("commits");
+  const [backfillDate, setBackfillDate] = useState(() => new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10));
+  const [countProgress, setCountProgress] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const canCountProgress = activityKind === progressActivityKind;
+
+  useEffect(() => {
+    const github = new URLSearchParams(window.location.search).get("github");
+    if (github === "connected") setMessage("GitHub is connected. Choose the repository that represents this goal.");
+    if (github === "failed") setMessage("GitHub could not complete the connection. Please try again.");
+    if (github === "cancelled") setMessage("GitHub connection was cancelled.");
+  }, []);
+
+  useEffect(() => {
+    if (!canCountProgress) setCountProgress(false);
+  }, [canCountProgress]);
+
+  const connect = async () => {
+    setBusy("connect");
+    setMessage(null);
+    try {
+      const { authorizationUrl } = await beginConnect({ returnTo: window.location.pathname });
+      window.location.assign(authorizationUrl);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not start GitHub connection");
+      setBusy(null);
+    }
+  };
+
+  const linkRepository = async () => {
+    if (!repositoryId) {
+      setMessage("Choose the repository that represents this goal.");
+      return;
+    }
+    setBusy("link");
+    setMessage(null);
+    try {
+      const backfillFrom = Date.parse(`${backfillDate}T00:00:00`);
+      const result = await createGoalLink({
+        goalId,
+        repositoryId: repositoryId as Id<"githubRepositories">,
+        activityKind,
+        progressMode: countProgress && canCountProgress ? "progress" : "activity",
+        countBackfilledProgress: countProgress,
+        backfillFrom: Number.isFinite(backfillFrom) ? backfillFrom : undefined,
+      });
+      const synced = await syncLink({ linkId: result.linkId });
+      setMessage(`Linked and backfilled ${synced.imported} verified GitHub item${synced.imported === 1 ? "" : "s"}.`);
+      window.setTimeout(() => document.getElementById("github-work")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not link this repository");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  if (connection === undefined || candidates === undefined) {
+    return <div className="mt-3 h-24 animate-pulse rounded-xl bg-[var(--color-bg-sunken)]" />;
+  }
+
+  if (!connection.connected) {
+    return (
+      <div className="mt-3">
+        {candidates.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs leading-5 text-[var(--color-text-muted)]">Choose the GitHub installation that contains this goal’s repository.</p>
+            {candidates.map((candidate: any) => (
+              <button
+                key={candidate.installationId}
+                type="button"
+                disabled={busy !== null}
+                onClick={async () => {
+                  setBusy(`installation-${candidate.installationId}`);
+                  try {
+                    await selectInstallation({ installationId: candidate.installationId });
+                    setMessage("GitHub is connected. Choose a repository below.");
+                  } catch (error) {
+                    setMessage(error instanceof Error ? error.message : "Could not connect that installation");
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+                className="flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-sunken)] px-3 py-3 text-left transition hover:border-[var(--color-primary)]/40 active:scale-[0.99] disabled:opacity-50"
+              >
+                <GitBranch size={16} className="text-[var(--color-primary)]" />
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[var(--color-text)]">{candidate.installationLogin}</span><span className="block text-xs text-[var(--color-text-muted)]">{candidate.repositorySelection === "selected" ? "Selected repositories" : "All repositories"}</span></span>
+                {busy === `installation-${candidate.installationId}` ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} className="text-[var(--color-primary)]" />}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <>
+            <p className="text-xs leading-5 text-[var(--color-text-muted)]">Connect GitHub here, then select the repository and backfill the work into this goal. You’ll return here after authorising it.</p>
+            <button type="button" onClick={() => void connect()} disabled={busy === "connect"} className="workspace-button-primary mt-3 min-h-9 px-3 text-xs disabled:opacity-50">
+              {busy === "connect" ? <Loader2 size={14} className="animate-spin" /> : <GitBranch size={14} />} {busy === "connect" ? "Opening GitHub…" : "Connect GitHub"}
+            </button>
+          </>
+        )}
+        {message ? <p className="mt-3 text-xs leading-5 text-[var(--color-text-secondary)]">{message}</p> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="grid gap-3">
+        <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Repository
+          <select value={repositoryId} onChange={(event) => setRepositoryId(event.target.value)} disabled={!repositories?.length} className="workspace-input mt-1 h-10 w-full px-3 text-sm disabled:opacity-50">
+            <option value="">{repositories === undefined ? "Loading repositories…" : repositories.length === 0 ? "No repositories available" : "Choose a repository"}</option>
+            {repositories?.filter((repository: any) => !repository.archived).map((repository: any) => <option key={repository._id} value={repository._id}>{repository.fullName}</option>)}
+          </select>
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Track
+            <select value={activityKind} onChange={(event) => setActivityKind(event.target.value as "commits" | "merged_prs" | "both")} className="workspace-input mt-1 h-10 w-full px-3 text-sm">
+              <option value="commits">Commits</option><option value="merged_prs">Merged pull requests</option><option value="both">Both</option>
+            </select>
+          </label>
+          <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Backfill from
+            <input type="date" value={backfillDate} onChange={(event) => setBackfillDate(event.target.value)} className="workspace-input mt-1 h-10 w-full px-3 text-sm" />
+          </label>
+        </div>
+      </div>
+      {progressActivityKind ? (
+        <label className="flex items-start gap-2 rounded-xl bg-[var(--color-bg-sunken)] p-3 text-xs leading-5 text-[var(--color-text-secondary)]">
+          <input type="checkbox" checked={countProgress} disabled={!canCountProgress} onChange={(event) => setCountProgress(event.target.checked)} className="mt-0.5" />
+          <span>{canCountProgress ? "Use new verified work to update this goal’s primary measurement. Historic work is still preserved in the timeline." : `Choose ${progressActivityKind === "commits" ? "Commits" : "Merged pull requests"} above to use this goal’s primary measurement.`}</span>
+        </label>
+      ) : (
+        <p className="rounded-xl bg-[var(--color-bg-sunken)] p-3 text-xs leading-5 text-[var(--color-text-secondary)]">This goal’s primary measurement stays unchanged. GitHub work becomes a verified delivery history and AI recap.</p>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => void linkRepository()} disabled={busy !== null || !repositoryId} className="workspace-button-primary min-h-9 px-3 text-xs disabled:opacity-50">
+          {busy === "link" ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />}{busy === "link" ? "Linking…" : "Link repository and backfill"}
+        </button>
+        <button type="button" onClick={async () => { setBusy("refresh"); try { await refreshRepositories({}); } catch (error) { setMessage(error instanceof Error ? error.message : "Could not refresh repositories"); } finally { setBusy(null); } }} disabled={busy !== null} className="workspace-button-secondary min-h-9 px-3 text-xs disabled:opacity-50">
+          <RefreshCw size={14} className={busy === "refresh" ? "animate-spin" : ""} /> Refresh
+        </button>
+      </div>
+      {message ? <p className="text-xs leading-5 text-[var(--color-text-secondary)]">{message}</p> : null}
+    </div>
+  );
+}
+
+function GitHubGoalCard({ goalId }: { goalId: Id<"goals"> }) {
+  const integration = useQuery(api.github.getGoalIntegration, { goalId });
+  if (integration === undefined) return null;
+  return (
+    <section className="workspace-card p-4">
+      <div className="flex items-center gap-2 text-[var(--color-text)]"><GitBranch size={16} /><p className="text-sm font-semibold">GitHub delivery</p></div>
+      {integration.links.length === 0 ? (
+        <GitHubGoalLinker goalId={goalId} progressActivityKind={integration.progressActivityKind} />
+      ) : (
+        <>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">{integration.primaryMetricIsGitHub ? "Verified GitHub work updates this goal’s primary measurement." : `Primary measurement remains ${integration.primaryMetricLabel}. GitHub work is a second, verified delivery signal.`}</p>
+          <div className="mt-3 space-y-2">
+            {integration.links.map((link: any) => (
+              <div key={link.linkId} className="rounded-xl bg-[var(--color-bg-sunken)] px-3 py-2.5">
+                <a href={link.repositoryUrl} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1 text-xs font-semibold text-[var(--color-primary)] hover:underline"><span className="truncate">{link.repository}</span><ExternalLink size={12} /></a>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{link.activityCount} verified {link.activityKind === "merged_prs" ? "merged pull requests" : link.activityKind === "both" ? "activities" : "commits"}{link.lastSyncedAt ? ` · synced ${relativeTime(link.lastSyncedAt)}` : " · ready to sync"}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+type GitHubTimelineActivity = {
+  id: string;
+  kind: "commit" | "merged_pr";
+  title: string;
+  summary: string | null;
+  url: string;
+  authorLogin: string | null;
+  occurredAt: number;
+  repository: string;
+  repositoryUrl: string | null;
+};
+
+function GitHubActivityTimeline({ goalId }: { goalId: Id<"goals"> }) {
+  const timeline = useQuery(api.github.listGoalActivity, { goalId, limit: 60 });
+  const syncGoal = useAction(api.github.syncGoal);
+  const summarizeGoal = useAction(api.github.summarizeGoal);
+  const summarizeGoalDay = useAction(api.github.summarizeGoalDay);
+  const [syncing, setSyncing] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const [dailySummaryDay, setDailySummaryDay] = useState<string | null>(null);
+  const [dailySummaryText, setDailySummaryText] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState<string | null>(null);
+  const [days, setDays] = useState(7);
+  const [freshSummary, setFreshSummary] = useState<string | null>(null);
+
+  if (timeline === undefined || !timeline || timeline.links.length === 0) return null;
+
+  const activities = timeline.activities as GitHubTimelineActivity[];
+  const grouped = activities.reduce<Array<{ date: string; rows: GitHubTimelineActivity[] }>>((groups, activity) => {
+    const date = new Date(activity.occurredAt).toISOString().slice(0, 10);
+    const previous = groups.at(-1);
+    if (previous?.date === date) previous.rows.push(activity);
+    else groups.push({ date, rows: [activity] });
+    return groups;
+  }, []);
+  const summary = freshSummary ?? timeline.latestSummary?.content ?? null;
+  const summaryForDay = (day: string) =>
+    dailySummaryText[day] ??
+    timeline.dailySummaries?.find((item: any) => new Date(item.periodStart).toISOString().slice(0, 10) === day)?.content ??
+    null;
+
+  return (
+    <section id="github-work" className="workspace-card scroll-mt-24 p-4 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--color-primary-soft)] text-[var(--color-primary)]"><GitBranch size={16} /></span>
+            <div>
+              <h2 className="text-base font-bold text-[var(--color-text)]">GitHub work</h2>
+              <p className="text-xs text-[var(--color-text-muted)]">Verified delivery history from your linked repositories.</p>
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={syncing}
+          onClick={async () => {
+            setSyncing(true);
+            setNotice(null);
+            try {
+              const result = await syncGoal({ goalId });
+              setNotice(result.imported ? `${result.imported} new item${result.imported === 1 ? "" : "s"} added.` : "You’re up to date.");
+            } catch (error) {
+              setNotice(error instanceof Error ? error.message : "Could not sync GitHub work");
+            } finally {
+              setSyncing(false);
+            }
+          }}
+          className="workspace-button-secondary min-h-9 px-3 text-xs disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+          {syncing ? "Syncing…" : "Sync now"}
+        </button>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-[var(--color-bg-sunken)] p-3">
+        <Sparkles size={15} className="text-[var(--color-gold-text)]" />
+        <p className="mr-auto text-xs font-semibold text-[var(--color-text-secondary)]">Create a factual work recap from the verified history.</p>
+        <select
+          value={days}
+          onChange={(event) => setDays(Number(event.target.value))}
+          aria-label="Recap period"
+          className="h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs font-medium text-[var(--color-text)]"
+        >
+          <option value={7}>Past 7 days</option>
+          <option value={30}>Past 30 days</option>
+          <option value={90}>Past 90 days</option>
+        </select>
+        <button
+          type="button"
+          disabled={summarizing}
+          onClick={async () => {
+            setSummarizing(true);
+            setNotice(null);
+            try {
+              const result = await summarizeGoal({ goalId, days });
+              setFreshSummary(result.content);
+            } catch (error) {
+              setNotice(error instanceof Error ? error.message : "Could not create a recap");
+            } finally {
+              setSummarizing(false);
+            }
+          }}
+          className="workspace-button-primary min-h-8 px-3 text-xs disabled:opacity-50"
+        >
+          {summarizing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+          {summarizing ? "Writing…" : "Create recap"}
+        </button>
+      </div>
+
+      {notice ? <p className="mt-3 text-xs text-[var(--color-text-secondary)]">{notice}</p> : null}
+      {summary ? (
+        <div className="mt-3 rounded-xl border border-[var(--color-gold-soft)] bg-[var(--color-gold-soft)]/30 p-3">
+          <p className="text-xs font-bold text-[var(--color-gold-text)]">GitHub recap</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">{summary}</p>
+        </div>
+      ) : null}
+
+      {grouped.length === 0 ? (
+        <div className="mt-4 rounded-xl border border-dashed border-[var(--color-border-strong)] px-4 py-7 text-center">
+          <GitBranch className="mx-auto text-[var(--color-primary)]" size={22} />
+          <p className="mt-2 text-sm font-semibold text-[var(--color-text)]">Your GitHub work will appear here.</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">Sync now to import recent commits and merged pull requests. Future work syncs automatically every hour.</p>
+        </div>
+      ) : (
+        <div className="mt-5 space-y-5">
+          {grouped.map((group) => (
+            <div key={group.date} className="relative border-l border-[var(--color-border)] pl-5">
+              <div className="-ml-[1.68rem] flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-secondary)]">
+                  <span className="h-3 w-3 rounded-full border-2 border-[var(--color-primary)] bg-[var(--color-surface)]" />
+                  {formatDate(new Date(`${group.date}T12:00:00Z`).getTime())}
+                </p>
+                <button
+                  type="button"
+                  disabled={dailySummaryDay !== null}
+                  onClick={async () => {
+                    setDailySummaryDay(group.date);
+                    setNotice(null);
+                    try {
+                      const result = await summarizeGoalDay({ goalId, day: group.date });
+                      setDailySummaryText((current) => ({ ...current, [group.date]: result.content }));
+                    } catch (error) {
+                      setNotice(error instanceof Error ? error.message : "Could not create the daily summary");
+                    } finally {
+                      setDailySummaryDay(null);
+                    }
+                  }}
+                  className="inline-flex min-h-7 items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 text-[11px] font-bold text-[var(--color-primary)] transition hover:border-[var(--color-primary)]/40 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {dailySummaryDay === group.date ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  {dailySummaryDay === group.date ? "Writing…" : summaryForDay(group.date) ? "Refresh summary" : "Summarise day"}
+                </button>
+              </div>
+              {summaryForDay(group.date) ? (
+                <div className="mt-3 rounded-xl border border-[var(--color-gold-soft)] bg-[var(--color-gold-soft)]/30 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-gold-text)]">Daily summary</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">{summaryForDay(group.date)}</p>
+                </div>
+              ) : null}
+              <div className="mt-3 space-y-2">
+                {group.rows.map((activity) => {
+                  const Icon = activity.kind === "commit" ? GitCommitHorizontal : GitPullRequest;
+                  return (
+                    <a key={activity.id} href={activity.url} target="_blank" rel="noreferrer" className="group flex items-start gap-3 rounded-xl px-2 py-2 transition hover:bg-[var(--color-bg-sunken)]">
+                      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--color-bg-sunken)] text-[var(--color-primary)]"><Icon size={15} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                          <span className="truncate text-sm font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)]">{activity.title}</span>
+                          <span className="inline-flex shrink-0 items-center gap-1 text-xs text-[var(--color-text-dim)]">{relativeTime(activity.occurredAt)} <ExternalLink size={11} /></span>
+                        </span>
+                        <span className="mt-0.5 block text-xs text-[var(--color-text-muted)]">{activity.kind === "commit" ? "Commit" : "Merged pull request"} · {activity.repository}{activity.authorLogin ? ` · ${activity.authorLogin}` : ""}</span>
+                        {activity.summary && activity.summary !== activity.title ? <span className="mt-1 block text-xs leading-5 text-[var(--color-text-dim)]">{activity.summary}</span> : null}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -317,6 +701,9 @@ function GoalDetailContent() {
     await addUpdate({ goalId, type: "note", note });
   };
 
+  // Above the loading/not-found returns below — hooks can't sit after them.
+  const streakTodayKey = useLocalDayKey();
+
   if (goal === undefined) {
     return (
       <div className="min-h-screen bg-[var(--color-bg)]">
@@ -355,10 +742,6 @@ function GoalDetailContent() {
     motivators?.[0]?.user?.name ??
     undefined;
   const firstIncomplete = (goal.milestones ?? []).find((milestone: any) => !milestone.done);
-  const streakOffset = goal.streakTimezoneOffsetMinutes ?? new Date().getTimezoneOffset();
-  const streakTodayKey = new Date(Date.now() - streakOffset * 60_000)
-    .toISOString()
-    .slice(0, 10);
   const streakLoggedToday = goal.streakLastLoggedDay === streakTodayKey;
   const nextUpdateKind: OwnerUpdateKind =
     goal.progressType === "milestones"
@@ -445,7 +828,8 @@ function GoalDetailContent() {
             onOpenUpdate={openUpdate}
           />
         }
-        partnerPanel={<AiblSyncCard goalId={goalId} />}
+        partnerPanel={<><GitHubGoalCard goalId={goalId} /><AiblSyncCard goalId={goalId} /></>}
+        githubTimeline={<GitHubActivityTimeline goalId={goalId} />}
         onCopyLink={onCopyLink}
         onOpenUpdate={openUpdate}
         onPostUpdate={postQuickUpdate}
@@ -598,6 +982,7 @@ function GoalDetailContent() {
             unit={goal.unit}
             milestones={goal.milestones ?? []}
             quickDelta={goal.direction === "decrease" ? -1 : 1}
+            streakLastLoggedDay={goal.streakLastLoggedDay}
             draftNote={updateDraftNote}
             onSelectType={setShowUpdate}
             onQuickIncrement={async (note) => {
@@ -949,6 +1334,7 @@ function UpdateModal({
   unit,
   milestones,
   quickDelta,
+  streakLastLoggedDay,
   draftNote,
   onSelectType,
   onQuickIncrement,
@@ -960,6 +1346,7 @@ function UpdateModal({
   unit: string;
   milestones: any[];
   quickDelta: -1 | 1;
+  streakLastLoggedDay?: string;
   draftNote?: string;
   onSelectType: (type: OwnerUpdateKind) => void;
   onQuickIncrement: (note?: string) => Promise<void>;
@@ -1025,7 +1412,12 @@ function UpdateModal({
           />
         )}
         {type === "streak" && (
-          <StreakForm goalId={goalId} initialNote={draftNote} onDone={onClose} />
+          <StreakForm
+            goalId={goalId}
+            lastLoggedDay={streakLastLoggedDay}
+            initialNote={draftNote}
+            onDone={onClose}
+          />
         )}
         {type === "milestone" && (
           <MilestoneForm goalId={goalId} milestones={milestones} onDone={onClose} />
@@ -1511,17 +1903,33 @@ function ValueForm({
 
 function StreakForm({
   goalId,
+  lastLoggedDay,
   initialNote,
   onDone,
 }: {
   goalId: Id<"goals">;
+  lastLoggedDay?: string;
   initialNote?: string;
   onDone: () => void;
 }) {
   const logStreakDay = useMutation(api.goals.logStreakDay);
+  const todayKey = useLocalDayKey();
   const [note, setNote] = useState(initialNote ?? "");
+  const [creditPreviousDay, setCreditPreviousDay] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Just past midnight, work that ran late belongs to the day before. Only
+  // offer it while neither day is already claimed, and drop the choice as
+  // soon as the window closes so a stale checkbox can't be submitted.
+  const yesterdayKey = previousDayKey(todayKey);
+  const canCreditPreviousDay =
+    withinStreakGrace() && lastLoggedDay !== todayKey && lastLoggedDay !== yesterdayKey;
+  useEffect(() => {
+    if (!canCreditPreviousDay && creditPreviousDay) setCreditPreviousDay(false);
+  }, [canCreditPreviousDay, creditPreviousDay]);
+
+  const creditedDay = creditPreviousDay ? yesterdayKey : todayKey;
   return (
     <form
       onSubmit={async (e) => {
@@ -1535,6 +1943,7 @@ function StreakForm({
             goalId,
             note: note || undefined,
             tzOffsetMinutes: new Date().getTimezoneOffset(),
+            creditPreviousDay: creditPreviousDay || undefined,
           });
           trackDataFastGoal("goal_update_posted", { update_type: "streak" });
           onDone();
@@ -1548,12 +1957,29 @@ function StreakForm({
     >
       <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-3 py-2.5">
         <p className="text-sm font-medium text-[var(--color-text)]">
-          Mark today as done
+          {creditPreviousDay ? "Mark yesterday as done" : "Mark today as done"}
         </p>
         <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
-          Your streak count goes up by 1. You can do this once per day.
+          Counts for {formatDayKey(creditedDay)}. Your streak goes up by 1, once per day.
         </p>
       </div>
+      {canCreditPreviousDay && (
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-[var(--color-border)] px-3 py-2.5">
+          <input
+            type="checkbox"
+            checked={creditPreviousDay}
+            onChange={(e) => setCreditPreviousDay(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--color-accent)]"
+          />
+          <span className="text-xs leading-5 text-[var(--color-text-muted)]">
+            It&apos;s still early — this was{" "}
+            <span className="font-medium text-[var(--color-text)]">
+              {formatDayKey(yesterdayKey)}
+            </span>
+            &apos;s work. Count it for yesterday and keep today free.
+          </span>
+        </label>
+      )}
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
@@ -1568,7 +1994,7 @@ function StreakForm({
         className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--color-accent)] py-2 text-sm font-semibold text-black transition hover:bg-[var(--color-accent-soft)] disabled:opacity-50"
       >
         <Plus size={14} />
-        {busy ? "Saving..." : "Mark today"}
+        {busy ? "Saving..." : creditPreviousDay ? "Mark yesterday" : "Mark today"}
       </button>
     </form>
   );

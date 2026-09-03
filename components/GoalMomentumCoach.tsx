@@ -177,7 +177,7 @@ export function GoalMomentumCoach({
               <div className="space-y-2">
                 {topSignals.length ? (
                   <ul className="space-y-1.5">
-                    {topSignals.map((signal) => (
+                    {topSignals.map((signal: any) => (
                       <li
                         key={signal.id}
                         className="flex items-start gap-1.5 text-[10px] leading-4"
