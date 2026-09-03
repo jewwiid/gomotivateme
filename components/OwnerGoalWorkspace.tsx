@@ -238,7 +238,7 @@ export function OwnerGoalWorkspace({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 md:col-span-2 xl:col-span-1 xl:flex xl:flex-col">
+          <div className="grid min-w-0 grid-cols-2 gap-2 md:col-span-2 xl:col-span-1 xl:flex xl:flex-col">
             <a
               href={publicUrl || "#public-page"}
               target="_blank"
@@ -268,7 +268,7 @@ export function OwnerGoalWorkspace({
               detail={safeProgress >= 100 ? "Complete" : "On track"}
               progress={safeProgress}
               variant="card"
-              className="col-span-2 sm:col-span-1 xl:col-span-4"
+              className="col-span-2 min-w-0 sm:col-span-1 xl:col-span-4"
             />
             <MomentumStat
               icon={goal.progressType === "streak" ? Flame : goal.progressType === "number" ? CircleGauge : Flag}
@@ -286,7 +286,7 @@ export function OwnerGoalWorkspace({
                   : goal.unit ?? "units"
               }
               variant="card"
-              className="xl:col-span-2"
+              className="min-w-0 xl:col-span-2"
             />
             <MomentumStat
               icon={Users}
@@ -294,7 +294,7 @@ export function OwnerGoalWorkspace({
               value={String(supporterCount)}
               detail={resolvedSupporterName}
               variant="card"
-              className="xl:col-span-2"
+              className="min-w-0 xl:col-span-2"
             />
             <MomentumStat
               icon={Target}
@@ -302,7 +302,7 @@ export function OwnerGoalWorkspace({
               value={`${coreMotivators.length} of 6`}
               detail={coreMotivators.length ? "motivators set" : "motivators to add"}
               variant="card"
-              className="xl:col-span-2"
+              className="min-w-0 xl:col-span-2"
             />
             <MomentumStat
               icon={MessageCircle}
@@ -310,7 +310,7 @@ export function OwnerGoalWorkspace({
               value={String(updates?.length ?? 0)}
               detail="updates shared"
               variant="card"
-              className="xl:col-span-2"
+              className="min-w-0 xl:col-span-2"
             />
           </div>
         </section>
@@ -617,7 +617,7 @@ export function OwnerGoalWorkspace({
           </section>
         ) : null}
         {settingsPanel ? (
-          <section id="settings" className="scroll-mt-24 xl:col-span-12">
+          <section id="settings" className="min-w-0 scroll-mt-24 xl:col-span-12">
             {settingsPanel}
           </section>
         ) : null}
