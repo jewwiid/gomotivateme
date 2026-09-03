@@ -316,7 +316,7 @@ export function OwnerGoalWorkspace({
         </section>
 
         <div className="!mt-[1.3125rem] grid items-start gap-4 xl:grid-cols-12">
-          <div className="space-y-3 xl:col-span-8">
+          <div className="min-w-0 space-y-3 xl:col-span-8">
             <form onSubmit={postNote} className="workspace-card p-4">
               <h2 className="text-base font-bold text-[var(--color-text)]">Share an update</h2>
               <textarea
@@ -478,7 +478,7 @@ export function OwnerGoalWorkspace({
             {githubTimeline}
           </div>
 
-          <aside className="space-y-4 xl:col-span-4">
+          <aside className="min-w-0 space-y-4 xl:col-span-4">
             <div>
             {nextActionPanel ?? <section className="workspace-card p-3">
               <div className="flex items-start gap-3">
@@ -594,22 +594,22 @@ export function OwnerGoalWorkspace({
 
         <div className="!mt-4 grid items-start gap-4 xl:grid-flow-row-dense xl:grid-cols-12">
         {milestoneEditor ? (
-          <section id="milestone-editor" className="scroll-mt-24 xl:col-span-8">
+          <section id="milestone-editor" className="min-w-0 scroll-mt-24 xl:col-span-8">
             {milestoneEditor}
           </section>
         ) : null}
         {updatesArchive ? (
-          <section id="all-updates" className="scroll-mt-24 xl:col-span-8">
+          <section id="all-updates" className="min-w-0 scroll-mt-24 xl:col-span-8">
             {updatesArchive}
           </section>
         ) : null}
         {supporterInbox ? (
-          <section id="supporters" className="scroll-mt-24 xl:col-span-4">
+          <section id="supporters" className="min-w-0 scroll-mt-24 xl:col-span-4">
             {supporterInbox}
           </section>
         ) : null}
         {circleManager || applicationQueue ? (
-          <section id="circle-manager" className="scroll-mt-24 xl:col-span-4">
+          <section id="circle-manager" className="min-w-0 scroll-mt-24 xl:col-span-4">
             <div className="grid gap-4">
               {circleManager}
               {applicationQueue}

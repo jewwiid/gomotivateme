@@ -911,7 +911,7 @@ function GoalDetailContent() {
         }
         settingsPanel={
           <div className="grid items-start gap-4 xl:grid-cols-12">
-            <div className="workspace-card p-5 xl:col-span-3">
+            <div className="min-w-0 workspace-card p-5 xl:col-span-3">
               <div>
                 <p className="workspace-eyebrow">Lifecycle</p>
                 <p className="mt-1 text-base font-bold text-[var(--color-text)]">Goal status</p>

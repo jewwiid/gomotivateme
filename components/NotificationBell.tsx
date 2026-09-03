@@ -73,7 +73,10 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-xl sm:w-96"
+            // Anchoring a 20rem panel to the bell pushes its left edge off a phone
+            // screen, so on mobile it spans the viewport instead and only becomes a
+            // bell-anchored dropdown once there is room for one.
+            className="fixed left-3 right-3 top-[5rem] z-50 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-11 sm:w-96"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
@@ -92,7 +95,7 @@ export function NotificationBell() {
             </div>
 
             {/* Feed */}
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[min(24rem,calc(100vh-9rem))] overflow-y-auto">
               {notifications === undefined ? (
                 <div className="p-4">
                   {[0, 1, 2].map((i) => (
